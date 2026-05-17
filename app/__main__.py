@@ -12,6 +12,7 @@ eventlet.monkey_patch()   # patche socket, threading, time… avant tout le rest
 
 import os
 from .main import socketio, app
+from . import events  # ← enregistre tous les handlers SocketIO
 
 if __name__ == "__main__":
     port  = int(os.getenv("APP_PORT", 7777))
