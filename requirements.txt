@@ -1,0 +1,30 @@
+# ============================================================
+#  GOSSIP GIRL PARTY — Dépendances Python
+# ============================================================
+
+# Framework web
+flask==3.0.3
+flask-socketio==5.3.6
+
+# WebSocket backend performant (meilleur pour 4G/5G)
+eventlet==0.36.1
+
+# ORM base de données
+flask-sqlalchemy==3.1.1
+sqlalchemy==2.0.30
+
+# Compression images côté serveur (fallback si JS échoue)
+Pillow==10.3.0
+
+# QR Code generation
+qrcode==7.4.2
+
+# Scheduler non-bloquant (timers quiz, mode libre)
+APScheduler==3.10.4
+
+# Utilitaires
+python-dotenv==1.0.1
+werkzeug==3.0.3
+
+# Bot runner — client Socket.io pour les bots de test automatisés
+python-socketio[client]==5.11.3
