@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gossip Girl — Rejoins la soirée</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:       #C9A84C;
+      --gold-light: #E2C97E;
+      --gold-dim:   rgba(201,168,76,.12);
+      --black:      #040404;
+      --cream:      #F5F0E8;
+      --stone:      #6A6050;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--black);
+      color: var(--cream);
+      font-family: 'Montserrat', sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══════════════════════════════════
+       BACKGROUND
+    ═══════════════════════════════════ */
+    .bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    }
+
+    /* Halo central doux */
+    .bg-halo {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 65% 55% at 50% 50%,
+          rgba(201,168,76,.09) 0%,
+          rgba(201,168,76,.03) 40%,
+          transparent 70%);
+    }
+
+    /* Halo coin haut-gauche */
+    .bg-halo-tl {
+      position: absolute; top: 0; left: 0;
+      width: 40%; height: 50%;
+      background: radial-gradient(ellipse at top left,
+        rgba(201,168,76,.06) 0%, transparent 65%);
+    }
+
+    /* Halo coin bas-droite */
+    .bg-halo-br {
+      position: absolute; bottom: 0; right: 0;
+      width: 40%; height: 50%;
+      background: radial-gradient(ellipse at bottom right,
+        rgba(201,168,76,.06) 0%, transparent 65%);
+    }
+
+    /* Grille art-déco */
+    .bg-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(201,168,76,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,.03) 1px, transparent 1px);
+      background-size: 90px 90px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%,
+        black 20%, transparent 80%);
+    }
+
+    /* Lignes verticales encadrantes */
+    .bg-vline {
+      position: absolute; top: 0; bottom: 0; width: 1px;
+      background: linear-gradient(to bottom,
+        transparent 0%, rgba(201,168,76,.2) 20%,
+        rgba(201,168,76,.2) 80%, transparent 100%);
+    }
+    .bg-vline-l { left: 7%; }
+    .bg-vline-r { right: 7%; }
+
+    /* Grain cinématique */
+    .bg-grain {
+      position: absolute; inset: 0; opacity: .022;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+    }
+
+    /* ═══════════════════════════════════
+       ORNEMENTS COINS
+    ═══════════════════════════════════ */
+    .ornament {
+      position: fixed; z-index: 5; pointer-events: none;
+      color: rgba(201,168,76,.28);
+    }
+    .ornament svg { width: 56px; height: 56px; }
+    .orn-tl { top: 28px; left: 28px; }
+    .orn-tr { top: 28px; right: 28px; transform: scaleX(-1); }
+    .orn-bl { bottom: 28px; left: 28px; transform: scaleY(-1); }
+    .orn-br { bottom: 28px; right: 28px; transform: scale(-1); }
+
+    /* ═══════════════════════════════════
+       LAYOUT PRINCIPAL
+       Grille : left (titre) | centre (QR) | right (info)
+    ═══════════════════════════════════ */
+    .stage {
+      position: relative; z-index: 10;
+      width: 100vw; height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0;
+      padding: 60px 9%;
+    }
+
+    /* ═══════════════════════════════════
+       COLONNE GAUCHE — Titre
+    ═══════════════════════════════════ */
+    .col-left {
+      display: flex; flex-direction: column;
+      justify-content: center;
+      padding-right: 40px;
+    }
+
+    .title-eyebrow {
+      font-size: clamp(7px, .9vw, 11px);
+      letter-spacing: .55em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: clamp(14px, 2vh, 24px);
+      animation: fadeUp .6s .1s ease both;
+    }
+
+    .title-main {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(72px, 11vw, 148px);
+      font-weight: 800; line-height: .88;
+      letter-spacing: .06em; color: white;
+      text-shadow: 0 0 100px rgba(201,168,76,.12);
+      animation: fadeUp .6s .2s ease both;
+    }
+
+    .title-gold {
+      background: linear-gradient(135deg,
+        #C9A84C 0%, #E2C97E 40%, #C9A84C 70%, #A8842C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+    }
+
+    .title-divider {
+      display: flex; align-items: center; gap: 14px;
+      margin: clamp(16px, 2.5vh, 28px) 0;
+      animation: fadeUp .6s .3s ease both;
+    }
+    .divider-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(to right, rgba(201,168,76,.4), transparent);
+    }
+    .divider-diamond {
+      width: 6px; height: 6px;
+      border: 1px solid rgba(201,168,76,.6);
+      transform: rotate(45deg); flex-shrink: 0;
+    }
+
+    .title-subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(13px, 1.6vw, 20px);
+      font-style: italic; font-weight: 300;
+      color: var(--stone); line-height: 1.65;
+      max-width: 380px;
+      animation: fadeUp .6s .35s ease both;
+    }
+
+    /* Compteur invités */
+    .guest-counter {
+      margin-top: clamp(20px, 3vh, 36px);
+      display: flex; align-items: baseline; gap: 10px;
+      animation: fadeUp .6s .45s ease both;
+    }
+    .guest-num {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 700; color: var(--gold-light);
+      line-height: 1;
+      transition: all .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    .guest-num.bump {
+      transform: scale(1.15);
+      color: var(--gold);
+    }
+    .guest-label {
+      font-size: clamp(9px, 1vw, 12px);
+      letter-spacing: .3em; text-transform: uppercase;
+      color: var(--stone); line-height: 1.4;
+    }
+
+    /* ═══════════════════════════════════
+       COLONNE CENTRE — QR
+    ═══════════════════════════════════ */
+    .col-center {
+      display: flex; flex-direction: column;
+      align-items: center; gap: clamp(14px, 2vh, 22px);
+      animation: qrReveal .8s .2s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes qrReveal {
+      from { opacity: 0; transform: scale(.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* Cadre QR avec glow */
+    .qr-frame {
+      position: relative;
+      padding: 18px;
+      background: white;
+      border-radius: clamp(18px, 2.5vw, 28px);
+      box-shadow:
+        0 0 0 1px rgba(201,168,76,.3),
+        0 0 40px rgba(201,168,76,.15),
+        0 24px 60px rgba(0,0,0,.5);
+      animation: qrGlow 4s ease-in-out infinite;
+    }
+    @keyframes qrGlow {
+      0%,100% { box-shadow: 0 0 0 1px rgba(201,168,76,.3), 0 0 40px rgba(201,168,76,.15), 0 24px 60px rgba(0,0,0,.5); }
+      50%      { box-shadow: 0 0 0 1px rgba(201,168,76,.5), 0 0 70px rgba(201,168,76,.28), 0 24px 60px rgba(0,0,0,.5); }
+    }
+
+    /* Coins décoratifs sur le cadre QR */
+    .qr-corner {
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: var(--gold);
+      border-style: solid;
+    }
+    .qr-corner-tl { top: -1px; left: -1px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .qr-corner-tr { top: -1px; right: -1px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .qr-corner-bl { bottom: -1px; left: -1px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .qr-corner-br { bottom: -1px; right: -1px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+    #qr-img {
+      display: block;
+      width: clamp(180px, 22vw, 300px);
+      height: clamp(180px, 22vw, 300px);
+      border-radius: clamp(8px, 1vw, 14px);
+    }
+
+    /* Spinner pendant le chargement */
+    .qr-loading {
+      width: clamp(180px, 22vw, 300px);
+      height: clamp(180px, 22vw, 300px);
+      display: flex; align-items: center; justify-content: center;
+      background: #f5f5f5; border-radius: clamp(8px, 1vw, 14px);
+    }
+    .qr-spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(201,168,76,.2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* URL sous le QR */
+    .qr-url {
+      font-size: clamp(11px, 1.2vw, 15px);
+      letter-spacing: .06em; color: var(--stone);
+      text-align: center;
+    }
+    .qr-url span { color: var(--gold-light); }
+
+    /* Hint scan */
+    .qr-hint {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic; font-size: clamp(12px, 1.3vw, 16px);
+      color: rgba(106,96,80,.6); text-align: center;
+    }
+
+    /* Pulse ring autour du QR */
+    .qr-pulse {
+      position: absolute; inset: -20px;
+      border-radius: inherit;
+      border: 1px solid rgba(201,168,76,.18);
+      animation: pulsRing 3s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .qr-pulse-2 {
+      position: absolute; inset: -36px;
+      border-radius: inherit;
+      border: 1px solid rgba(201,168,76,.08);
+      animation: pulsRing 3s .8s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes pulsRing {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .4; transform: scale(1.02); }
+    }
+
+    /* ═══════════════════════════════════
+       COLONNE DROITE — Infos
+    ═══════════════════════════════════ */
+    .col-right {
+      display: flex; flex-direction: column;
+      justify-content: center; gap: clamp(16px, 2.5vh, 28px);
+      padding-left: 40px;
+    }
+
+    .info-block {
+      animation: fadeUp .6s ease both;
+    }
+    .info-block:nth-child(1) { animation-delay: .3s; }
+    .info-block:nth-child(2) { animation-delay: .4s; }
+    .info-block:nth-child(3) { animation-delay: .5s; }
+
+    .info-num {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(24px, 3vw, 38px);
+      color: var(--gold); font-weight: 700;
+      line-height: 1; margin-bottom: 4px;
+    }
+    .info-label {
+      font-size: clamp(7px, .85vw, 10px);
+      letter-spacing: .4em; text-transform: uppercase;
+      color: var(--stone);
+    }
+    .info-sep {
+      height: 1px; width: 48px;
+      background: rgba(201,168,76,.2);
+    }
+
+    /* Steps "Comment ça marche" */
+    .steps { display: flex; flex-direction: column; gap: clamp(10px, 1.5vh, 16px); }
+    .step {
+      display: flex; align-items: flex-start; gap: 12px;
+      animation: fadeUp .6s ease both;
+    }
+    .step:nth-child(1) { animation-delay: .4s; }
+    .step:nth-child(2) { animation-delay: .5s; }
+    .step:nth-child(3) { animation-delay: .6s; }
+
+    .step-num {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(20px, 2.5vw, 30px);
+      color: rgba(201,168,76,.3); font-weight: 700;
+      line-height: 1; flex-shrink: 0; width: 28px;
+    }
+    .step-text {
+      font-size: clamp(11px, 1.2vw, 14px);
+      color: var(--stone); line-height: 1.6;
+      padding-top: 2px;
+    }
+    .step-text strong { color: var(--cream); font-weight: 500; }
+
+    /* XOXO signature */
+    .xoxo-sig {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(12px, 1.4vw, 17px);
+      color: rgba(201,168,76,.5);
+      margin-top: clamp(6px, 1vh, 12px);
+      animation: fadeUp .6s .7s ease both;
+    }
+
+    /* ═══════════════════════════════════
+       BOTTOM BAR
+    ═══════════════════════════════════ */
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      z-index: 20;
+      display: flex; align-items: center; justify-content: center;
+      gap: 32px;
+      padding: 12px 40px;
+      border-top: 1px solid rgba(201,168,76,.07);
+      background: rgba(4,4,4,.7);
+      backdrop-filter: blur(12px);
+      font-size: 9px; letter-spacing: .32em;
+      text-transform: uppercase; color: var(--stone);
+    }
+    .bottom-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: rgba(201,168,76,.3);
+      flex-shrink: 0;
+    }
+
+    /* Indicateur "nouveau joueur" */
+    .player-toast {
+      position: fixed; bottom: 52px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(10,10,10,.95);
+      border: 1px solid rgba(201,168,76,.3);
+      border-radius: 20px; padding: 9px 22px;
+      font-size: clamp(11px, 1.2vw, 14px);
+      color: var(--cream); white-space: nowrap;
+      opacity: 0; transition: opacity .3s, transform .3s;
+      pointer-events: none; z-index: 50;
+    }
+    .player-toast.show {
+      opacity: 1; transform: translateX(-50%) translateY(0);
+    }
+
+    /* ═══════════════════════════════════
+       ANIMATIONS
+    ═══════════════════════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hint clavier */
+    .key-hint {
+      position: fixed; bottom: 52px; right: 36px;
+      font-size: 9px; letter-spacing: .25em;
+      text-transform: uppercase; color: rgba(106,96,80,.4);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .key-badge {
+      border: 1px solid rgba(106,96,80,.3);
+      border-radius: 5px; padding: 2px 7px;
+      font-size: 10px; color: rgba(106,96,80,.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ BACKGROUND ══ -->
+  <div class="bg">
+    <div class="bg-halo"></div>
+    <div class="bg-halo-tl"></div>
+    <div class="bg-halo-br"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-grain"></div>
+    <div class="bg-vline bg-vline-l"></div>
+    <div class="bg-vline bg-vline-r"></div>
+  </div>
+
+  <!-- ══ ORNEMENTS ══ -->
+  <div class="ornament orn-tl">
+    <svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width=".8">
+      <path d="M2 2 L28 2 L28 9"/><path d="M2 2 L2 28 L9 28"/><path d="M18 2 L18 18 L2 18"/>
+    </svg>
+  </div>
+  <div class="ornament orn-tr">
+    <svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width=".8">
+      <path d="M2 2 L28 2 L28 9"/><path d="M2 2 L2 28 L9 28"/><path d="M18 2 L18 18 L2 18"/>
+    </svg>
+  </div>
+  <div class="ornament orn-bl">
+    <svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width=".8">
+      <path d="M2 2 L28 2 L28 9"/><path d="M2 2 L2 28 L9 28"/><path d="M18 2 L18 18 L2 18"/>
+    </svg>
+  </div>
+  <div class="ornament orn-br">
+    <svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width=".8">
+      <path d="M2 2 L28 2 L28 9"/><path d="M2 2 L2 28 L9 28"/><path d="M18 2 L18 18 L2 18"/>
+    </svg>
+  </div>
+
+  <!-- ══ STAGE ══ -->
+  <div class="stage">
+
+    <!-- GAUCHE — Titre -->
+    <div class="col-left">
+      <div class="title-eyebrow">Manhattan Elite Network · Soirée Privée</div>
+      <h1 class="title-main">
+        GOSSIP<br>
+        <span class="title-gold">GIRL</span>
+      </h1>
+      <div class="title-divider">
+        <div class="divider-line"></div>
+        <div class="divider-diamond"></div>
+      </div>
+      <p class="title-subtitle">
+        The one and only source into the<br>
+        scandalous lives of Manhattan's elite.
+      </p>
+      <div class="guest-counter">
+        <div class="guest-num" id="guest-num">0</div>
+        <div class="guest-label">invité·es<br>connecté·es</div>
+      </div>
+    </div>
+
+    <!-- CENTRE — QR Code -->
+    <div class="col-center">
+
+      <div class="qr-frame" style="position:relative;">
+        <div class="qr-pulse"></div>
+        <div class="qr-pulse-2"></div>
+        <div class="qr-corner qr-corner-tl"></div>
+        <div class="qr-corner qr-corner-tr"></div>
+        <div class="qr-corner qr-corner-bl"></div>
+        <div class="qr-corner qr-corner-br"></div>
+
+        <!-- Placeholder pendant le chargement -->
+        <div class="qr-loading" id="qr-loading">
+          <div class="qr-spinner"></div>
+        </div>
+        <!-- QR image -->
+        <img id="qr-img" src="" alt="QR Code" style="display:none;"/>
+      </div>
+
+      <div class="qr-url" id="qr-url">
+        <span id="qr-url-text">Chargement…</span>
+      </div>
+
+      <div class="qr-hint">Scanne pour rejoindre la soirée</div>
+
+    </div>
+
+    <!-- DROITE — Infos + étapes -->
+    <div class="col-right">
+
+      <!-- Comment rejoindre -->
+      <div class="info-block">
+        <div class="info-label" style="margin-bottom:14px;">Comment rejoindre</div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text"><strong>Scanne</strong> le QR code avec ton téléphone</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text"><strong>Choisis</strong> ton prénom et ton personnage</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text"><strong>Rejoins</strong> Manhattan ce soir. XOXO.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-sep"></div>
+
+      <!-- Stats live -->
+      <div class="info-block">
+        <div class="info-label" style="margin-bottom:12px;">Soirée en direct</div>
+        <div style="display:flex;gap:28px;">
+          <div>
+            <div class="info-num" id="stat-guests">0</div>
+            <div class="info-label">connectés</div>
+          </div>
+          <div>
+            <div class="info-num" id="stat-phase" style="font-size:clamp(14px,1.8vw,22px);padding-top:8px;">En attente</div>
+            <div class="info-label">phase</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="xoxo-sig">XOXO, Gossip Girl</div>
+
+    </div>
+
+  </div>
+
+  <!-- ══ BOTTOM BAR ══ -->
+  <div class="bottom-bar">
+    <span>Gossip Girl Party</span>
+    <div class="bottom-dot"></div>
+    <span>5 juillet 2026</span>
+    <div class="bottom-dot"></div>
+    <span id="bottom-url">—</span>
+    <div class="bottom-dot"></div>
+    <span>Manhattan Elite Network</span>
+  </div>
+
+  <!-- ══ PLAYER TOAST ══ -->
+  <div class="player-toast" id="player-toast"></div>
+
+  <!-- ══ KEY HINT ══ -->
+  <div class="key-hint">
+    <span class="key-badge">Q</span>
+    Fermer
+  </div>
+
+  <!-- ══ SOCKET ══ -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+
+    /* ── QR GENERATION ── */
+    function loadQR() {
+      const url  = window.location.origin + '/mobile';
+      const text = url.replace('https://', '').replace('http://', '');
+
+      document.getElementById('qr-url-text').textContent = url;
+      document.getElementById('bottom-url').textContent  = text;
+
+      fetch('/api/qr/' + encodeURIComponent(url))
+        .then(r => r.json())
+        .then(d => {
+          const img = document.getElementById('qr-img');
+          img.src = d.qr_base64;
+          img.onload = () => {
+            document.getElementById('qr-loading').style.display = 'none';
+            img.style.display = 'block';
+          };
+        })
+        .catch(() => {
+          // Fallback texte si l'API QR n'est pas dispo
+          document.getElementById('qr-loading').innerHTML =
+            '<div style="font-size:11px;color:#888;text-align:center;padding:20px;">QR indisponible<br>Tape l\'URL manuellement</div>';
+        });
+    }
+
+    /* ── SOCKET ── */
+    const socket = io({ reconnection: true, reconnectionDelay: 1500 });
+
+    let guestCount = 0;
+    let _toastTimer = null;
+
+    function bumpCount(n) {
+      const el = document.getElementById('guest-num');
+      el.textContent = n;
+      el.classList.remove('bump');
+      void el.offsetWidth; // reflow
+      el.classList.add('bump');
+      setTimeout(() => el.classList.remove('bump'), 450);
+
+      document.getElementById('stat-guests').textContent = n;
+    }
+
+    function showPlayerToast(msg) {
+      const t = document.getElementById('player-toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    socket.on('game_state', data => {
+      if (data.leaderboard) {
+        const n = data.leaderboard.filter(p => p.is_connected).length;
+        bumpCount(n);
+      }
+      const phaseMap = {
+        waiting: 'En attente',
+        quiz:    '⚡ Quiz',
+        free:    '🖤 Mode Libre',
+        paused:  '⏸ Pause',
+      };
+      document.getElementById('stat-phase').textContent =
+        phaseMap[data.phase] || data.phase;
+    });
+
+    socket.on('player_joined', data => {
+      bumpCount(data.count);
+      showPlayerToast(`👋 ${data.prenom} (${data.personnage}) a rejoint la soirée !`);
+    });
+
+    socket.on('leaderboard_update', data => {
+      if (data.leaderboard) {
+        bumpCount(data.leaderboard.filter(p => p.is_connected).length);
+      }
+    });
+
+    socket.on('phase_changed', data => {
+      const phaseMap = {
+        waiting: 'En attente',
+        quiz:    '⚡ Quiz',
+        free:    '🖤 Mode Libre',
+      };
+      document.getElementById('stat-phase').textContent =
+        phaseMap[data.phase] || data.phase;
+    });
+
+    /* ── TOUCHE Q — fermer ── */
+    document.addEventListener('keydown', e => {
+      if (e.key === 'q' || e.key === 'Q' || e.key === 'Escape') {
+        window.close();
+        // Fallback si window.close() refusé
+        history.back();
+      }
+    });
+
+    /* ── HEARTBEAT ── */
+    setInterval(() => {
+      if (socket.connected) socket.emit('ping_client', { ts: Date.now() });
+    }, 20000);
+
+    /* ── INIT ── */
+    loadQR();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chuck Mode — Gossip Girl Party</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500;1,700&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --gold:#C9A84C;--gold-light:#E2C97E;--gold-dim:rgba(201,168,76,.15);
+      --black:#050505;--dark:#0A0A0A;--dark2:#111111;--dark3:#161616;
+      --cream:#F5F0E8;--stone:#7A7060;--stone2:#504840;
+      --red:#C0504D;--red-dim:rgba(192,80,77,.12);
+      --green:#22c55e;--green-dim:rgba(34,197,94,.12);
+      --blue:#60a5fa;--blue-dim:rgba(96,165,250,.1);
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Montserrat',sans-serif;background:var(--black);color:var(--cream);min-height:100vh;overflow-x:hidden}
+    a{color:inherit;text-decoration:none}
+    select option{background:var(--dark2);color:var(--cream)}
+
+    /* ════════════════════ LAYOUT ════════════════════ */
+    .layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+
+    /* ════════════════════ SIDEBAR ════════════════════ */
+    .sidebar{
+      background:var(--dark);
+      border-right:1px solid rgba(201,168,76,.07);
+      padding:0;
+      position:sticky;top:0;height:100vh;
+      overflow-y:auto;overflow-x:hidden;
+      display:flex;flex-direction:column;
+      scrollbar-width:thin;scrollbar-color:var(--stone2) transparent;
+    }
+    .sidebar::-webkit-scrollbar{width:3px}
+    .sidebar::-webkit-scrollbar-thumb{background:var(--stone2);border-radius:2px}
+
+    .sidebar-header{
+      padding:24px 20px 20px;
+      border-bottom:1px solid rgba(201,168,76,.07);
+      text-align:center;
+    }
+    .sidebar-logo-title{
+      font-family:'Playfair Display',serif;
+      font-size:20px;color:var(--gold);
+      letter-spacing:.03em;
+    }
+    .sidebar-logo-sub{
+      font-size:8px;letter-spacing:.45em;text-transform:uppercase;
+      color:var(--stone);margin-top:5px;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+    }
+    .live-dot{
+      width:7px;height:7px;border-radius:50%;background:var(--green);
+      display:inline-block;flex-shrink:0;
+      animation:livePulse 2.2s ease-in-out infinite;
+    }
+    .live-dot.offline{background:var(--red);animation:none}
+    @keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{opacity:.6;box-shadow:0 0 0 4px rgba(34,197,94,0)}}
+
+    .sidebar-nav{flex:1;padding:12px 12px 0}
+    .sidebar-section{
+      font-size:7.5px;letter-spacing:.45em;text-transform:uppercase;
+      color:var(--stone2);margin:18px 0 6px 8px;
+    }
+    .sidebar-item{
+      display:flex;align-items:center;gap:10px;
+      padding:9px 12px;border-radius:10px;
+      cursor:pointer;transition:all .18s;
+      color:var(--stone);font-size:11.5px;letter-spacing:.02em;
+      border:none;background:none;width:100%;text-align:left;
+      text-decoration:none;position:relative;
+    }
+    .sidebar-item:hover{background:rgba(201,168,76,.06);color:var(--cream)}
+    .sidebar-item.active{background:rgba(201,168,76,.1);color:var(--gold)}
+    .sidebar-item.active::before{
+      content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+      width:3px;height:18px;background:var(--gold);border-radius:0 2px 2px 0;
+    }
+    .sidebar-item.danger{color:var(--red)}
+    .sidebar-item.danger:hover{background:var(--red-dim)}
+    .sidebar-item .icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+    .sidebar-badge{
+      margin-left:auto;font-size:9px;font-weight:600;
+      background:var(--red);color:white;
+      padding:1px 6px;border-radius:20px;
+      display:none;
+    }
+    .sidebar-badge.show{display:block}
+
+    .sidebar-footer{
+      padding:12px;
+      border-top:1px solid rgba(201,168,76,.06);
+      margin-top:12px;
+    }
+
+    /* ════════════════════ CONTENT ════════════════════ */
+    .content{padding:28px 32px;overflow-y:auto;min-height:100vh}
+    .page-title{
+      font-family:'Playfair Display',serif;
+      font-size:34px;color:white;margin-bottom:4px;
+    }
+    .page-sub{font-size:10.5px;color:var(--stone);letter-spacing:.08em;margin-bottom:24px}
+    .section{display:none}
+    .section.active{display:block;animation:fadeIn .25s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ════════════════════ STATUS GRID ════════════════════ */
+    .status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    .status-card{
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(201,168,76,.09);
+      border-radius:14px;padding:18px 20px;
+      transition:border-color .2s;
+    }
+    .status-card:hover{border-color:rgba(201,168,76,.2)}
+    .status-val{
+      font-family:'Playfair Display',serif;
+      font-size:30px;color:var(--gold);
+      font-weight:700;line-height:1.1;
+    }
+    .status-val.sm{font-size:17px;padding-top:7px}
+    .status-label{font-size:8.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--stone);margin-top:5px}
+
+    /* ════════════════════ PANELS ════════════════════ */
+    .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+    .panel-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
+    .panel{
+      background:rgba(255,255,255,.022);
+      border:1px solid rgba(201,168,76,.09);
+      border-radius:16px;padding:20px 22px;
+    }
+    .panel-full{margin-bottom:16px}
+    .panel-title{
+      font-family:'Playfair Display',serif;
+      font-size:17px;color:white;margin-bottom:3px;
+    }
+    .panel-sub{
+      font-size:8px;letter-spacing:.28em;text-transform:uppercase;
+      color:var(--stone);margin-bottom:16px;
+    }
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+    /* ════════════════════ BUTTONS ════════════════════ */
+    .btn{
+      padding:9px 16px;border-radius:10px;
+      font-family:'Montserrat',sans-serif;
+      font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+      cursor:pointer;transition:all .18s;border:none;
+      white-space:nowrap;
+    }
+    .btn:active{transform:scale(.97)}
+    .btn-gold{background:var(--gold);color:var(--black);box-shadow:0 4px 14px rgba(201,168,76,.2)}
+    .btn-gold:hover{background:var(--gold-light);box-shadow:0 4px 20px rgba(201,168,76,.35)}
+    .btn-outline{background:transparent;border:1px solid rgba(201,168,76,.25);color:var(--gold)}
+    .btn-outline:hover{background:var(--gold-dim)}
+    .btn-ghost{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:var(--cream)}
+    .btn-ghost:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12)}
+    .btn-danger{background:transparent;border:1px solid rgba(192,80,77,.3);color:var(--red)}
+    .btn-danger:hover{background:var(--red-dim)}
+    .btn-gold{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:var(--gold)}
+    .btn-gold:hover{background:rgba(201,168,76,.22);border-color:rgba(201,168,76,.6)}
+
+    /* ── Barre de progression des sons ── */
+    .sound-btn-wrap { display:flex; flex-direction:column; gap:4px; }
+    .sound-trigger-btn { width:100%; text-align:left; }
+    .sound-progress-bar {
+      height: 3px;
+      background: rgba(255,255,255,.07);
+      border-radius: 2px;
+      overflow: hidden;
+      display: none; /* cachée au repos */
+    }
+    .sound-progress-bar.active { display: block; }
+    .sound-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--gold);
+      border-radius: 2px;
+      transition: width linear; /* durée injectée dynamiquement via JS */
+    }
+    /* Bouton actif : léger highlight doré */
+    .sound-trigger-btn.playing {
+      border-color: rgba(201,168,76,.5) !important;
+      color: var(--gold) !important;
+    }
+    .btn-green{background:transparent;border:1px solid rgba(34,197,94,.3);color:var(--green)}
+    .btn-green:hover{background:var(--green-dim)}
+    .btn-sm{padding:5px 10px;font-size:8px;letter-spacing:.12em}
+    .btn-xs{padding:3px 8px;font-size:7.5px;letter-spacing:.1em}
+
+    /* ════════════════════ INPUTS ════════════════════ */
+    .input-field{
+      width:100%;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(201,168,76,.18);
+      border-radius:10px;padding:10px 14px;
+      color:white;font-family:'Montserrat',sans-serif;font-size:13px;
+      outline:none;transition:border-color .25s;margin-bottom:10px;
+    }
+    .input-field:focus{border-color:rgba(201,168,76,.45)}
+    .input-field::placeholder{color:var(--stone)}
+    textarea.input-field{resize:vertical;min-height:70px}
+    select.input-field{cursor:pointer}
+
+    /* ════════════════════ TABLE ════════════════════ */
+    .table-wrap{overflow-x:auto;border-radius:10px}
+    table{width:100%;border-collapse:collapse}
+    th{
+      font-size:7.5px;letter-spacing:.32em;text-transform:uppercase;
+      color:var(--stone);text-align:left;padding:9px 14px;
+      border-bottom:1px solid rgba(201,168,76,.07);
+    }
+    td{
+      padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.03);
+      font-size:12.5px;color:var(--cream);
+    }
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(255,255,255,.018)}
+    .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
+    .dot-on{background:var(--green)}
+    .dot-off{background:var(--stone2)}
+    .gg-badge{
+      font-size:8px;letter-spacing:.15em;text-transform:uppercase;
+      color:var(--gold);background:rgba(201,168,76,.1);
+      border:1px solid rgba(201,168,76,.22);
+      padding:2px 8px;border-radius:20px;
+    }
+
+    /* ════════════════════ SCOOP ITEMS ════════════════════ */
+    .scoop-row{
+      background:rgba(255,255,255,.018);
+      border:1px solid rgba(255,255,255,.05);
+      border-radius:12px;padding:12px 16px;
+      margin-bottom:8px;
+      display:flex;gap:12px;align-items:flex-start;
+      transition:border-color .2s;
+    }
+    .scoop-row:hover{border-color:rgba(255,255,255,.1)}
+    .scoop-row.official{border-color:rgba(201,168,76,.22);background:rgba(201,168,76,.03)}
+    .scoop-info{flex:1;min-width:0}
+    .scoop-author-label{
+      font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;
+      color:var(--stone);margin-bottom:4px;
+    }
+    .scoop-author-label.gg{color:var(--gold)}
+    .scoop-time{font-size:9px;color:var(--stone2);margin-left:8px}
+    .scoop-text{font-size:13px;color:var(--cream);line-height:1.55;white-space:pre-wrap;word-break:break-word}
+    .scoop-img{max-width:120px;max-height:80px;border-radius:8px;object-fit:cover;flex-shrink:0}
+    .scoop-actions{display:flex;gap:6px;margin-top:8px}
+
+    /* ════════════════════ LOGS ════════════════════ */
+    .log-row{
+      display:flex;gap:14px;padding:9px 0;
+      border-bottom:1px solid rgba(255,255,255,.03);
+      font-size:11px;
+    }
+    .log-row:last-child{border-bottom:none}
+    .log-time{color:var(--stone);flex-shrink:0;width:52px;font-feature-settings:'tnum'}
+    .log-event{
+      flex-shrink:0;width:110px;
+      font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+      padding:1px 7px;border-radius:20px;height:fit-content;margin-top:1px;
+      background:rgba(255,255,255,.05);color:var(--stone);
+    }
+    .log-event.ev-login{background:var(--green-dim);color:var(--green)}
+    .log-event.ev-quiz{background:var(--gold-dim);color:var(--gold)}
+    .log-event.ev-scoop{background:var(--blue-dim);color:var(--blue)}
+    .log-event.ev-admin{background:var(--red-dim);color:var(--red)}
+    .log-detail{color:var(--cream);flex:1}
+
+    /* ════════════════════ QUIZ LIVE ════════════════════ */
+    .question-card{
+      background:rgba(201,168,76,.04);
+      border:1px solid rgba(201,168,76,.18);
+      border-radius:14px;padding:20px 24px;
+      margin-bottom:16px;
+    }
+    .question-text{
+      font-family:'Playfair Display',serif;
+      font-size:20px;color:white;
+      margin-bottom:16px;line-height:1.4;
+    }
+    .choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+    .choice-item{
+      display:flex;align-items:center;gap:10px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:10px;padding:10px 14px;
+      font-size:12px;
+    }
+    .choice-item.correct{border-color:rgba(34,197,94,.3);background:var(--green-dim)}
+    .choice-key{
+      font-family:'Playfair Display',serif;
+      font-size:16px;color:var(--gold);
+      flex-shrink:0;width:20px;
+    }
+    .answer-progress-bar{
+      height:6px;background:rgba(255,255,255,.06);
+      border-radius:3px;overflow:hidden;margin-top:12px;
+    }
+    .answer-progress-fill{
+      height:100%;background:var(--gold);
+      border-radius:3px;transition:width .4s ease;
+      width:0%;
+    }
+    .answer-list{margin-top:14px;display:flex;flex-direction:column;gap:4px}
+    .answer-item{
+      display:flex;align-items:center;gap:10px;
+      font-size:11px;padding:5px 10px;border-radius:8px;
+      background:rgba(255,255,255,.02);
+    }
+    .answer-item.correct{color:var(--green)}
+    .answer-item.wrong{color:var(--stone)}
+
+    /* ════════════════════ TIMER ════════════════════ */
+    .timer-display{
+      font-family:'Playfair Display',serif;
+      font-size:48px;color:var(--gold);
+      text-align:center;padding:16px 0 8px;
+      letter-spacing:.05em;
+    }
+    .timer-display.urgent{color:var(--red);animation:timerUrgent .8s ease infinite}
+    @keyframes timerUrgent{0%,100%{opacity:1}50%{opacity:.5}}
+
+    /* ════════════════════ TOAST ════════════════════ */
+    #toast{
+      position:fixed;bottom:24px;right:24px;
+      background:rgba(14,14,14,.97);
+      border:1px solid rgba(201,168,76,.3);
+      border-radius:12px;padding:12px 18px;
+      font-size:12px;color:var(--cream);
+      z-index:9999;opacity:0;transition:opacity .28s,transform .28s;
+      pointer-events:none;transform:translateY(8px);
+      max-width:280px;
+    }
+    #toast.show{opacity:1;transform:translateY(0)}
+    #toast.success{border-color:rgba(34,197,94,.4)}
+    #toast.error{border-color:rgba(192,80,77,.4)}
+
+    /* ════════════════════ CONN STATUS ════════════════════ */
+    #conn-status{
+      font-size:9px;letter-spacing:.15em;text-transform:uppercase;
+      color:var(--stone);padding:8px 12px;margin:8px 12px;
+      background:rgba(255,255,255,.02);border-radius:8px;
+      display:flex;align-items:center;gap:6px;
+    }
+
+    /* ════════════════════ SEPARATORS ════════════════════ */
+    .divider{
+      height:1px;background:rgba(201,168,76,.07);
+      margin:20px 0;
+    }
+
+    /* ════════════════════ RESPONSIVE ════════════════════ */
+    @media(max-width:900px){
+      .layout{grid-template-columns:1fr}
+      .sidebar{display:none}
+      .status-grid{grid-template-columns:1fr 1fr}
+      .panel-grid,.panel-grid-3{grid-template-columns:1fr}
+      .choices-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ═══════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-title">Chuck Mode</div>
+      <div class="sidebar-logo-sub">
+        <span class="live-dot" id="socket-dot"></span>
+        <span id="socket-label">God Mode Actif</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Contrôle</div>
+      <button class="sidebar-item active" onclick="showSection('dashboard',this)">
+        <span class="icon">🎮</span> Dashboard
+      </button>
+      <button class="sidebar-item" onclick="showSection('quiz',this)">
+        <span class="icon">⚡</span> Quiz Live
+      </button>
+      <button class="sidebar-item" onclick="showSection('players',this)">
+        <span class="icon">👥</span> Joueurs
+        <span class="sidebar-badge" id="badge-players">0</span>
+      </button>
+
+      <div class="sidebar-section">Contenu</div>
+      <button class="sidebar-item" onclick="showSection('scoops',this)">
+        <span class="icon">📸</span> Scoops
+        <span class="sidebar-badge" id="badge-scoops">!</span>
+      </button>
+      <button class="sidebar-item" onclick="showSection('scores',this)">
+        <span class="icon">📊</span> Scores
+      </button>
+      <button class="sidebar-item" onclick="showSection('logs',this)">
+        <span class="icon">📋</span> Logs
+      </button>
+
+      <div class="sidebar-section">Projecteur</div>
+      <button class="sidebar-item" onclick="showSection('projector',this)">
+        <span class="icon">📺</span> Contrôles
+      </button>
+      <button class="sidebar-item" onclick="window.open('/projector','_blank')">
+        <span class="icon">↗</span> Ouvrir Projecteur
+      </button>
+      <button class="sidebar-item" id="btn-sound-toggle" onclick="toggleProjectorSound()" title="Son projecteur — cliquer pour activer/couper">
+        <span class="icon" id="sound-toggle-icon">🔇</span>
+        <span id="sound-toggle-label" style="color:var(--red);">Son OFF</span>
+      </button>
+      <button class="sidebar-item" onclick="window.open('/qr','_blank')">
+        <span class="icon">📱</span> QR Code
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div id="conn-status">
+        <span class="live-dot" id="conn-dot"></span>
+        <span id="conn-label">Connecté</span>
+      </div>
+      <!-- F7 — Reset pool de questions (Chantier A) -->
+      <button class="sidebar-item danger" onclick="confirmResetQuestions()" title="Remet à zéro le pool de questions déjà posées">
+        <span class="icon">🃏</span> Reset Questions
+      </button>
+      <button class="sidebar-item danger" onclick="confirmResetScores()" title="Remet les scores à zéro — joueurs conservés">
+        <span class="icon">📊</span> Reset Scores
+      </button>
+      <button class="sidebar-item danger" onclick="confirmReset()" title="Efface tout : joueurs, scores et scoops">
+        <span class="icon">🔄</span> Reset Complet
+      </button>
+      <a class="sidebar-item" href="/xoxo-admin/logout">
+        <span class="icon">🚪</span> Déconnexion
+      </a>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════
+       CONTENT
+  ═══════════════════════════════════════ -->
+  <main class="content">
+
+    <!-- ══════════════ DASHBOARD ══════════════ -->
+    <div id="section-dashboard" class="section active">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub" id="dash-sub">Soirée du 5 juillet 2026 · Phase : En attente</div>
+
+      <!-- Stats -->
+      <div class="status-grid">
+        <div class="status-card">
+          <div class="status-val" id="stat-players">0</div>
+          <div class="status-label">Invités connectés</div>
+        </div>
+        <div class="status-card">
+          <div class="status-val sm" id="stat-phase">En attente</div>
+          <div class="status-label">Phase actuelle</div>
+        </div>
+        <div class="status-card">
+          <div class="status-val" id="stat-answers" style="color:var(--green);">0</div>
+          <div class="status-label">Réponses reçues</div>
+        </div>
+        <div class="status-card">
+          <div class="status-val sm" id="stat-gg">—</div>
+          <div class="status-label">Gossip Girl actuel</div>
+        </div>
+      </div>
+
+      <!-- Controls row 1 -->
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-title">Contrôle des Phases</div>
+          <div class="panel-sub">Bascule instantanée · God Mode</div>
+          <div class="btn-row">
+            <button class="btn btn-gold no-quiz-btn" onclick="launchQuiz()">⚡ Lancer Quiz</button>
+            <button class="btn btn-outline" onclick="adminAction('/api/admin/phase',{phase:'LIBRE'})">🕊 Mode Libre</button>
+            <button class="btn btn-ghost" onclick="adminAction('/api/admin/phase',{phase:'LOBBY'})">🏠 Retour Lobby</button>
+            <button class="btn btn-ghost" onclick="adminAction('/api/admin/phase',{phase:'PAUSE'})">⏸ Pause</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Quiz en cours</div>
+          <div class="panel-sub" id="quiz-live-sub">Aucun quiz actif</div>
+          <div class="btn-row" id="quiz-controls-row-1">
+            <button class="btn btn-outline quiz-only-btn" id="btn-reload-question"
+              onclick="adminAction('/api/admin/reload-question')">🔄 Relancer Q</button>
+            <button class="btn btn-ghost quiz-only-btn" id="btn-add-time"
+              onclick="adminAction('/api/admin/adjust-timer',{delta:10})">+10s</button>
+          </div>
+          <div class="btn-row" style="margin-top:8px;">
+            <button id="btn-pause-quiz" class="btn btn-ghost quiz-only-btn" onclick="pauseQuiz()">⏸ Pause Quiz</button>
+            <button id="btn-stop-quiz" class="btn btn-danger quiz-only-btn" onclick="stopQuizConfirm()">✕ Arrêter + Rollback</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls row 2 -->
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-title">Timer Mode Libre</div>
+          <div class="panel-sub">Temps restant en Mode Libre</div>
+          <div class="timer-display" id="dash-timer">--:--</div>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-ghost btn-sm" onclick="adminAction('/api/admin/adjust-timer',{delta:300})">+5 min</button>
+            <button class="btn btn-ghost btn-sm" onclick="adminAction('/api/admin/adjust-timer',{delta:600})">+10 min</button>
+            <button class="btn btn-ghost btn-sm" onclick="adminStartQuiz()" id="btn-admin-start-quiz">🎯 Lancer Quiz</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Blair Waldorf · Slot VIP</div>
+          <div class="panel-sub" id="blair-status">Vérification…</div>
+          <div class="btn-row">
+            <button class="btn btn-danger" onclick="adminAction('/api/admin/free-blair').then(()=>checkBlair())">🔓 Libérer le slot</button>
+            <button class="btn btn-ghost" onclick="copyBlair()">📋 Copier lien VIP</button>
+            <button class="btn btn-gold" onclick="openBlairLogin()">🌹 Ouvrir login Blair</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="panel panel-full">
+        <div class="panel-title">Actions rapides</div>
+        <div class="panel-sub">Raccourcis · Projecteur & Session</div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="triggerSound('xoxo')">🔊 Son XOXO</button>
+          <button class="btn btn-ghost" onclick="triggerSound('quiz_start')">⚡ Son Quiz</button>
+          <button class="btn btn-ghost" onclick="triggerSound('new_gg')">👑 Son New GG</button>
+          <button class="btn btn-danger btn-sm" id="btn-stop-sound-quick" onclick="stopSound()" style="opacity:0.4;pointer-events:none;">■ Stop son</button>
+          <button class="btn btn-ghost" onclick="showSection('projector',null);document.getElementById('custom-msg-input').focus()">💬 Message custom</button>
+          <button class="btn btn-ghost" onclick="toggleProjectorQR()">📱 QR Projecteur</button>
+          <button class="btn btn-ghost" onclick="toggleProjectorScores()">📊 Scores grand</button>
+          <button class="btn btn-ghost" onclick="adminAction('/api/admin/projector-refresh')">↻ Refresh projecteur</button>
+          <button class="btn btn-ghost" onclick="adminAction('/api/admin/refresh-clients').then(()=>showToast('Clients rechargés','info',2500))">↻ Refresh mobiles</button>
+          <button class="btn btn-outline" onclick="window.open('/projector','_blank')">↗ Ouvrir Projecteur</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ QUIZ LIVE ══════════════ -->
+    <div id="section-quiz" class="section">
+      <div class="page-title">Quiz Live</div>
+      <div class="page-sub">Contrôle des questions en temps réel</div>
+
+      <!-- Question display -->
+      <div class="question-card">
+        <div class="panel-sub" id="quiz-q-sub">Aucune question en cours</div>
+        <div class="question-text" id="quiz-q-text">En attente du Gossip Girl…</div>
+
+        <div class="choices-grid" id="quiz-choices">
+          <div class="choice-item" style="color:var(--stone);grid-column:1/-1;">Les choix apparaîtront ici dès le lancement du quiz.</div>
+        </div>
+
+        <!-- Barre de progression réponses -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);">Réponses reçues</span>
+          <span style="font-size:12px;color:var(--gold);" id="quiz-answered-count">0 / 0</span>
+        </div>
+        <div class="answer-progress-bar">
+          <div class="answer-progress-fill" id="quiz-progress-fill"></div>
+        </div>
+
+        <!-- Liste des répondants -->
+        <div class="answer-list" id="quiz-answer-list"></div>
+      </div>
+
+      <!-- Controls -->
+      <div class="panel panel-full">
+        <div class="panel-title">Contrôles Quiz</div>
+        <div class="panel-sub">Actions sur la question en cours</div>
+        <div class="btn-row">
+          <button class="btn btn-gold no-quiz-btn" onclick="adminAction('/api/admin/phase',{phase:'QUIZ'})">⚡ Lancer Quiz</button>
+          <button class="btn btn-outline quiz-only-btn" onclick="adminAction('/api/admin/reload-question')">🔄 Relancer question</button>
+          <button class="btn btn-ghost quiz-only-btn" onclick="adminAction('/api/admin/adjust-timer',{delta:10})">+10 secondes</button>
+          <button id="btn-pause-quiz-ql" class="btn btn-ghost quiz-only-btn" onclick="pauseQuiz()">⏸ Pause Quiz</button>
+          <button class="btn btn-ghost" onclick="toggleProjectorScores()">📊 Scores projecteur</button>
+          <button class="btn btn-danger quiz-only-btn" onclick="stopQuizConfirm()">✕ Arrêter + Rollback</button>
+        </div>
+      </div>
+
+      <!-- Leaderboard mini -->
+      <div class="panel panel-full">
+        <div class="panel-title">Classement rapide</div>
+        <div class="panel-sub">Top 5 pendant le quiz</div>
+        <div id="quiz-mini-lb" style="color:var(--stone);font-size:12px;padding:8px 0;">En attente des scores…</div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PLAYERS ══════════════ -->
+    <div id="section-players" class="section">
+      <div class="page-title">Joueurs</div>
+      <div class="page-sub">Gestion des invités · <span id="players-count-label">0 connectés</span></div>
+
+      <!-- Transfer GG -->
+      <div class="panel panel-full" style="margin-bottom:16px;">
+        <div class="panel-title">Transfert Gossip Girl</div>
+        <div class="panel-sub">Désigner manuellement le prochain GG</div>
+        <div class="btn-row">
+          <select class="input-field" id="transfer-gg-select" style="margin:0;max-width:280px;">
+            <option value="">— Choisir un joueur —</option>
+          </select>
+          <button class="btn btn-outline" onclick="transferGG()">👑 Transférer GG</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Statut</th>
+                <th>Prénom</th>
+                <th>Personnage</th>
+                <th>Score</th>
+                <th>Rôle</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="players-table-body">
+              <tr><td colspan="6" style="text-align:center;color:var(--stone);padding:28px;">Aucun joueur connecté.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ SCOOPS ══════════════ -->
+    <div id="section-scoops" class="section">
+      <div class="page-title">Scoops</div>
+      <div class="page-sub">Modération du feed en temps réel</div>
+
+      <!-- Post as GG -->
+      <div class="panel panel-full" style="margin-bottom:16px;">
+        <div class="panel-title">Poster en tant que Gossip Girl</div>
+        <div class="panel-sub">Message officiel · Visible par tous instantanément</div>
+        <textarea class="input-field" id="gg-message-input" placeholder="Your message, darling… XOXO" rows="3"></textarea>
+        <button class="btn btn-gold" onclick="postAsGG()">✦ Publier en tant que GG</button>
+      </div>
+
+      <!-- Feed -->
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <div class="panel-title">Feed Modération</div>
+            <div class="panel-sub" style="margin-bottom:0;">Plus récents en premier</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadScoops()">↻ Rafraîchir</button>
+        </div>
+        <div id="scoops-list">
+          <div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l'instant.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ SCORES ══════════════ -->
+    <div id="section-scores" class="section">
+      <div class="page-title">Scores</div>
+      <div class="page-sub">Classement complet · Mis à jour en temps réel</div>
+
+      <!-- Elite Circle — scores totaux + édition manuelle -->
+      <div class="panel panel-full">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <div class="panel-title">Elite Circle</div>
+            <div class="panel-sub" style="margin-bottom:0;">Score total cumulé · Cliquer sur un score pour l'éditer</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadScores()">↻ Rafraîchir</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Prénom</th>
+                <th>Personnage</th>
+                <th>Score total</th>
+                <th>Rôle</th>
+                <th>Transfert GG</th>
+              </tr>
+            </thead>
+            <tbody id="scores-table-body">
+              <tr><td colspan="6" style="text-align:center;color:var(--stone);padding:28px;">Aucun score.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Historique par Flash Quiz -->
+      <div id="scores-history-wrap"></div>
+    </div>
+
+    <!-- ══════════════ LOGS ══════════════ -->
+    <div id="section-logs" class="section">
+      <div class="page-title">Logs d'activité</div>
+      <div class="page-sub">Historique complet de la session</div>
+
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div class="panel-title">Journal</div>
+            <div class="panel-sub" style="margin-bottom:0;">Les 100 derniers événements</div>
+          </div>
+          <div class="btn-row">
+            <select class="input-field" id="log-filter" style="margin:0;width:160px;padding:7px 12px;font-size:11px;" onchange="filterLogs()">
+              <option value="">Tous les événements</option>
+              <option value="login">Connexions</option>
+              <option value="quiz">Quiz</option>
+              <option value="scoop">Scoops</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻ Rafraîchir</button>
+          </div>
+        </div>
+        <div id="logs-list">
+          <div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun événement.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PROJECTEUR ══════════════ -->
+    <div id="section-projector" class="section">
+      <div class="page-title">Contrôle Projecteur</div>
+      <div class="page-sub">Sons, effets et messages sur le grand écran</div>
+
+      <div class="panel-grid">
+
+        <!-- Sons -->
+        <div class="panel">
+          <div class="panel-title">Sons</div>
+          <div class="panel-sub">Déclenchés sur le projecteur uniquement</div>
+
+          <!-- Boutons sons avec barre de progression -->
+          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+
+            <div class="sound-btn-wrap" data-sound="xoxo"         data-duration="5.41">
+              <button class="btn btn-gold  sound-trigger-btn" onclick="triggerSound('xoxo')">🔊 XOXO</button>
+              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+            </div>
+
+            <div class="sound-btn-wrap" data-sound="quiz_start"   data-duration="22.15">
+              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('quiz_start')">⚡ Quiz Start</button>
+              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+            </div>
+
+            <div class="sound-btn-wrap" data-sound="correct"      data-duration="2.72">
+              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('correct')">✓ Correct</button>
+              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+            </div>
+
+            <div class="sound-btn-wrap" data-sound="new_gg"       data-duration="6.06">
+              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('new_gg')">👑 New GG</button>
+              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+            </div>
+
+            <div class="sound-btn-wrap" data-sound="phase2_start" data-duration="14.87">
+              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('phase2_start')">🖤 Mode Libre</button>
+              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+            </div>
+
+            <div class="sound-btn-wrap" data-sound="countdown"    data-duration="2.30">
+              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('countdown')">⏱ Countdown</button>
+              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+            </div>
+
+          </div>
+
+          <!-- Bouton Stop global -->
+          <button class="btn btn-danger" id="btn-stop-sound" onclick="stopSound()" style="width:100%; opacity:0.4; pointer-events:none;">
+            ■ Stop
+          </button>
+        </div>
+
+        <!-- Message custom -->
+        <div class="panel">
+          <div class="panel-title">Message Custom</div>
+          <div class="panel-sub">S'affiche 8s en grand sur le projecteur</div>
+          <input class="input-field" id="custom-msg-input" type="text"
+            placeholder="Ton message sur le grand écran…"
+            onkeydown="if(event.key==='Enter')sendCustomMessage()"/>
+          <button class="btn btn-gold" onclick="sendCustomMessage()">📺 Afficher sur projecteur</button>
+        </div>
+
+        <!-- Transfert GG (projecteur section) -->
+        <div class="panel">
+          <div class="panel-title">Transférer Gossip Girl</div>
+          <div class="panel-sub">Désigner le prochain GG manuellement</div>
+          <select class="input-field" id="transfer-gg-select-2">
+            <option value="">— Choisir un joueur —</option>
+          </select>
+          <button class="btn btn-outline" onclick="transferGGById('transfer-gg-select-2')">👑 Transférer</button>
+        </div>
+
+        <!-- QR Code -->
+        <div class="panel">
+          <div class="panel-title">QR Code</div>
+          <div class="panel-sub">Afficher / masquer sur le projecteur</div>
+          <div class="btn-row">
+            <button class="btn btn-gold" id="btn-qr-proj" onclick="toggleProjectorQR()">📱 Afficher QR sur projecteur</button>
+            <button class="btn btn-ghost" onclick="window.open('/qr','_blank')">↗ Ouvrir page QR</button>
+          </div>
+          <div style="margin-top:12px;font-size:11px;color:var(--stone);">
+            URL de connexion : <span style="color:var(--gold);" id="app-url">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview zone -->
+      <div class="panel panel-full" style="margin-top:0;">
+        <div class="panel-title">Aperçu Projecteur</div>
+        <div class="panel-sub">Contrôle à distance du grand écran</div>
+        <div class="btn-row">
+          <button class="btn btn-outline" onclick="window.open('/projector','_blank')">↗ Ouvrir le projecteur</button>
+          <button class="btn btn-ghost" onclick="adminAction('/api/admin/projector-refresh')">↻ Refresh projecteur</button>
+          <button class="btn btn-ghost" id="btn-scores-proj" onclick="toggleProjectorScores()">📊 Scores en grand</button>
+          <button class="btn btn-ghost" onclick="window.open('/mobile','_blank')">📱 Vue mobile (test)</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════ -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+/* ─────────────────────────────────────────
+   SOCKET
+───────────────────────────────────────── */
+const socket = io({
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  reconnectionAttempts: Infinity,
+});
+
+socket.on('connect', () => {
+  setConnStatus(true);
+  loadDashboardData();
+});
+socket.on('disconnect', () => setConnStatus(false));
+
+function setConnStatus(online) {
+  const dot  = document.getElementById('socket-dot');
+  const lbl  = document.getElementById('socket-label');
+  const dot2 = document.getElementById('conn-dot');
+  const lbl2 = document.getElementById('conn-label');
+  if (online) {
+    dot.classList.remove('offline');  dot2.classList.remove('offline');
+    lbl.textContent  = 'God Mode Actif';
+    lbl2.textContent = 'Connecté';
+  } else {
+    dot.classList.add('offline');  dot2.classList.add('offline');
+    lbl.textContent  = 'Reconnexion…';
+    lbl2.textContent = 'Hors ligne';
+  }
+}
+
+/* ─────────────────────────────────────────
+   TOAST
+───────────────────────────────────────── */
+let _toastTimer = null;
+function showToast(msg, type='', duration=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.className = '', duration);
+}
+
+/* ─────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────── */
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Charger les données selon la section
+  const loaders = {players: loadPlayers, scoops: loadScoops, scores: loadScores, logs: loadLogs};
+  if (loaders[name]) loaders[name]();
+  // Masquer badge scoops si on ouvre scoops
+  if (name === 'scoops') document.getElementById('badge-scoops').classList.remove('show');
+  // Mettre à jour URL app dans section projecteur
+  if (name === 'projector') document.getElementById('app-url').textContent = window.location.origin;
+}
+
+/* ─────────────────────────────────────────
+   API CALLS
+───────────────────────────────────────── */
+async function adminAction(endpoint, body = {}) {
+  try {
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (d.ok !== false) showToast('✓ ' + (d.message || 'Action effectuée'), 'success');
+    else showToast('✗ ' + (d.error || 'Erreur inconnue'), 'error');
+    return d;
+  } catch(e) {
+    showToast('✗ Erreur réseau.', 'error');
+    return null;
+  }
+}
+
+/* ─────────────────────────────────────────
+   DASHBOARD — Chargement initial
+───────────────────────────────────────── */
+async function loadDashboardData() {
+  // ✅ FIX : charge players d'abord — alimente stat-players, badge ET le tableau Joueurs
+  await loadPlayers();
+  checkBlair();
+}
+
+/* ─────────────────────────────────────────
+   BLAIR VIP
+───────────────────────────────────────── */
+async function checkBlair() {
+  const r = await fetch('/api/admin/players').catch(() => null);
+  if (!r) return;
+  const d = await r.json();
+  const blair = (d.players || []).find(p => p.personnage && p.personnage.includes('Blair'));
+  const el = document.getElementById('blair-status');
+  if (blair) {
+    el.textContent = `Réservé par ${blair.prenom} · ${blair.is_connected ? 'Connectée' : 'Hors ligne'}`;
+  } else {
+    el.textContent = 'Slot libre · En attente de Blair';
+  }
+}
+
+function copyBlair() {
+  const url = window.location.origin + '/blair-vip?token=' + (window.__BLAIR_TOKEN__ || 'blair-waldorf-queen-b-vip-token-dino');
+  navigator.clipboard.writeText(url).then(() => showToast('✓ Lien VIP copié', 'success'));
+}
+
+function openBlairLogin() {
+  // Ouvre le login Blair VIP dans un nouvel onglet avec le token correct
+  const url = window.location.origin + '/blair-vip?token=' + (window.__BLAIR_TOKEN__ || 'blair-waldorf-queen-b-vip-token-dino');
+  window.open(url, '_blank');
+}
+
+/* ─────────────────────────────────────────
+   TIMER PHASE 2
+───────────────────────────────────────── */
+let _timerEndsAt = null;
+let _timerInterval = null;
+
+function startTimer(endsAtISO) {
+  _timerEndsAt = endsAtISO ? new Date(endsAtISO) : null;
+  clearInterval(_timerInterval);
+  if (!_timerEndsAt) { updateTimerDisplay(null); return; }
+  _timerInterval = setInterval(updateTimerDisplay, 1000);
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('dash-timer');
+  if (!_timerEndsAt) { el.textContent = '--:--'; el.classList.remove('urgent'); return; }
+  const diff = Math.max(0, Math.round((_timerEndsAt - Date.now()) / 1000));
+  const m = String(Math.floor(diff / 60)).padStart(2, '0');
+  const s = String(diff % 60).padStart(2, '0');
+  el.textContent = m + ':' + s;
+  el.classList.toggle('urgent', diff <= 60);
+  if (diff === 0) { clearInterval(_timerInterval); }
+}
+
+/* ─────────────────────────────────────────
+   PLAYERS
+───────────────────────────────────────── */
+async function loadPlayers() {
+  const r = await fetch('/api/admin/players').catch(() => null);
+  if (!r) return;
+  const d = await r.json();
+  const players = d.players || [];
+  const connected = players.filter(p => p.is_connected).length;
+
+  document.getElementById('stat-players').textContent = connected;
+  document.getElementById('players-count-label').textContent = connected + ' connecté' + (connected > 1 ? 's' : '');
+  document.getElementById('badge-players').textContent = connected;
+  if (connected > 0) document.getElementById('badge-players').classList.add('show');
+
+  const tbody = document.getElementById('players-table-body');
+  if (!players.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--stone);padding:28px;">Aucun joueur connecté.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = players.map(p => `
+    <tr>
+      <td><span class="dot ${p.is_connected ? 'dot-on' : 'dot-off'}"></span>${p.is_connected ? 'En ligne' : 'Hors ligne'}</td>
+      <td style="font-weight:500;">${escHtml(p.prenom)}</td>
+      <td style="font-family:'Playfair Display',serif;">${escHtml(p.personnage)}</td>
+      <td style="color:var(--gold);font-weight:600;">${p.score_total} pts</td>
+      <td>${p.is_gg ? '<span class="gg-badge">👑 GG</span>' : p.is_admin ? '<span class="gg-badge" style="color:var(--red);border-color:rgba(192,80,77,.3);">Admin</span>' : ''}</td>
+      <td>
+        <div class="btn-row">
+          <button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}})">👑 GG</button>
+          <button class="btn btn-ghost btn-xs" onclick="refreshPlayer(${p.id})" title="Reload ciblé">↻</button>
+          <button class="btn btn-danger btn-xs" onclick="kickPlayer(${p.id},'${escHtml(p.prenom)}')">Expulser</button>
+          <button class="btn btn-xs" style="background:rgba(120,0,0,.7);color:#fff;border:1px solid rgba(192,80,77,.5);" onclick="deletePlayer(${p.id},'${escHtml(p.prenom)}')">🗑 Suppr.</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  // Remplir les selects de transfert GG
+  const opts = '<option value="">— Choisir un joueur —</option>' +
+    players.map(p => `<option value="${p.id}">${escHtml(p.prenom)} (${escHtml(p.personnage.split(' ')[0])})</option>`).join('');
+  document.getElementById('transfer-gg-select').innerHTML = opts;
+  document.getElementById('transfer-gg-select-2').innerHTML = opts;
+}
+
+function kickPlayer(id, prenom) {
+  if (!confirm(`Expulser ${prenom} de la soirée ?`)) return;
+  adminAction('/api/admin/kick-player', {player_id: id}).then(() => loadPlayers());
+}
+
+function deletePlayer(id, prenom) {
+  if (!confirm(`Supprimer définitivement ${prenom} de la base de données ?\nCette action est irréversible.`)) return;
+  adminAction('/api/admin/delete-player', {player_id: id}).then(() => loadPlayers());
+}
+
+// F8 — Refresh ciblé par joueur
+function refreshPlayer(id) {
+  adminAction('/api/admin/refresh-player', {player_id: id}).then(() => {
+    showToast('↻ Reload envoyé au joueur.', 'success', 2000);
+  });
+}
+
+/* ─────────────────────────────────────────
+   SCOOPS
+───────────────────────────────────────── */
+async function loadScoops() {
+  const r = await fetch('/api/admin/scoops').catch(() => null);
+  if (!r) return;
+  const d = await r.json();
+  const list = document.getElementById('scoops-list');
+  const scoops = d.scoops || [];
+  if (!scoops.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l\'instant.</div>';
+    return;
+  }
+  list.innerHTML = scoops.map(s => `
+    <div class="scoop-row ${s.is_official ? 'official' : ''}" id="scoop-row-${s.id}">
+      ${s.image_path ? `<img class="scoop-img" src="/static/uploads/${s.image_path}" alt="scoop">` : ''}
+      <div class="scoop-info">
+        <div class="scoop-author-label ${s.is_official ? 'gg' : ''}">
+          ${s.is_official ? '✦ Gossip Girl' : escHtml(s.author_name)}
+          <span class="scoop-time">${formatTime(s.created_at)}</span>
+        </div>
+        <div class="scoop-text">${escHtml(s.content || '[Image uniquement]')}</div>
+        <div class="scoop-actions">
+          <button class="btn btn-danger btn-xs" onclick="deleteScoop(${s.id})">🗑 Supprimer</button>
+          <button class="btn btn-ghost btn-xs" onclick="pinScoop(${s.id})">📌 Épingler</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteScoop(id) {
+  if (!confirm('Supprimer ce scoop ?')) return;
+  // La route attend {scoop_id} dans le body JSON (pas dans l'URL)
+  adminAction('/api/admin/delete-scoop', {scoop_id: id}).then(() => {
+    const el = document.getElementById('scoop-row-' + id);
+    if (el) el.remove();
+  });
+}
+
+function pinScoop(id) {
+  // Idem : body JSON
+  adminAction('/api/admin/pin-scoop', {scoop_id: id});
+}
+
+async function postAsGG() {
+  const content = document.getElementById('gg-message-input').value.trim();
+  if (!content) { showToast('Message vide.', 'error'); return; }
+  await adminAction('/api/admin/post-as-gg', {content});
+  document.getElementById('gg-message-input').value = '';
+}
+
+/* ─────────────────────────────────────────
+   SCORES
+───────────────────────────────────────── */
+async function loadScores() {
+  const r = await fetch('/api/admin/leaderboard').catch(() => null);
+  if (!r) return;
+  const d = await r.json();
+  const lb = d.leaderboard || [];
+  const tbody = document.getElementById('scores-table-body');
+  if (!lb.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--stone);padding:28px;">Aucun score.</td></tr>';
+  } else {
+    tbody.innerHTML = lb.map((p, i) => `
+      <tr>
+        <td style="color:${i === 0 ? 'var(--gold)' : 'var(--stone)'};">${i === 0 ? '👑' : i + 1}</td>
+        <td style="font-weight:500;">${escHtml(p.prenom)}</td>
+        <td style="color:var(--gold);opacity:.9;font-size:13px;">${escHtml(p.personnage)}</td>
+        <td>
+          <span class="score-edit-cell" data-id="${p.id}" data-score="${p.score_total}"
+                style="color:var(--gold);font-weight:700;cursor:pointer;border-bottom:1px dashed rgba(201,168,76,.4);"
+                title="Cliquer pour éditer" onclick="editScore(this)">
+            ${p.score_total} pts
+          </span>
+        </td>
+        <td>${p.is_gg ? '<span class="gg-badge">👑 GG</span>' : ''}</td>
+        <td><button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}})">👑 Transférer GG</button></td>
+      </tr>
+    `).join('');
+  }
+
+  // Update mini-lb dans section quiz
+  document.getElementById('quiz-mini-lb').innerHTML = lb.slice(0, 5).map((p, i) =>
+    `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;">
+      <span style="color:${i===0?'var(--gold)':'var(--cream)'};">${i===0?'👑':i+1}. ${escHtml(p.prenom)}</span>
+      <span style="color:var(--gold);font-weight:600;">${p.score_total} pts</span>
+    </div>`
+  ).join('');
+
+  // Charger l'historique par quiz en parallèle
+  loadScoresHistory();
+}
+
+function editScore(el) {
+  const id    = el.dataset.id;
+  const score = parseInt(el.dataset.score, 10);
+  const input = document.createElement('input');
+  input.type  = 'number';
+  input.value = score;
+  input.min   = 0;
+  input.style.cssText = 'width:80px;background:rgba(255,255,255,.07);border:1px solid rgba(201,168,76,.4);border-radius:6px;padding:3px 8px;color:var(--gold);font-weight:700;font-size:inherit;';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+
+  const commit = async () => {
+    const newScore = parseInt(input.value, 10);
+    if (!isNaN(newScore) && newScore !== score) {
+      await adminAction('/api/admin/adjust-score', {player_id: parseInt(id), score_total: newScore});
+      showToast('Score mis à jour. XOXO.', 'success', 2500);
+      loadScores();
+    } else {
+      loadScores();
+    }
+  };
+  input.addEventListener('blur',   commit);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') loadScores(); });
+}
+
+async function loadScoresHistory() {
+  const wrap = document.getElementById('scores-history-wrap');
+  if (!wrap) return;
+  const r = await fetch('/api/admin/scores-history').catch(() => null);
+  if (!r) return;
+  const d = await r.json();
+  const history = d.history || [];
+  if (!history.length) { wrap.innerHTML = ''; return; }
+
+  wrap.innerHTML = history.map(quiz => `
+    <div class="panel panel-full" style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div>
+          <div class="panel-title">Flash Quiz #${quiz.quiz_number}</div>
+          <div class="panel-sub" style="margin-bottom:0;">Scores de cette partie uniquement</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Prénom</th><th>Personnage</th><th>Points cette partie</th></tr></thead>
+          <tbody>
+            ${quiz.scores.map((s, i) => `
+              <tr>
+                <td style="color:${i===0?'var(--gold)':'var(--stone)'};">${i===0?'🏆':i+1}</td>
+                <td style="font-weight:500;">${escHtml(s.prenom)}</td>
+                <td style="color:var(--gold);opacity:.9;font-size:13px;">${escHtml(s.personnage)}</td>
+                <td style="color:var(--gold);font-weight:600;">${s.points} pts</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ─────────────────────────────────────────
+   LOGS
+───────────────────────────────────────── */
+let _allLogs = [];
+
+async function loadLogs() {
+  const r = await fetch('/api/admin/logs').catch(() => null);
+  if (!r) return;
+  const d = await r.json();
+  _allLogs = d.logs || [];
+  filterLogs();
+}
+
+function filterLogs() {
+  const filter = document.getElementById('log-filter').value;
+  const logs = filter ? _allLogs.filter(l => l.event_type.includes(filter)) : _allLogs;
+  const list = document.getElementById('logs-list');
+  if (!logs.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun événement.</div>';
+    return;
+  }
+  list.innerHTML = logs.map(l => {
+    let evClass = '';
+    if (l.event_type.includes('login') || l.event_type.includes('join')) evClass = 'ev-login';
+    else if (l.event_type.includes('quiz') || l.event_type.includes('question') || l.event_type.includes('answer')) evClass = 'ev-quiz';
+    else if (l.event_type.includes('scoop')) evClass = 'ev-scoop';
+    else if (l.event_type.includes('admin') || l.event_type.includes('kick') || l.event_type.includes('reset')) evClass = 'ev-admin';
+    return `
+      <div class="log-row">
+        <div class="log-time">${formatTime(l.created_at)}</div>
+        <div class="log-event ${evClass}">${l.event_type}</div>
+        <div class="log-detail">${escHtml(l.actor || '')}${l.detail ? ' — ' + escHtml(l.detail) : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────
+   PROJECTEUR & SONS
+───────────────────────────────────────── */
+/* ── Référence à l'animation en cours côté admin ── */
+let _soundProgressTimer = null;
+let _activeSoundWrap    = null;
+
+function _resetSoundUI() {
+  // Remet tous les boutons et barres dans leur état initial
+  document.querySelectorAll('.sound-btn-wrap').forEach(wrap => {
+    const bar  = wrap.querySelector('.sound-progress-bar');
+    const fill = wrap.querySelector('.sound-progress-fill');
+    const btn  = wrap.querySelector('.sound-trigger-btn');
+    bar.classList.remove('active');
+    fill.style.transition = 'none';
+    fill.style.width      = '0%';
+    btn.classList.remove('playing');
+  });
+  // Désactiver le bouton Stop
+  const stopBtn = document.getElementById('btn-stop-sound');
+  if (stopBtn) { stopBtn.style.opacity = '0.4'; stopBtn.style.pointerEvents = 'none'; }
+  // Annuler le timer de reset automatique
+  if (_soundProgressTimer) { clearTimeout(_soundProgressTimer); _soundProgressTimer = null; }
+  _activeSoundWrap = null;
+}
+
+async function triggerSound(sound) {
+  // Envoie l'ordre au backend — la barre de progression sera déclenchée
+  // en retour via socket.on('sound_started') une fois que le projecteur
+  // confirme que le son joue réellement. Pas d'animation locale anticipée.
+  await adminAction('/api/admin/play-sound', {sound});
+  showToast(`🔊 "${sound}" envoyé au projecteur`, 'success', 1500);
+}
+
+async function stopSound() {
+  // Arrêt côté projecteur via socket
+  await adminAction('/api/admin/stop-sound', {});
+  // Réinitialiser l'UI immédiatement
+  _resetSoundUI();
+  showToast('■ Son arrêté', 'success', 1500);
+}
+
+// Arrêt d'urgence : tue tous les timers APScheduler + bascule en LIBRE
+async function stopQuizEmergency() {
+  if (!confirm('⚠️ Arrêter le quiz maintenant ? L\'état basculera en Mode Libre.')) return;
+  await adminAction('/api/admin/phase', {phase: 'LIBRE'});
+  showToast('✓ Quiz arrêté — Mode Libre activé', 'success');
+}
+
+// Arrêt + rollback complet : annule les scores du quiz en cours et repasse en LIBRE
+async function stopQuizConfirm() {
+  if (!confirm('⚠️ Arrêter le quiz et annuler tous les points de cette session ?\n\nCette action est irréversible.')) return;
+  await adminAction('/api/admin/phase', {phase: 'STOP_QUIZ'});
+  showToast('✓ Quiz arrêté — scores rollback effectué. XOXO.', 'success');
+}
+
+// Pause / Reprise du quiz (toggle selon la phase courante)
+function pauseQuiz() {
+  const targetPhase = (_currentPhase === 'QUIZ_PAUSED') ? 'RESUME_QUIZ' : 'PAUSE_QUIZ';
+  adminAction('/api/admin/phase', {phase: targetPhase})
+    .then(() => showToast(targetPhase === 'RESUME_QUIZ' ? '▶ Quiz relancé. XOXO.' : '⏸ Quiz en pause.', 'success'));
+}
+
+async function sendCustomMessage() {
+  const msg = document.getElementById('custom-msg-input').value.trim();
+  if (!msg) { showToast('Message vide.', 'error'); return; }
+  await adminAction('/api/admin/custom-message', {message: msg});
+  document.getElementById('custom-msg-input').value = '';
+}
+
+function transferGG() {
+  const sel = document.getElementById('transfer-gg-select');
+  const id = sel.value;
+  if (!id) { showToast('Choisis un joueur.', 'error'); return; }
+  adminAction('/api/admin/transfer-gg', {player_id: parseInt(id)});
+}
+
+function transferGGById(selectId) {
+  const sel = document.getElementById(selectId);
+  const id = sel.value;
+  if (!id) { showToast('Choisis un joueur.', 'error'); return; }
+  adminAction('/api/admin/transfer-gg', {player_id: parseInt(id)});
+}
+
+/* ─────────────────────────────────────────
+   RESET
+───────────────────────────────────────── */
+function launchQuiz() {
+  // Double garde : vérifie la phase courante côté client avant d'appeler l'API
+  if (_currentPhase === 'QUIZ' || _currentPhase === 'QUIZ_PAUSED') {
+    showToast('Un quiz est déjà en cours. Arrête-le avant d\'en lancer un nouveau.', 'error', 4000);
+    return;
+  }
+  adminAction('/api/admin/phase', {phase: 'QUIZ'});
+}
+
+// F7 — Reset pool de questions
+function confirmResetQuestions() {
+  if (!confirm('⚠️ Reset du pool de questions ?\n\nLes questions déjà posées redeviendront disponibles.\nScores et joueurs conservés.')) return;
+  adminAction('/api/admin/reset-questions').then(() => {
+    showToast('🃏 Pool de questions réinitialisé. XOXO.', 'success', 3500);
+  });
+}
+
+// R4 — Lancer le quiz directement via socket (remplace force-gg-quiz qui causait des bugs)
+function adminStartQuiz() {
+  if (!confirm('Lancer le quiz maintenant ?\nCela démarre la séquence normale comme si le GG avait cliqué.')) return;
+  socket.emit('gg_start_quiz', {});
+  showToast('🎯 Quiz lancé !', 'success', 2500);
+}
+
+function confirmReset() {
+  if (!confirm('⚠️ Reset COMPLET de la session ?\n\nScores, joueurs ET scoops seront effacés de la base de données.\nCette action est irréversible.')) return;
+  adminAction('/api/admin/reset').then(() => {
+    loadDashboardData();
+    showToast('Session réinitialisée. XOXO.', 'success', 3500);
+  });
+}
+
+function confirmResetScores() {
+  if (!confirm('⚠️ Reset SCORES uniquement ?\n\nLes joueurs et leurs profils sont conservés.\nScores et scoops seront remis à zéro.')) return;
+  adminAction('/api/admin/reset-scores').then(() => {
+    loadDashboardData();
+    showToast('Scores réinitialisés — les joueurs restent. XOXO.', 'success', 3500);
+  });
+}
+
+/* ─────────────────────────────────────────
+   SOCKET LIVE EVENTS
+───────────────────────────────────────── */
+// phaseMap aligné sur les constantes V3 : LOBBY / QUIZ / QUIZ_PAUSED / LIBRE
+const PHASE_MAP = {
+  LOBBY:       '🏠 Lobby',
+  QUIZ:        '⚡ Quiz',
+  QUIZ_PAUSED: '⏸ Quiz (pause)',
+  LIBRE:       '🖤 Mode Libre',
+  PAUSE:       '⏸ Pause',
+  // rétro-compat anciennes valeurs (si jamais)
+  waiting: '🏠 Lobby',
+  quiz:    '⚡ Quiz',
+  free:    '🖤 Mode Libre',
+};
+
+socket.on('game_state', data => {
+  document.getElementById('stat-phase').textContent = PHASE_MAP[data.phase] || data.phase;
+  document.getElementById('dash-sub').textContent   = `Phase : ${PHASE_MAP[data.phase] || data.phase}`;
+  if (data.gg) document.getElementById('stat-gg').textContent = data.gg.prenom + ' (' + data.gg.personnage.split(' ')[0] + ')';
+  if (data.ends_at) startTimer(data.ends_at);
+  // Initialise l'état des boutons quiz-only dès le chargement
+  updateQuizOnlyButtons(data.phase || 'LOBBY');
+  updatePauseButton(data.phase || 'LOBBY');
+});
+
+socket.on('phase_changed', data => {
+  const label = PHASE_MAP[data.phase] || data.phase;
+  document.getElementById('stat-phase').textContent = label;
+  document.getElementById('dash-sub').textContent   = `Phase : ${label}`;
+
+  if (data.phase === 'LIBRE' && data.ends_at) startTimer(data.ends_at);
+  if (data.phase === 'QUIZ')        startTimer(null);
+  if (data.phase === 'QUIZ_PAUSED') startTimer(null);
+  if (data.phase === 'LOBBY')       startTimer(null);
+
+  if (data.gg) {
+    document.getElementById('stat-gg').textContent = data.gg.prenom + ' (' + data.gg.personnage.split(' ')[0] + ')';
+  }
+
+  // Mise à jour du sous-titre "Quiz en cours"
+  const quizActive  = data.phase === 'QUIZ';
+  const quizPaused  = data.phase === 'QUIZ_PAUSED';
+  const quizLiveSub = document.getElementById('quiz-live-sub');
+  if (quizActive)       quizLiveSub.textContent = data.quiz_number ? `Quiz #${data.quiz_number} en cours` : 'Quiz en cours';
+  else if (quizPaused)  quizLiveSub.textContent = `⏸ Quiz #${data.quiz_number || '?'} en pause`;
+  else                  quizLiveSub.textContent = 'Aucun quiz actif';
+
+  // Bouton pause + activation boutons quiz-only
+  updatePauseButton(data.phase);
+  updateQuizOnlyButtons(data.phase);
+
+  showToast(`Phase → ${label}`, 'success');
+});
+
+socket.on('player_joined', data => {
+  document.getElementById('stat-players').textContent = data.count;
+  document.getElementById('badge-players').textContent = data.count;
+  document.getElementById('badge-players').classList.add('show');
+  showToast(`👋 ${data.prenom} a rejoint la soirée !`, '', 3000);
+  loadPlayers();
+});
+
+socket.on('player_disconnected', () => loadPlayers());
+/* V4.5.1
+socket.on('new_question', data => {
+  const total = data.total || '?';
+  document.getElementById('quiz-live-sub').textContent = `Q${data.question_number}/${total} · ${data.duration}s`;
+  document.getElementById('quiz-q-sub').textContent = `Question ${data.question_number} / ${total} · ${data.duration} secondes`;
+  document.getElementById('quiz-q-text').textContent = data.question;
+  document.getElementById('quiz-answered-count').textContent = `0 / ?`;
+  document.getElementById('quiz-progress-fill').style.width = '0%';
+  document.getElementById('quiz-answer-list').innerHTML = '';
+
+  // ✅ FIX : normalise choices côté client (défense si cache serveur non rechargé)
+  // Ancien format : dict {"A":"…","B":"…"} | Nouveau format : array ["…","…"]
+  let choices = data.choices;
+  if (Array.isArray(choices)) {
+    const letters = ['A','B','C','D'];
+    const obj = {};
+    choices.forEach((v, i) => { if (i < 4) obj[letters[i]] = v; });
+    choices = obj;
+  }
+
+  if (choices && typeof choices === 'object') {
+    document.getElementById('quiz-choices').innerHTML = Object.entries(choices).map(([k, v]) => `
+      <div class="choice-item ${data.answer === k ? 'correct' : ''}">
+        <span class="choice-key">${k}</span>
+        <span>${escHtml(v)}</span>
+      </div>
+    `).join('');
+  }
+});
+*/
+
+// V4.5.2 — Amélioration de la robustesse et de la flexibilité du rendu des questions
+socket.on('new_question', data => {
+  // 1. Mise à jour de l'en-tête (Ex: Question 3 / 10 [Cinéma])
+  const qSub = document.getElementById('quiz-q-sub');
+  if (qSub) {
+    const categoryText = data.category ? ` [${data.category}]` : '';
+    qSub.textContent = `Question ${data.question_number} / ${data.total}${categoryText}`;
+  }
+  
+  // 2. Mise à jour du texte de la question
+  const qText = document.getElementById('quiz-q-text');
+  if (qText) {
+    qText.textContent = data.question;
+  }
+
+  // 3. Reconstruction de la grille et coloration de la bonne réponse
+  const choicesGrid = document.getElementById('quiz-choices');
+  if (choicesGrid && data.choices) {
+    choicesGrid.innerHTML = Object.entries(data.choices).map(([k, v]) => {
+      // Sécurité absolue : .trim().toUpperCase() évite les bugs si la réponse est en minuscule ou contient un espace
+      const isCorrect = data.answer && (data.answer.trim().toUpperCase() === k.trim().toUpperCase());
+      const correctClass = isCorrect ? 'correct' : ''; 
+      
+      return `
+        <div class="choice-item ${correctClass}">
+          <span class="choice-letter" style="font-weight: bold; margin-right: 6px;">${k}.</span>
+          <span class="choice-val">${v}</span>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // 4. Réinitialisation sécurisée du compteur de réponses reçues (sans casser le total de joueurs)
+  const answeredCount = document.getElementById('quiz-answered-count');
+  if (answeredCount) {
+    const parts = answeredCount.textContent.split('/');
+    const currentTotal = parts[1] ? parts[1].trim() : '0';
+    answeredCount.textContent = `0 / ${currentTotal}`;
+  }
+  
+  // 5. Réinitialisation de la barre de progression et de la liste visuelle
+  const progressFill = document.getElementById('quiz-progress-fill');
+  if (progressFill) {
+    progressFill.style.width = '0%';
+  }
+  
+  const answerList = document.getElementById('quiz-answer-list');
+  if (answerList) {
+    answerList.innerHTML = '';
+  }
+});
+
+
+// Affiche un état d'attente dans Quiz Live pendant que GG choisit sa question
+socket.on('waiting_for_gg_pick', data => {
+  const total = data.total || app_config?.QUESTIONS_PER_SESSION || '?';
+  // Le payload Python envoie question_number (pas question_index)
+  const qNum  = data.question_number ?? '?';
+  document.getElementById('quiz-live-sub').textContent = `Q${qNum}/${total} · En attente GG…`;
+  document.getElementById('quiz-q-sub').textContent    = `Question ${qNum} / ${total} · En attente du choix Gossip Girl…`;
+  document.getElementById('quiz-q-text').textContent   = '🎭 Gossip Girl sélectionne sa question…';
+  document.getElementById('quiz-choices').innerHTML    =
+    '<div class="choice-item" style="color:var(--stone);grid-column:1/-1;text-align:center;padding:20px;">⏳ Gossip Girl fait son choix…</div>';
+  document.getElementById('quiz-answered-count').textContent = `0 / ?`;
+  document.getElementById('quiz-progress-fill').style.width = '0%';
+  document.getElementById('quiz-answer-list').innerHTML = '';
+});
+
+socket.on('answer_progress', data => {
+  const total = data.total_players || 1;
+  const answered = data.answered || 0;
+  document.getElementById('stat-answers').textContent = answered;
+  document.getElementById('quiz-answered-count').textContent = `${answered} / ${total}`;
+  document.getElementById('quiz-progress-fill').style.width = Math.round((answered / total) * 100) + '%';
+  // Ajouter le répondant dans la liste
+  if (data.latest_player) {
+    const list = document.getElementById('quiz-answer-list');
+    const item = document.createElement('div');
+    item.className = 'answer-item';
+    item.textContent = `${data.latest_player.prenom} · ${data.latest_player.personnage.split(' ')[0]}`;
+    list.prepend(item);
+  }
+});
+
+// R1 — question_answer : la case correcte est déjà colorée par new_question (correct_answer).
+// On ajoute juste un ✓ sur la case gagnante et on recharge les scores. Pas de div flottant.
+socket.on('question_answer', data => {
+  const answer = data.answer || '';
+  // Recolore la case correcte avec un ✓ (idempotent si new_question l'a déjà colorée)
+  document.querySelectorAll('#quiz-choices .choice-item').forEach(el => {
+    const key = el.querySelector('.choice-key');
+    if (key && key.textContent.trim() === answer) {
+      el.classList.add('correct');
+      key.textContent = '✓';
+    }
+  });
+  loadScores();
+});
+
+// F10 — Erreurs serveur → toast admin (pause sans quiz, +10s sans timer, etc.)
+socket.on('admin_error', data => {
+  showToast(`⚠️ ${data.message || 'Erreur serveur.'}`, 'error', 4000);
+});
+
+/* V4.5.1
+socket.on('leaderboard_update', data => {
+  if (!data.leaderboard) return;
+  const connected = data.leaderboard.filter(p => p.is_connected).length;
+  document.getElementById('stat-players').textContent = connected;
+  // Mini-lb update
+  document.getElementById('quiz-mini-lb').innerHTML = data.leaderboard.slice(0, 5).map((p, i) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;">
+      <span style="color:${i===0?'var(--gold)':'var(--cream)'};">${i===0?'👑':i+1}. ${escHtml(p.prenom)} <span style="color:var(--gold);opacity:.9;font-size:11px;font-style:italic;">${escHtml(p.personnage)}</span></span>
+      <span style="color:var(--gold);font-weight:600;">${p.score_total} pts</span>
+    </div>`
+  ).join('');
+});
+*/
+
+// V4.5.3 — leaderboard_update : UI légère, tableau Joueurs délégué à loadPlayers()
+// BUGFIX : document.querySelector('table tbody') ciblait le tbody Scores, pas players-table-body.
+// BUGFIX : boutons générés passaient p.uuid alors que kickPlayer/deletePlayer attendent p.id (int).
+// Règle : leaderboard_update ne touche JAMAIS au tableau Joueurs — seul loadPlayers() le gère.
+socket.on('leaderboard_update', data => {
+  if (!data.leaderboard) return;
+
+  const players = data.leaderboard;
+
+  // 1. Compteur dashboard "Invités connectés"
+  const connected = players.filter(p => p.is_connected).length;
+  const statPlayersEl = document.getElementById('stat-players');
+  if (statPlayersEl) statPlayersEl.textContent = connected;
+
+  // 2. Badge + label sidebar Joueurs
+  const badge = document.getElementById('badge-players');
+  if (badge) { badge.textContent = connected; badge.classList.toggle('show', connected > 0); }
+  const countLabel = document.getElementById('players-count-label');
+  if (countLabel) countLabel.textContent = connected + ' connecté' + (connected > 1 ? 's' : '');
+
+  // 3. Mini-leaderboard (section Quiz Live)
+  const miniLbEl = document.getElementById('quiz-mini-lb');
+  if (miniLbEl) {
+    miniLbEl.innerHTML = players.slice(0, 5).map((p, i) =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;">
+        <span style="color:${i===0?'var(--gold)':'var(--cream)'};">${i===0?'👑':i+1}. ${escHtml(p.prenom)} <span style="color:var(--gold);opacity:.9;font-size:11px;font-style:italic;">${escHtml(p.personnage)}</span></span>
+        <span style="color:var(--gold);font-weight:600;">${p.score_total} pts</span>
+      </div>`
+    ).join('');
+  }
+
+  // 4. Tableau Joueurs : délégué à loadPlayers() — seule source de vérité (p.id + boutons corrects)
+  loadPlayers();
+});
+
+socket.on('new_gg', data => {
+  document.getElementById('stat-gg').textContent = `${data.prenom} (${data.personnage.split(' ')[0]})`;
+  showToast(`👑 Nouveau Gossip Girl : ${data.prenom} !`, 'success', 4000);
+  loadPlayers();
+});
+
+// Transfert GG silencieux (ré-attribution après expulsion/doublon) — pas de toast, juste refresh UI
+socket.on('gg_updated_silent', data => {
+  document.getElementById('stat-gg').textContent = `${data.prenom} (${data.personnage.split(' ')[0]})`;
+  loadPlayers();
+});
+
+socket.on('timer_update', data => {
+  if (data.ends_at) startTimer(data.ends_at);
+});
+
+socket.on('admin_new_scoop', data => {
+  document.getElementById('badge-scoops').classList.add('show');
+  showToast(`📸 Nouveau scoop de ${data.author_name} !`, '', 3500);
+});
+
+socket.on('session_reset', () => {
+  showToast('🔄 Session réinitialisée.', 'success');
+  loadDashboardData();
+});
+
+/* ── Sync audio projecteur → admin ─────────────────────────
+   Le projecteur est la source de vérité.
+   sound_started : un son vient de démarrer sur le projecteur
+   sound_stopped : le son s'est terminé ou a été stoppé
+──────────────────────────────────────────────────────────── */
+socket.on('sound_started', data => {
+  const { sound, duration } = data;
+  if (!sound) return;
+
+  // Active le bouton Stop son rapide dans les Actions rapides
+  const stopQuick = document.getElementById('btn-stop-sound-quick');
+  if (stopQuick) { stopQuick.style.opacity = '1'; stopQuick.style.pointerEvents = 'auto'; }
+
+  // Réinitialise l'UI précédente (annule aussi le timer local si encore actif)
+  _resetSoundUI();
+
+  const wrap = document.querySelector(`.sound-btn-wrap[data-sound="${sound}"]`);
+  if (!wrap) return; // Son déclenché automatiquement sans bouton dédié → ignoré visuellement
+
+  const durationMs = duration * 1000;
+  const bar        = wrap.querySelector('.sound-progress-bar');
+  const fill       = wrap.querySelector('.sound-progress-fill');
+  const btn        = wrap.querySelector('.sound-trigger-btn');
+
+  _activeSoundWrap = wrap;
+  btn.classList.add('playing');
+  bar.classList.add('active');
+
+  fill.style.transition = 'none';
+  fill.style.width      = '0%';
+  fill.getBoundingClientRect(); // reflow
+
+  fill.style.transition = `width ${durationMs}ms linear`;
+  fill.style.width      = '100%';
+
+  // Activer le bouton Stop
+  const stopBtn = document.getElementById('btn-stop-sound');
+  if (stopBtn) { stopBtn.style.opacity = '1'; stopBtn.style.pointerEvents = 'auto'; }
+
+  // Sécurité : reset auto au cas où sound_stopped ne reviendrait pas
+  _soundProgressTimer = setTimeout(_resetSoundUI, durationMs + 500);
+});
+
+socket.on('sound_stopped', () => {
+  _resetSoundUI();
+  // Désactive le bouton Stop son rapide
+  const stopQuick = document.getElementById('btn-stop-sound-quick');
+  if (stopQuick) { stopQuick.style.opacity = '0.4'; stopQuick.style.pointerEvents = 'none'; }
+});
+
+/* ── Pause / Stop Quiz ─────────────────────────────── */
+/* ── Activation/désactivation boutons quiz-only selon la phase ── */
+let _currentPhase = 'LOBBY';
+
+function updateQuizOnlyButtons(phase) {
+  _currentPhase = phase;
+  const isQuizActive = (phase === 'QUIZ' || phase === 'QUIZ_PAUSED');
+
+  // Boutons actifs uniquement pendant un quiz
+  document.querySelectorAll('.quiz-only-btn').forEach(btn => {
+    btn.disabled            = !isQuizActive;
+    btn.style.opacity       = isQuizActive ? '1' : '0.35';
+    btn.style.pointerEvents = isQuizActive ? 'auto' : 'none';
+    btn.title               = isQuizActive ? '' : 'Disponible uniquement pendant un quiz';
+  });
+
+  // Boutons désactivés pendant un quiz (Lancer Quiz)
+  document.querySelectorAll('.no-quiz-btn').forEach(btn => {
+    btn.disabled            = isQuizActive;
+    btn.style.opacity       = isQuizActive ? '0.35' : '1';
+    btn.style.pointerEvents = isQuizActive ? 'none' : 'auto';
+    btn.title               = isQuizActive ? 'Un quiz est déjà en cours' : '';
+  });
+}
+
+function updatePauseButton(phase) {
+  // Met à jour les deux boutons pause (dashboard + quiz live)
+  ['btn-pause-quiz', 'btn-pause-quiz-ql'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (phase === 'QUIZ_PAUSED') {
+      btn.textContent = '▶ Relancer Quiz';
+      btn.onclick = () => adminAction('/api/admin/phase', {phase: 'RESUME_QUIZ'})
+        .then(() => showToast('Quiz relancé. XOXO.', 'success'));
+    } else {
+      btn.textContent = '⏸ Pause Quiz';
+      btn.onclick = pauseQuiz;
+    }
+  });
+}
+
+/* ── Toggle QR Code sur le projecteur ── */
+/* ── Toggle Son Projecteur ── */
+let _projSoundMuted = true; // OFF par défaut (avant que le projecteur clique sur l'overlay)
+
+function toggleProjectorSound() {
+  _projSoundMuted = !_projSoundMuted;
+  adminAction('/api/admin/projector-sound', {muted: _projSoundMuted});
+  _updateSoundToggleUI(!_projSoundMuted);
+}
+
+function _updateSoundToggleUI(enabled) {
+  _projSoundMuted = !enabled;
+  const icon  = document.getElementById('sound-toggle-icon');
+  const label = document.getElementById('sound-toggle-label');
+  if (!icon || !label) return;
+  if (enabled) {
+    icon.textContent  = '🔊';
+    label.textContent = 'Son ON';
+    label.style.color = 'var(--green)';
+  } else {
+    icon.textContent  = '🔇';
+    label.textContent = 'Son OFF';
+    label.style.color = 'var(--red)';
+  }
+}
+
+// Le projecteur notifie son état sonore (connexion, unlock audio)
+socket.on('projector_sound_state', data => {
+  _updateSoundToggleUI(data.enabled === true);
+});
+
+let _projQRVisible = false;
+function toggleProjectorQR() {
+  _projQRVisible = !_projQRVisible;
+  adminAction('/api/admin/projector-qr', {visible: _projQRVisible});
+  const btn = document.getElementById('btn-qr-proj');
+  if (btn) btn.textContent = _projQRVisible ? '✕ Masquer QR projecteur' : '📱 Afficher QR sur projecteur';
+  const btn2 = document.querySelector('.btn[onclick="toggleProjectorQR()"]');
+  if (btn2 && btn2 !== btn) btn2.textContent = _projQRVisible ? '✕ Masquer QR' : '📱 QR Projecteur';
+}
+
+/* ── Toggle Scores en grand sur le projecteur ── */
+let _projScoresVisible = false;
+function toggleProjectorScores() {
+  _projScoresVisible = !_projScoresVisible;
+  adminAction('/api/admin/projector-scores', {visible: _projScoresVisible});
+  // Met à jour tous les boutons liés
+  document.querySelectorAll('[onclick="toggleProjectorScores()"]').forEach(btn => {
+    btn.textContent = _projScoresVisible ? '✕ Masquer scores' : '📊 Scores en grand';
+  });
+  const btn2 = document.getElementById('btn-scores-proj');
+  if (btn2) btn2.textContent = _projScoresVisible ? '✕ Masquer scores' : '📊 Scores en grand';
+}
+
+function pauseQuiz() {
+  adminAction('/api/admin/phase', {phase:'PAUSE_QUIZ'})
+    .then(() => showToast('Quiz en pause.', 'info'));
+}
+
+/* ───────────────────────────────────────────
+   INIT — chargement immédiat au boot
+   Indépendant du socket pour éviter toute race condition.
+   V4.4 avait ce bloc — supprimé par erreur en V4.5.
+─────────────────────────────────────────── */
+loadPlayers();
+loadDashboardData();
+setInterval(() => {
+  if (document.getElementById('section-logs').classList.contains('active')) loadLogs();
+}, 30000);
+</script>
+</body>
+</html>
