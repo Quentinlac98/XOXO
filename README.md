@@ -1,11 +1,11 @@
-# 🖤 XOXO — Gossip Girl Party App `v4.5`
+# 🖤 XOXO — Gossip Girl Party App `v4.6.1`
 
 > *The one and only source into the scandalous lives of Manhattan's elite.*
 
 Application événementielle temps réel pour soirée à thème Gossip Girl.  
 Stack : **Flask · Flask-SocketIO · APScheduler · SQLite · Docker**
 
-> **Version actuelle : v4.5** — 2026-05-17
+> **Version actuelle : v4.6.1** — 2026-05-18
 
 ---
 
@@ -20,7 +20,7 @@ LOBBY ──► QUIZ ──► LIBRE ──► QUIZ ──► ...
 
 - Le serveur est le **Master Clock** : les timers sont gérés par APScheduler (threads background). Toute émission Socket.io depuis ces threads est encapsulée dans `with app.app_context()`.
 - **Zéro rechargement de page** : l'UI mute entièrement via événements Socket.io — changement de phase, questions, scores, scoops.
-- Chaque joueur possède un **UUID persistent** (localStorage) pour la reconnexion transparente en cas de coupure réseau.
+- Chaque joueur possède un **`player_token` persistent** (localStorage) pour la reconnexion transparente en cas de coupure réseau.
 - **`game.question_index`** = numéro de round courant (0-based). `game.get_current_question()` retourne la question sérialisée en DB, indépendamment de toute liste en mémoire.
 - **Questions à la demande** (v4.5) : plus de pré-sélection globale en début de quiz. Les candidates sont tirées round par round via `pick_one_per_category()` — 1 question par catégorie non épuisée.
 
@@ -33,7 +33,7 @@ gossip-girl-party/
 │
 ├── app/                        # Code Python (package)
 │   ├── __init__.py             # Initialisation du package
-│   ├── __main__.py             # Point d'entrée : python -m app.main
+│   ├── __main__.py             # Point d'entrée : python -m app
 │   ├── main.py                 # ★ Flask app factory + routes HTTP + logique métier
 │   │                           #   (machine à états, timers APScheduler, routes admin)
 │   ├── events.py               # ★ Tous les handlers Socket.io (connect, quiz, scoops…)
@@ -149,7 +149,38 @@ Si une seule candidate existe, le serveur auto-pick sans interaction GG. Si 0 ca
 
 ---
 
-## 🚀 Lancement rapide (local ou homelab)
+## 🚀 Lancement rapide
+
+### Lancement local (Windows — sans Docker)
+
+```powershell
+# 1. Clone le projet
+git clone <repo-url> gossip-girl-party
+cd gossip-girl-party
+
+# 2. Crée et active l'environnement virtuel
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# 3. Installe les dépendances
+pip install -r requirements.txt
+
+# 4. Configure l'environnement
+Copy-Item .env.example .env
+# → Édite .env : SECRET_KEY, ADMIN_PASSWORD, BLAIR_SECRET_CODE, BLAIR_VIP_TOKEN
+
+# 5. Lance l'application
+python -m app
+
+# Accès (avec APP_PORT=7777 dans .env)
+# Interface invités  → http://localhost:7777/mobile
+# Projecteur         → http://localhost:7777/projector
+# Chuck Mode (admin) → http://localhost:7777/xoxo-admin
+# VIP Mode Blair     → http://localhost:7777/mobile?vip=blair
+# QR Code            → http://localhost:7777/qr
+```
+
+### Lancement via Docker Compose (NAS / homelab)
 
 ```bash
 # 1. Clone le projet
@@ -164,14 +195,14 @@ cp .env.example .env
 make up
 # ou : docker compose up -d --build
 
-# 4. Accès LOCAL (avec APP_PORT=7777 dans .env)
+# Accès LOCAL (avec APP_PORT=7777 dans .env)
 # Interface invités  → http://192.168.0.10:7777/mobile
 # Projecteur         → http://192.168.0.10:7777/projector
 # Chuck Mode (admin) → http://192.168.0.10:7777/xoxo-admin
 # VIP Mode Blair     → http://192.168.0.10:7777/mobile?vip=blair
 # QR Code            → http://192.168.0.10:7777/qr
 
-# 4. Accès NAS (avec APP_PORT=7777 dans .env)
+# Accès NAS (avec APP_PORT=7777 dans .env)
 # Interface invités  → http://192.168.0.13:7777/mobile
 # Projecteur         → http://192.168.0.13:7777/projector
 # Chuck Mode (admin) → http://192.168.0.13:7777/xoxo-admin
@@ -377,10 +408,6 @@ Le Chuck Mode reçoit désormais un toast d'erreur pour les actions refusées pa
 - **Refresh projecteur** — rechargement de la page projecteur
 - **Refresh mobiles** — rechargement forcé de tous les mobiles
 
-### Toasts d'erreur
-
-Le Chuck Mode reçoit désormais un toast d'erreur pour les actions refusées par le serveur (pause sans quiz actif, ajustement de timer sans timer actif, transfert GG vers un joueur déjà GG, etc.).
-
 ### Log d'Activité
 
 Toutes les actions admin sont tracées en DB (`ActivityLog`) avec timestamp, acteur et détail. Visible dans la section Logs du dashboard.
@@ -390,19 +417,19 @@ Toutes les actions admin sont tracées en DB (`ActivityLog`) avec timestamp, act
 ## 🔌 Logique de Connexion / Reconnexion
 
 ```
-Client                          Serveur
-  │                                │
-  ├─ localStorage.getItem(uuid) ──►│
-  │  (génère UUID si absent)       │
-  │                                │
-  ├─ io({ query: { uuid } }) ─────►│ on_connect()
-  │                                │   └─ lookup UUID en DB
-  │                                │      ├─ trouvé  → update SID → reconnect_success
-  │◄── reconnect_success ──────────┤      └─ inconnu → attente join_player
-  │    (payload état complet)      │
-  │                                │
-  ├─ join_player (prénom, perso) ──►│ (si nouveau joueur)
-  │◄── login_success ──────────────┤
+Client                                    Serveur
+  │                                          │
+  ├─ localStorage.getItem('player_token') ──►│
+  │  (génère token UUID si absent)           │
+  │                                          │
+  ├─ io({ query: { player_token } }) ───────►│ on_connect()
+  │                                          │   └─ lookup player_token en DB
+  │                                          │      ├─ trouvé  → update SID → reconnect_success
+  │◄── reconnect_success ────────────────────┤      └─ inconnu → attente join_player
+  │    (payload état complet)                │
+  │                                          │
+  ├─ join_player (prénom, perso) ───────────►│ (si nouveau joueur)
+  │◄── login_success ────────────────────────┤
 ```
 
 Un personnage ne peut être sélectionné que si son slot n'est pas déjà occupé (`is_connected == False` en DB). Blair Waldorf requiert en plus le `BLAIR_SECRET_CODE` (ou le token VIP dans l'URL).

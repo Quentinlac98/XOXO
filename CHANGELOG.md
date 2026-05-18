@@ -6,6 +6,39 @@ XOXO, Chuck Bass.
 
 ---
 
+## [v4.6.1] — 2026-05-18
+
+Audit de fiabilité et de performance — corrections de bugs critiques identifiés après v4.6-bots.  
+Aucune nouvelle fonctionnalité. Aucune régression comportementale.
+
+### Fixed
+
+| # | Fichier(s) | Description |
+|---|-----------|-------------|
+| C-1 | `app/main.py` | **Ghost timer tasks** — compteur de génération `_tick_task_generation` au niveau module. `_send_question()` incrémente le compteur et le passe à `_question_tick_task()` à la création. Chaque tick vérifie si sa génération correspond encore au compteur global — si non, la tâche fantôme se termine immédiatement sans émettre de `question_tick`. Élimine les double-décomptes lors d'un rechargement de question. |
+| C-2 | `app/main.py` → `_libre_end_job` | **Objet SQLAlchemy périmé dans un job APScheduler** — `GameSession.query.get(game_id)` retournait parfois un objet issu du cache ORM d'une session précédente. Ajout de `db.session.refresh(game)` pour forcer une lecture fraîche en DB avant de vérifier `game.is_libre`. |
+| C-3 | `app/main.py` → `_libre_tick_task` | **Requête DB à chaque seconde dans la boucle Mode Libre** — la vérification `GameSession.query.get()` était exécutée 60× par minute. Optimisation : vérification toutes les 10 secondes (`tick_count % 10 == 0`), réduisant les lectures DB de 90 %. |
+| C-4/5 | `app/events.py` → `on_disconnect` | **Session leak sur déconnexion** — `player.session_id` n'était pas remis à `None` à la déconnexion, laissant un SID mort en base. Corrigé : `player.session_id = None` ajouté. Suppression d'un doublon de `socketio.emit("leaderboard_update", …)` en fin de handler. |
+| C-6 | `app/models.py` | **SQLite en mode journal DELETE par défaut** — risque de contention sur plusieurs connexions simultanées. Activation du **WAL mode** via un listener `@event.listens_for(Engine, "connect")` : `PRAGMA journal_mode=WAL`, `PRAGMA busy_timeout=5000`, `PRAGMA synchronous=NORMAL`. S'applique à chaque connexion du pool sans modifier le schéma. |
+| C-7 | `app/events.py` → `on_submit_answer` | **Race condition sur l'attribution des points** — `correct_count` était lu depuis `app.config["current_answers"]` (liste en mémoire) avant la fin de la vérification de toutes les réponses. Corrigé : lecture directe depuis `Score.query.filter_by(question_id=…, is_correct=True).count()` dans la même transaction. |
+| C-8 | `app/models.py` + `app/main.py` | **`synchronize_session` non spécifié sur les bulk updates SQLAlchemy** — `Player.query.update({"score_total": 0, …})` sans `synchronize_session=False` peut lever une `InvalidRequestError` si des objets chargés sont en session. Ajout du flag sur tous les appels `Player.query.update()` (5 occurrences dans `main.py`, 1 dans `models.py`). |
+| C-9/10 | `templates/mobile.html` | **Upload image bloquant** — `FileReader.readAsDataURL()` (synchrone, double allocation mémoire) remplacé par `URL.createObjectURL()` (aperçu instantané, zéro copie) + `Canvas.toBlob()` (compression async WebP non-bloquante). Ajout d'un `AbortController` dans `state._uploadAbort` pour annuler un upload en cours si le joueur change d'image. |
+| C-11 | `templates/mobile.html` | **Timer fantôme côté client** — `setTimer()` et `_questionTimerInterval` (`setInterval` client) coexistaient avec les `question_tick` serveur, causant deux barres de progression indépendantes et des sauts visuels. Suppression complète du timer côté client. Le décompte est désormais 100 % piloté par les événements `question_tick` du serveur. Ajout d'un guard `data.question_id !== state.currentQuestion?.question_id` pour ignorer les ticks d'une question obsolète. |
+
+### Removed
+
+| Élément | Fichier | Raison |
+|---------|---------|--------|
+| `pick_questions()` | `app/models.py` | Fonction morte depuis v4.5 — jamais appelée après le passage à `pick_one_per_category()`. |
+| `app.config["quiz_questions"]` | `app/main.py` | Clé initialisée à `[]` dans 5 endroits mais jamais lue (remplacée par `pick_one_per_category()` en v4.5). Toutes les initialisations supprimées. |
+| `app.config["projector_sound_muted"]` | `app/main.py` | État write-only : écrit lors du mute projecteur mais jamais lu en dehors de l'assignation. Supprimé. |
+| `from app.models import Score, Scoop as ScoopModel` (import local) | `app/main.py` → `api_reset_scores` | Import redondant déplacé dans les imports du module — l'import local à l'intérieur de la route masquait l'import de niveau module. |
+| `from .main import _cancel_job, _question_timer_job` (import local) | `app/events.py` → `on_submit_answer` | Import déplacé au niveau module avec les autres imports de `.main`. |
+| `templates/admin_old.html` | `templates/` | Template legacy de l'admin, non utilisé depuis v4.0. Supprimé via `git rm`. |
+| `templates/admin_v4.5.html` | `templates/` | Snapshot de l'admin v4.5 laissé par erreur, non référencé par aucune route. Supprimé via `git rm`. |
+
+---
+
 ## [v4.6-bots] — 2026-05-17
 
 ### Fixed
@@ -62,7 +95,7 @@ XOXO, Chuck Bass.
 | B10 | `app/events.py` | Handlers audio (`on_sound_stopped`, `on_projector_toggle_sound`, `on_projector_sound_state`) reconstruits après troncature du fichier à la ligne 604 |
 
 ### Changed
-- **Flux quiz entièrement refondu** — `quiz_questions` (liste pré-sélectionnée en début de quiz) est abandonné. Les questions sont sélectionnées round par round via `pick_one_per_category()`. `quiz_questions` reste initialisé à `[]` pour compatibilité rétro.
+- **Flux quiz entièrement refondu** — `quiz_questions` (liste pré-sélectionnée en début de quiz) est abandonné. Les questions sont sélectionnées round par round via `pick_one_per_category()`.
 - **`_send_question()`** — reçoit `[chosen_q]` + `index=0` (position dans la liste d'un élément). `game.question_index` porte le numéro de round réel ; le job APScheduler reçoit `index=game.question_index` pour que le guard anti-doublon reste opérationnel.
 - **`on_gg_choose_question()`** — blackliste les non-choisis dans `last_round_candidates`, pose `game.question_index`, appelle `_send_question(game, [chosen_q], 0)`. Fin de la manipulation de l'ordre de `quiz_questions`.
 - **`_resume_quiz()`** — mode question active utilise `game.get_current_question()` ; mode pick appelle `_ask_gg_to_pick(game, [], game.question_index)`.
