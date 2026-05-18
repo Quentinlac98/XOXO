@@ -32,7 +32,7 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 from .models import (
     db, Player, GameSession, Score, Scoop, ActivityLog, ReservedSlot,
     STATE_LOBBY, STATE_QUIZ, STATE_QUIZ_PAUSED, STATE_LIBRE,
-    get_or_create_game_session, load_questions, pick_questions, pick_one_per_category,
+    get_or_create_game_session, load_questions, pick_one_per_category,
     get_leaderboard, log_activity, reset_game_session, init_db
 )
 
@@ -72,9 +72,8 @@ def create_app():
     app.config["BLAIR_VIP_TOKEN"]             = os.getenv("BLAIR_VIP_TOKEN", "blair-vip-token")
 
     # ─── État quiz en mémoire ───────────────────────────────
-    app.config["quiz_questions"]      = []   # liste des 10 questions du quiz courant
     app.config["current_answers"]     = {}   # {sid: {is_correct, points}}
-    app.config["gg_pick_candidates"]  = []   # 3 questions proposées au GG
+    app.config["gg_pick_candidates"]  = []   # questions proposées au GG
     app.config["gg_pick_index"]       = -1   # index en attente de pick GG (-1 = aucun)
     app.config["gg_pick_game_id"]     = None
     app.config["quiz_tick_active"]    = False  # flag pour stopper _question_tick_task
@@ -121,6 +120,7 @@ scheduler.start()
 NEW_GG_AUDIO_DURATION = 6.06   # secondes (durée réelle du fichier new_gg.mp3)
 
 _questions_cache = None
+_tick_task_generation = 0   # incrémenté à chaque _send_question pour invalider les ghost tasks
 
 def get_questions():
     global _questions_cache
@@ -311,7 +311,6 @@ def api_reset():
     """Reset complet : vide joueurs, scores, scoops, repart en LOBBY."""
     _cancel_all_timers()
     reset_game_session()
-    app.config["quiz_questions"]     = []
     app.config["current_answers"]    = {}
     app.config["gg_pick_candidates"] = []
     app.config["gg_pick_index"]      = -1
@@ -326,7 +325,6 @@ def api_reset_scores():
     Reset partiel : remet les scores à zéro et supprime les scoops,
     mais conserve les joueurs et leur profil.
     """
-    from app.models import Score, Scoop as ScoopModel
     _cancel_all_timers()
 
     game = get_or_create_game_session()
@@ -350,16 +348,15 @@ def api_reset_scores():
     ).first()
     first_connected = dan or Player.query.filter_by(is_connected=True).order_by(Player.id).first()
     if first_connected:
-        Player.query.update({"is_gg": False})
+        Player.query.update({"is_gg": False}, synchronize_session=False)
         first_connected.is_gg  = True
         game.current_gg_id     = first_connected.id
     else:
-        Player.query.update({"is_gg": False})
+        Player.query.update({"is_gg": False}, synchronize_session=False)
         game.current_gg_id = None
 
     db.session.commit()
 
-    app.config["quiz_questions"]     = []
     app.config["current_answers"]    = {}
     app.config["gg_pick_candidates"] = []
     app.config["gg_pick_index"]      = -1
@@ -423,7 +420,6 @@ def api_force_gg_quiz():
     game.libre_ends_at  = None
     db.session.commit()
 
-    app.config["quiz_questions"]     = []
     app.config["current_answers"]    = {}
     app.config["gg_pick_index"]      = -1
     app.config["quiz_intro_pending"] = True
@@ -462,7 +458,7 @@ def api_transfer_gg():
     if game.current_gg_id == new_gg.id:
         return jsonify({"ok": False, "error": "Ce joueur est déjà Gossip Girl."})
 
-    Player.query.update({"is_gg": False})
+    Player.query.update({"is_gg": False}, synchronize_session=False)
 
     new_gg.is_gg       = True
     game.current_gg_id = new_gg.id
@@ -666,7 +662,6 @@ def api_projector_sound():
     data  = request.json or {}
     muted = bool(data.get("muted", False))
     socketio.emit("projector_toggle_sound", {"muted": muted})
-    app.config["projector_sound_muted"] = muted
     log_activity("projector_sound", "admin", f"Son projecteur → {'MUET' if muted else 'ACTIF'}")
     return jsonify({"ok": True, "muted": muted})
 
@@ -1176,7 +1171,7 @@ def _stop_quiz_with_rollback(game: GameSession):
             Player.score_total.desc()
         ).first()
         if replacement:
-            Player.query.update({"is_gg": False})
+            Player.query.update({"is_gg": False}, synchronize_session=False)
             replacement.is_gg    = True
             game.current_gg_id   = replacement.id
             log_activity("gg_auto_replace", "system",
@@ -1222,7 +1217,6 @@ def _start_quiz_phase(game: GameSession):
     game.libre_ends_at  = None
     db.session.commit()
 
-    app.config["quiz_questions"]       = []   # plus de pré-sélection globale
     app.config["last_round_candidates"] = []  # blacklist round réinitialisée
     app.config["current_answers"]      = {}
     app.config["gg_pick_index"]        = -1
@@ -1439,20 +1433,26 @@ def _send_question(game: GameSession, questions: list, index: int):
         kwargs={"game_id": game.id, "question_id": q["id"], "index": round_number},
     )
 
+    global _tick_task_generation
+    _tick_task_generation += 1
     app.config["quiz_tick_active"] = True
-    socketio.start_background_task(_question_tick_task, q["id"], question_duration)
+    socketio.start_background_task(_question_tick_task, q["id"], question_duration, _tick_task_generation)
 
 
-def _question_tick_task(question_id: int, duration: int):
+def _question_tick_task(question_id: int, duration: int, task_gen: int):
     """
     Émet question_tick chaque seconde.
     Le remaining est calculé dynamiquement depuis next_run_time du job APScheduler,
     ce qui garantit la cohérence même après un +10s / -5s (reschedule).
     Si le job n'existe plus, on se base sur le dernier remaining connu jusqu'à 0.
+    task_gen : génération de la tâche — si _tick_task_generation a avancé, on est
+    un ghost task et on s'arrête immédiatement pour éviter les doubles émissions.
     """
     import eventlet
     last_remaining = duration
     while True:
+        if _tick_task_generation != task_gen:
+            return  # Ghost task : une nouvelle question a été envoyée, on s'arrête
         if not app.config.get("quiz_tick_active", True):
             return  # Pause ou arrêt — on stoppe proprement
 
@@ -1548,7 +1548,7 @@ def _end_quiz(game: GameSession):
     winner      = leaderboard[0] if leaderboard else None
 
     if winner:
-        Player.query.update({"is_gg": False})
+        Player.query.update({"is_gg": False}, synchronize_session=False)
         new_gg = Player.query.get(winner["id"])
         if new_gg:
             new_gg.is_gg       = True
@@ -1624,30 +1624,44 @@ def _start_libre_phase(game: GameSession):
 
 
 def _libre_tick_task(game_id: int, ends_at: datetime):
-    """Émet timer_tick chaque seconde pendant le mode LIBRE."""
+    """Émet timer_tick chaque seconde pendant le mode LIBRE.
+    Vérifie l'état DB toutes les 10s seulement (au lieu de chaque seconde)
+    pour limiter les requêtes SQLite inutiles (~900 req → ~90 req par session LIBRE).
+    """
     import eventlet
+    tick_count = 0
     while True:
         now       = datetime.now(timezone.utc)
         remaining = (ends_at - now).total_seconds()
         if remaining <= 0:
             socketio.emit("timer_tick", {"remaining": 0})
             break
-        with app.app_context():
-            g = GameSession.query.get(game_id)
-            if not g or not g.is_libre:
-                break
-            if g.libre_ends_at:
-                ends_at   = g.libre_ends_at
-                remaining = (ends_at - now).total_seconds()
+
+        # Vérification DB allégée : toutes les 10 secondes
+        if tick_count % 10 == 0:
+            with app.app_context():
+                g = GameSession.query.get(game_id)
+                if not g or not g.is_libre:
+                    break
+                if g.libre_ends_at:
+                    ends_at   = g.libre_ends_at
+                    remaining = (ends_at - now).total_seconds()
+
         socketio.emit("timer_tick", {"remaining": max(0, int(remaining))})
+        tick_count += 1
         eventlet.sleep(1)
 
 
 def _libre_end_job(game_id: int):
     """Appelé par APScheduler à la fin du timer LIBRE. → Transition vers QUIZ."""
     with app.app_context():
+        # expire_on_commit=True par défaut : on force un refresh pour éviter
+        # de lire un objet SQLAlchemy stalé si l'admin a déjà changé la phase.
         game = GameSession.query.get(game_id)
-        if not game or not game.is_libre:
+        if not game:
+            return
+        db.session.refresh(game)
+        if not game.is_libre:
             return
         log_activity("libre_ended", "system", "Timer LIBRE ecoule → QUIZ")
         socketio.emit("phase2_ended", {})

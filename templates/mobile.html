@@ -523,6 +523,7 @@ const state = {
   hasAnswered:       false,
   myAnswer:          null,
   uploadedImagePath: null,
+  _uploadAbort:      null,
   asGG:              false,
   timerInterval:     null,
   questionDuration:  10,
@@ -773,7 +774,8 @@ function renderQuestion(data) {
     ? Math.round((data.question_number / data.total) * 100) : 0;
   document.getElementById('progress-fill').style.width = `${_pct}%`;
 
-  setTimer(state.questionDuration, state.questionDuration);
+  // Le timer est piloté exclusivement par socket.on('question_tick') — pas de setInterval local
+  updateTimerDisplay(state.questionDuration, state.questionDuration);
   document.getElementById('answer-result').className = 'answer-result';
 
   // ✅ FIX: boutons gelés après premier clic (anti-double-click, anti-fausse-manip)
@@ -807,19 +809,10 @@ function renderQuestion(data) {
 
 /* ═══════════════════════════════════════
    TIMER SVG
+   Source de vérité : question_tick serveur uniquement.
+   Pas de setInterval local — évite la désync sur 4G instable.
 ═══════════════════════════════════════ */
 const CIRCUM = 188.5;
-let _questionTimerInterval = null;
-
-function setTimer(remaining, total) {
-  clearInterval(_questionTimerInterval);
-  updateTimerDisplay(remaining, total);
-  _questionTimerInterval = setInterval(() => {
-    remaining = Math.max(0, remaining - 1);
-    updateTimerDisplay(remaining, total);
-    if (remaining === 0) clearInterval(_questionTimerInterval);
-  }, 1000);
-}
 
 function updateTimerDisplay(remaining, total) {
   const arc   = document.getElementById('timer-arc');
@@ -837,8 +830,7 @@ function updateTimerDisplay(remaining, total) {
 function submitAnswer(key) {
   if (state.hasAnswered || !state.currentQuestion) return;
   state.hasAnswered = true;
-  state.myAnswer    = key;   // mémorise la réponse pour revealAnswer
-  clearInterval(_questionTimerInterval);
+  state.myAnswer    = key;
 
   // Gèle tous les boutons immédiatement
   document.querySelectorAll('.answer-btn').forEach(b => {
@@ -859,7 +851,6 @@ function submitAnswer(key) {
    REVEAL ANSWER
 ═══════════════════════════════════════ */
 function revealAnswer(data) {
-  clearInterval(_questionTimerInterval);
   document.querySelectorAll('.answer-btn').forEach(btn => {
     const key = btn.dataset.key;
     btn.disabled = true;
@@ -928,28 +919,64 @@ function submitScoop() {
   if (ggBtn) ggBtn.textContent = '✦ Poster en GG';
 }
 
-function handleImageSelect(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('img-preview').src = e.target.result;
-    document.getElementById('img-preview-wrap').style.display = 'block';
-    uploadImage(file);
-  };
-  reader.readAsDataURL(file);
+// Compresse une image côté client avant upload (non-bloquant via toBlob)
+function _compressImage(file, maxPx, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxPx || height > maxPx) {
+        const ratio = Math.min(maxPx / width, maxPx / height);
+        width  = Math.round(width  * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      // toBlob est asynchrone → ne bloque pas le thread UI (contrairement à toDataURL)
+      canvas.toBlob(
+        blob => blob ? resolve(blob) : reject(new Error('Compression échouée')),
+        'image/webp', quality
+      );
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
 }
 
-function uploadImage(file) {
-  const fd = new FormData();
-  fd.append('image', file);
-  fetch('/api/upload-image', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(d => { if (d.image_path) state.uploadedImagePath = d.image_path; })
-    .catch(() => showToast('Erreur upload image.'));
+async function handleImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Annule l'upload précédent en cours (évite la race condition image A/B)
+  if (state._uploadAbort) { state._uploadAbort.abort(); state._uploadAbort = null; }
+  state.uploadedImagePath = null;
+
+  // Affiche la preview via ObjectURL (ne charge pas le fichier en mémoire deux fois)
+  const previewUrl = URL.createObjectURL(file);
+  const previewEl  = document.getElementById('img-preview');
+  previewEl.src    = previewUrl;
+  previewEl.onload = () => URL.revokeObjectURL(previewUrl);
+  document.getElementById('img-preview-wrap').style.display = 'block';
+
+  try {
+    const compressed  = await _compressImage(file, 1024, 0.82);
+    const controller  = new AbortController();
+    state._uploadAbort = controller;
+    const fd = new FormData();
+    fd.append('image', compressed, file.name.replace(/\.[^.]+$/, '.webp'));
+    const r = await fetch('/api/upload-image', { method: 'POST', body: fd, signal: controller.signal });
+    const d = await r.json();
+    if (d.image_path) state.uploadedImagePath = d.image_path;
+  } catch (err) {
+    if (err.name !== 'AbortError') showToast('Erreur upload image.');
+  }
 }
 
 function removeImage() {
+  if (state._uploadAbort) { state._uploadAbort.abort(); state._uploadAbort = null; }
   state.uploadedImagePath = null;
   document.getElementById('img-preview-wrap').style.display = 'none';
   document.getElementById('img-preview').src = '';
@@ -1136,10 +1163,6 @@ socket.on('phase_changed', data => {
 
 socket.on('quiz_paused', data => {
   if (data.paused) {
-    // Stoppe le timer client immédiatement
-    clearInterval(_questionTimerInterval);
-    _questionTimerInterval = null;
-
     // Gèle les boutons de réponse sans les cacher
     document.querySelectorAll('.answer-btn').forEach(b => {
       b.disabled = true;
@@ -1242,8 +1265,8 @@ socket.on('new_question', data => {
 });
 
 socket.on('question_tick', data => {
+  if (data.question_id !== state.currentQuestion?.question_id) return;
   updateTimerDisplay(data.remaining, state.questionDuration);
-  if (data.remaining === 0) clearInterval(_questionTimerInterval);
 });
 
 // R3 — Mode Libre : écoute timer_update pour rafraîchir le décompte mobile
