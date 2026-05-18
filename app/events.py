@@ -17,6 +17,15 @@ from .models import (
     STATE_LOBBY, STATE_QUIZ, STATE_LIBRE,
     get_or_create_game_session, get_leaderboard, log_activity
 )
+def _utc_iso(dt):
+    """Retourne dt.isoformat() avec tzinfo=UTC garanti, ou None."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+
 from .main import (
     _get_current_gg_dict, _broadcast_scoop, _start_quiz_phase,
     _ask_gg_to_pick, _send_question, _get_question_scores, _start_libre_phase,
@@ -84,7 +93,7 @@ def on_reconnect(data):
             "state":       game.current_state,
             "phase":       game.current_state,
             "gg":          _get_current_gg_dict(game),
-            "ends_at":     game.libre_ends_at.isoformat() if game.libre_ends_at else None,
+            "ends_at":     _utc_iso(game.libre_ends_at),
             "leaderboard": get_leaderboard(),
         })
 
@@ -136,6 +145,12 @@ def on_projector_reconnect(data=None):
     # Indépendant de la phase : en LOBBY, LIBRE ou QUIZ, les joueurs (et bots)
     # doivent apparaître dans la sidebar dès que le projecteur se (re)connecte.
     emit("leaderboard_update", {"leaderboard": get_leaderboard()})
+
+    if game.is_libre and game.libre_ends_at:
+        ends_at = game.libre_ends_at
+        if ends_at.tzinfo is None:
+            ends_at = ends_at.replace(tzinfo=timezone.utc)
+        emit("timer_update", {"ends_at": ends_at.isoformat()})
 
     if not game.is_quiz_active:
         return
@@ -193,7 +208,7 @@ def on_get_game_state(data=None):
         "quiz_number": game.quiz_number,
         "gg":          _get_current_gg_dict(game),
         "leaderboard": get_leaderboard(),
-        "ends_at":     game.libre_ends_at.isoformat() if game.libre_ends_at else None,
+        "ends_at":     _utc_iso(game.libre_ends_at),
     })
 
     # Si un quiz est actif, resynchronise l'admin avec l'état courant de la question
@@ -309,7 +324,7 @@ def on_join_player(data):
         "state":       game.current_state,
         "phase":       game.current_state,
         "gg":          _get_current_gg_dict(game),
-        "ends_at":     game.libre_ends_at.isoformat() if game.libre_ends_at else None,
+        "ends_at":     _utc_iso(game.libre_ends_at),
         "leaderboard": get_leaderboard(),
     })
 

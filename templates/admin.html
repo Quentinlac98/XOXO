@@ -519,9 +519,10 @@
           <div class="panel-sub">Temps restant en Mode Libre</div>
           <div class="timer-display" id="dash-timer">--:--</div>
           <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="adminAction('/api/admin/adjust-timer',{delta:-300})">-5 min</button>
             <button class="btn btn-ghost btn-sm" onclick="adminAction('/api/admin/adjust-timer',{delta:300})">+5 min</button>
             <button class="btn btn-ghost btn-sm" onclick="adminAction('/api/admin/adjust-timer',{delta:600})">+10 min</button>
-            <button class="btn btn-ghost btn-sm" onclick="adminStartQuiz()" id="btn-admin-start-quiz">🎯 Lancer Quiz</button>
+            <button class="btn btn-ghost btn-sm" onclick="adminAction('/api/admin/reset-timer')">↺ Reset 15 min</button>
           </div>
         </div>
 
@@ -1064,6 +1065,9 @@ async function loadDashboardData() {
     if (d) {
       const connected = (d.leaderboard || []).filter(p => p.is_connected).length;
       document.getElementById('stat-players').textContent = connected;
+      const badge = document.getElementById('badge-players');
+      badge.textContent = connected;
+      badge.classList.toggle('show', connected > 0);
     }
   }
   checkBlair();

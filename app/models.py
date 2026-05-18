@@ -116,6 +116,14 @@ class GameSession(db.Model):
     def set_current_question(self, q):
         self.current_question_data = json.dumps(q) if q else None
 
+    def _ends_at_iso(self):
+        if not self.libre_ends_at:
+            return None
+        dt = self.libre_ends_at
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
+
     # ── sérialisation ────────────────────────────────────────
     def to_dict(self):
         return {
@@ -126,8 +134,8 @@ class GameSession(db.Model):
             "quiz_number":    self.quiz_number,
             "question_index": self.question_index,
             "is_paused":      self.is_paused,
-            "libre_ends_at":  self.libre_ends_at.isoformat() if self.libre_ends_at else None,
-            "phase2_ends_at": self.libre_ends_at.isoformat() if self.libre_ends_at else None,
+            "libre_ends_at":  self._ends_at_iso(),
+            "phase2_ends_at": self._ends_at_iso(),
         }
 
     # ── machine à états ──────────────────────────────────────
