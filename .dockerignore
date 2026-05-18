@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Données locales (montées via volumes Docker)
+data/
+
+# Environnement Python local
+__pycache__
+**/__pycache__
+*.py[cod]
+*.pyo
+.venv
+venv
+env
+
+# Secrets (ne jamais embarquer dans l'image)
+.env
+.env.*
+!.env.example
+
+# Docs & outils dev
+README.md
+CHANGELOG.md
+*.md
+
+# OS
+.DS_Store
+Thumbs.db

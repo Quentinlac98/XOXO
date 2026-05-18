@@ -1,0 +1,32 @@
+# ============================================================
+#  GOSSIP GIRL PARTY — Docker Compose
+#  NAS Synology DS923+  |  http://192.168.0.13:7777
+# ============================================================
+
+services:
+  xoxo:
+    build: .
+    container_name: xoxo_gossip
+    restart: unless-stopped
+    ports:
+      - "7777:7777"
+    env_file:
+      - .env
+    volumes:
+      # Base de données SQLite persistante
+      - gossip_db:/app/data/db
+      # Photos uploadées par les joueurs
+      - gossip_uploads:/app/data/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:7777/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  gossip_db:
+    driver: local
+  gossip_uploads:
+    driver: local
