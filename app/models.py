@@ -6,10 +6,23 @@
 
 import json
 import random
+import sqlite3
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 db = SQLAlchemy()
+
+
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragmas(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.close()
 
 # ============================================================
 #  ÉTATS VALIDES (constantes)
@@ -326,15 +339,6 @@ def load_questions(path):
     return questions
 
 
-def pick_questions(all_questions, already_asked, n=10):
-    asked_ids = set(already_asked)
-    available = [q for q in all_questions if q["id"] not in asked_ids]
-    if len(available) < n:
-        available = all_questions
-    return random.sample(available, min(n, len(available)))
-
-
-
 def pick_one_per_category(all_questions, already_asked, blacklisted_ids=None):
     """
     F1 — Chantier A : sélectionne 1 question par catégorie non vide à chaque round.
@@ -425,7 +429,7 @@ def reset_game_session():
     game.current_gg_id         = None
 
     Score.query.delete()
-    Player.query.update({"score_total": 0, "is_gg": False})
+    Player.query.update({"score_total": 0, "is_gg": False}, synchronize_session=False)
 
     dan = Player.query.filter(
         Player.personnage.ilike("%Dan%Humphrey%"),

@@ -20,6 +20,7 @@ from .models import (
 from .main import (
     _get_current_gg_dict, _broadcast_scoop, _start_quiz_phase,
     _ask_gg_to_pick, _send_question, _get_question_scores, _start_libre_phase,
+    _cancel_job, _question_timer_job,
 )
 
 
@@ -47,13 +48,15 @@ def on_disconnect():
     player = Player.query.filter_by(session_id=sid).first()
     if player and not player.is_admin:
         player.is_connected = False
+        player.session_id   = None   # libère le SID mort pour éviter les ghost emits
         db.session.commit()
+        leaderboard = get_leaderboard()
         socketio.emit("player_left", {
             "prenom":     player.prenom,
             "personnage": player.personnage,
             "count":      Player.query.filter_by(is_connected=True).count(),
         })
-        socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
+        socketio.emit("leaderboard_update", {"leaderboard": leaderboard})
         log_activity("disconnect", player.prenom, player.personnage)
 
 
@@ -99,7 +102,6 @@ def on_reconnect(data):
                     "timeout":         10,
                 })
 
-        socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
         log_activity("reconnect", player.prenom, f"token OK, sid: {old_sid} -> {sid}")
     else:
         emit("reconnect_failed", {"message": "Session introuvable. Reconnecte-toi."})
@@ -479,8 +481,11 @@ def on_submit_answer(data):
     is_correct  = bool(q_data and answer == q_data.get("answer"))
 
     if is_correct:
-        current_answers = app.config.get("current_answers", {})
-        correct_count   = sum(1 for v in current_answers.values() if v.get("is_correct"))
+        # Lecture depuis la DB (source de vérité atomique) pour éviter la race condition
+        # entre deux joueurs qui répondent simultanément (check-then-act non atomique)
+        correct_count = Score.query.filter_by(
+            question_id=question_id, is_correct=True
+        ).count()
         if   correct_count == 0: points = 3
         elif correct_count == 1: points = 2
         elif correct_count == 2: points = 1
@@ -528,7 +533,6 @@ def on_submit_answer(data):
 
     # All-In : si tous les joueurs participants ont répondu → on n'attend pas la fin du timer
     if total_players > 0 and total_answered >= total_players:
-        from .main import _cancel_job, _question_timer_job
         q_data  = game.get_current_question()
         index   = game.question_index
         game_id = game.id
