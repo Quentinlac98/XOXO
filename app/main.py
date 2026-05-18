@@ -1385,9 +1385,6 @@ def _send_question(game: GameSession, questions: list, index: int):
     Le job APScheduler reçoit index=game.question_index (le vrai round) pour que
     le guard anti-doublon dans _question_timer_job fonctionne correctement.
     """
-    if not game.is_quiz:
-        return
-
     if index >= len(questions):
         _end_quiz(game)
         return

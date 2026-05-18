@@ -1,0 +1,5 @@
+# Dépendances de test — installer avec :
+#   pip install -r requirements-test.txt
+-r requirements.txt
+pytest>=7.4
+pytest-timeout>=2.2
