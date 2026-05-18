@@ -244,26 +244,29 @@ class TestC1GhostTimer:
             "Vérifier la garde 'if _tick_task_generation != task_gen: return' (C-1)."
         )
 
+    @pytest.mark.timeout(10)
     def test_current_generation_does_emit(self, flask_app):
         """task_gen correct → la boucle s'exécute et émet au moins 1 question_tick."""
         import app.main as m
 
         m._tick_task_generation = 7
-        flask_app.config["quiz_tick_active"] = True
+        # On cible m.app.config directement (source de vérité dans la fonction)
+        m.app.config["quiz_tick_active"] = True
 
         emitted = []
 
         def mock_sleep(_n):
-            # Arrête la boucle après 1 itération
-            flask_app.config["quiz_tick_active"] = False
+            # Arrête la boucle après 1 itération — cible m.app.config, pas flask_app.config,
+            # au cas où les deux objets seraient différents selon la version de create_app().
+            m.app.config["quiz_tick_active"] = False
 
         with patch("eventlet.sleep", side_effect=mock_sleep), \
              patch.object(m.socketio, "emit",
                           side_effect=lambda ev, *a, **kw: emitted.append(ev)), \
-             patch.object(m.scheduler, "get_job", return_value=None), \
-             flask_app.app_context():
+             patch.object(m.scheduler, "get_job", return_value=None):
 
-            m._question_tick_task(question_id=42, duration=30, task_gen=7)
+            with flask_app.app_context():
+                m._question_tick_task(question_id=42, duration=30, task_gen=7)
 
         assert "question_tick" in emitted, (
             "Tâche avec bonne génération (gen=7, current=7) n'a pas émis question_tick.\n"
@@ -301,7 +304,9 @@ class TestC1GhostTimer:
                 gen_1 = m._tick_task_generation
 
                 q2 = dict(q, id=100)
-                m._send_question(game, [q2], 1)
+                # index=0 (pas 1) : _send_question reçoit questions[index],
+                # et [q2] n'a qu'un seul élément → questions[1] lèverait IndexError
+                m._send_question(game, [q2], 0)
                 gen_2 = m._tick_task_generation
 
         assert gen_1 == initial_gen + 1, (
@@ -395,8 +400,16 @@ class TestC3TickOptimization:
     et non N fois (optimisation C-3).
     """
 
+    @pytest.mark.timeout(10)
     def test_db_queried_at_most_every_10_ticks(self, flask_app):
-        """Sur 25 ticks, GameSession.query.get doit être appelé ≤ 4 fois."""
+        """Sur 25 ticks, GameSession.query.get doit être appelé ≤ 4 fois.
+
+        Pourquoi patch.object(GameSession, "query") et pas patch.object(GameSession.query, "get") ?
+        Flask-SQLAlchemy recrée un objet BaseQuery à chaque accès GameSession.query (descriptor).
+        Patcher l'instance retournée ne sert à rien — la prochaine évaluation de
+        GameSession.query rend une NOUVELLE instance non-patchée. On patche donc le
+        descriptor lui-même sur la classe pour intercepter tous les accès.
+        """
         import app.main as m
         from app.models import db, GameSession, STATE_LIBRE
 
@@ -406,44 +419,43 @@ class TestC3TickOptimization:
             db.session.commit()
             game_id = game.id
 
-            db_calls = [0]
-            tick_n   = [0]
+        db_calls = [0]
+        tick_n   = [0]
 
-            # Mock GameSession.query.get : renvoie un objet is_libre=True
-            # jusqu'au 25ème appel de sleep, puis False pour stopper la boucle.
-            mock_game = MagicMock()
-            mock_game.is_libre   = True
-            mock_game.libre_ends_at = None
+        mock_game = MagicMock()
+        mock_game.is_libre      = True
+        mock_game.libre_ends_at = None
 
-            original_qget = GameSession.query.get
+        def counting_get(gid):
+            db_calls[0] += 1
+            if tick_n[0] >= 25:
+                mock_game.is_libre = False
+            return mock_game
 
-            def counting_get(gid):
-                db_calls[0] += 1
-                if tick_n[0] >= 25:
-                    mock_game.is_libre = False
-                return mock_game
+        def fake_sleep(_n):
+            tick_n[0] += 1
 
-            def fake_sleep(_n):
-                tick_n[0] += 1
+        ends_at = datetime.now(timezone.utc) + timedelta(seconds=9999)
 
-            ends_at = datetime.now(timezone.utc) + timedelta(seconds=9999)
+        # patch.object(GameSession, "query") remplace le QueryProperty descriptor
+        # sur la classe → GameSession.query retourne notre mock au lieu d'une nouvelle Query.
+        with patch.object(GameSession, "query") as mock_q, \
+             patch("eventlet.sleep", side_effect=fake_sleep), \
+             patch.object(m.socketio, "emit"):
+            mock_q.get.side_effect = counting_get
+            m._libre_tick_task(game_id, ends_at)
 
-            with patch.object(GameSession.query, "get", side_effect=counting_get), \
-                 patch("eventlet.sleep", side_effect=fake_sleep), \
-                 patch.object(m.socketio, "emit"):
-                m._libre_tick_task(game_id, ends_at)
-
-        # Sur 25 ticks, vérifications attendues aux ticks 0, 10, 20 = 3 fois.
-        # On accepte 4 (tick 24 peut tomber selon l'implémentation).
+        # Sur ~25 ticks : checks aux ticks 0, 10, 20 = 3 fois (tolérance : 4)
         assert db_calls[0] <= 4, (
             f"GameSession.query.get() appelé {db_calls[0]} fois pour ~25 ticks.\n"
-            "Attendu ≤ 4 (optimisation toutes les 10 ticks, C-3 non appliqué)."
+            "Attendu ≤ 4 (optimisation C-3 : check toutes les 10 itérations)."
         )
         assert db_calls[0] >= 2, (
             f"GameSession.query.get() appelé seulement {db_calls[0]} fois — "
             "la vérification DB n'a peut-être jamais eu lieu."
         )
 
+    @pytest.mark.timeout(10)
     def test_each_tick_emits_timer_tick(self, flask_app):
         """Chaque tick doit émettre timer_tick (la réduction DB ne doit pas réduire les émissions)."""
         import app.main as m
@@ -455,28 +467,29 @@ class TestC3TickOptimization:
             db.session.commit()
             game_id = game.id
 
-            tick_n   = [0]
-            emitted  = []
+        tick_n  = [0]
+        emitted = []
 
-            mock_game = MagicMock()
-            mock_game.is_libre    = True
-            mock_game.libre_ends_at = None
+        mock_game = MagicMock()
+        mock_game.is_libre      = True
+        mock_game.libre_ends_at = None
 
-            def fake_get(_id):
-                if tick_n[0] >= 10:
-                    mock_game.is_libre = False
-                return mock_game
+        def fake_get(_id):
+            if tick_n[0] >= 10:
+                mock_game.is_libre = False
+            return mock_game
 
-            def fake_sleep(_n):
-                tick_n[0] += 1
+        def fake_sleep(_n):
+            tick_n[0] += 1
 
-            ends_at = datetime.now(timezone.utc) + timedelta(seconds=9999)
+        ends_at = datetime.now(timezone.utc) + timedelta(seconds=9999)
 
-            with patch.object(GameSession.query, "get", side_effect=fake_get), \
-                 patch("eventlet.sleep", side_effect=fake_sleep), \
-                 patch.object(m.socketio, "emit",
-                              side_effect=lambda ev, *a, **kw: emitted.append(ev)):
-                m._libre_tick_task(game_id, ends_at)
+        with patch.object(GameSession, "query") as mock_q, \
+             patch("eventlet.sleep", side_effect=fake_sleep), \
+             patch.object(m.socketio, "emit",
+                          side_effect=lambda ev, *a, **kw: emitted.append(ev)):
+            mock_q.get.side_effect = fake_get
+            m._libre_tick_task(game_id, ends_at)
 
         timer_ticks = [e for e in emitted if e == "timer_tick"]
         assert len(timer_ticks) >= 10, (
