@@ -17,4 +17,5 @@ from . import events  # ← enregistre tous les handlers SocketIO
 if __name__ == "__main__":
     port  = int(os.getenv("APP_PORT", 7777))
     debug = os.getenv("DEBUG", "false").lower() == "true"
+    print(f"XOXO — Gossip Girl Party démarré sur http://0.0.0.0:{port}  (debug={debug})")
     socketio.run(app, host="0.0.0.0", port=port, debug=debug)

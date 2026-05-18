@@ -684,10 +684,15 @@ def api_adjust_timer():
 
     if game.is_libre and game.libre_ends_at:
         # ── Mode LIBRE : on décale la date de fin ──────────────────
-        game.libre_ends_at += timedelta(seconds=delta)
+        current = game.libre_ends_at
+        if current.tzinfo is None:
+            current = current.replace(tzinfo=timezone.utc)
+        min_ends_at = datetime.now(timezone.utc) + timedelta(seconds=10)
+        new_ends_at = max(current + timedelta(seconds=delta), min_ends_at)
+        game.libre_ends_at = new_ends_at
         db.session.commit()
-        socketio.emit("timer_update", {"ends_at": game.libre_ends_at.isoformat()})
-        log_activity("adjust_timer", "admin", f"LIBRE +{delta}s → {game.libre_ends_at.isoformat()}")
+        socketio.emit("timer_update", {"ends_at": new_ends_at.isoformat()})
+        log_activity("adjust_timer", "admin", f"LIBRE {delta:+}s → {new_ends_at.isoformat()}")
 
     elif game.is_quiz:
         # ── Mode QUIZ : reporte le job question_timer ──────────────
@@ -710,6 +715,21 @@ def api_adjust_timer():
         return jsonify({"ok": False, "error": "Aucun timer actif."})
 
     return jsonify({"ok": True})
+
+
+@app.route("/api/admin/reset-timer", methods=["POST"])
+@admin_required
+def api_reset_timer():
+    """Remet le timer Mode Libre à 15 min à partir de maintenant."""
+    game = get_or_create_game_session()
+    if not game.is_libre:
+        return jsonify({"ok": False, "error": "Pas en Mode Libre."})
+    ends_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+    game.libre_ends_at = ends_at
+    db.session.commit()
+    socketio.emit("timer_update", {"ends_at": ends_at.isoformat()})
+    log_activity("reset_timer", "admin", f"LIBRE reset → {ends_at.isoformat()}")
+    return jsonify({"ok": True, "message": "Timer remis à 15 min."})
 
 
 # ============================================================
@@ -885,7 +905,7 @@ def api_game_state():
         "is_paused":   game.is_paused,
         "gg":          _get_current_gg_dict(game),
         "leaderboard": get_leaderboard(),
-        "ends_at":     game.libre_ends_at.isoformat() if game.libre_ends_at else None,
+        "ends_at":     (game.libre_ends_at.replace(tzinfo=timezone.utc) if game.libre_ends_at.tzinfo is None else game.libre_ends_at).isoformat() if game.libre_ends_at else None,
     })
 
 
