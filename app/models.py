@@ -163,6 +163,14 @@ class GameSession(db.Model):
         return self.current_state
 
 
+# Copy the QueryProperty descriptor into GameSession.__dict__ so that
+# unittest.mock.patch.object(GameSession, "query") can retrieve it via
+# target.__dict__[name] without triggering __get__ (which needs an app context).
+_qp = db.Model.__dict__.get("query")
+if _qp is not None:
+    GameSession.query = _qp
+
+
 # ============================================================
 #  SCORE
 # ============================================================
