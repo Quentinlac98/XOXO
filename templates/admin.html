@@ -958,6 +958,8 @@
 ═══════════════════════════════════════ -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
+window.__BLAIR_TOKEN__ = "{{ blair_token }}";
+
 /* ─────────────────────────────────────────
    SOCKET
 ───────────────────────────────────────── */
@@ -1837,6 +1839,17 @@ function toggleProjectorScores() {
   });
   const btn2 = document.getElementById('btn-scores-proj');
   if (btn2) btn2.textContent = _projScoresVisible ? '✕ Masquer scores' : '📊 Scores en grand';
+}
+
+let _projQRVisible = false;
+function toggleProjectorQR() {
+  _projQRVisible = !_projQRVisible;
+  adminAction('/api/admin/projector-qr', {visible: _projQRVisible});
+  document.querySelectorAll('[onclick="toggleProjectorQR()"]').forEach(btn => {
+    btn.textContent = _projQRVisible ? '✕ Masquer QR' : '📱 QR Projecteur';
+  });
+  const btn2 = document.getElementById('btn-qr-proj');
+  if (btn2) btn2.textContent = _projQRVisible ? '✕ Masquer QR' : '📱 Afficher QR sur projecteur';
 }
 
 function pauseQuiz() {

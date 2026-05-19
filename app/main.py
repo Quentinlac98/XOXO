@@ -327,6 +327,7 @@ def admin_dashboard():
         logs=logs,
         blair_slot=blair_slot,
         leaderboard=get_leaderboard(),
+        blair_token=app.config["BLAIR_VIP_TOKEN"],
     )
 
 
