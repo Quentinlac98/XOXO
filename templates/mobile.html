@@ -1172,6 +1172,10 @@ socket.on('login_error', data => {
   showToast(data.message, 3500);
 });
 
+socket.on('blair_vip_granted', data => {
+  window.location.href = data.redirect || '/vip';
+});
+
 // ✅ FIX: reconnexion silencieuse
 socket.on('reconnect_success', data => {
   if (data.player.player_token) {

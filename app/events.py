@@ -7,7 +7,7 @@
 import secrets
 from datetime import datetime, timezone
 
-from flask import request
+from flask import request, session
 from flask_socketio import emit
 
 from .main import app, socketio, _cancel_job
@@ -277,6 +277,8 @@ def on_join_player(data):
         if blair_code != app.config.get("BLAIR_SECRET_CODE", ""):
             emit("login_error", {"message": "Blair Waldorf necessite un code secret. XOXO."})
             return
+        session["blair_vip_verified"] = True
+        emit("blair_vip_granted", {"redirect": "/vip"})
 
     existing = Player.query.filter_by(personnage=personnage).first()
     if existing and existing.session_id != sid and existing.is_connected:
