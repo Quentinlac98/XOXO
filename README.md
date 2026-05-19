@@ -1,11 +1,11 @@
-# 🖤 XOXO — Gossip Girl Party App `v4.6.1`
+# 🖤 XOXO — Gossip Girl Party App `v4.6.2`
 
 > *The one and only source into the scandalous lives of Manhattan's elite.*
 
 Application événementielle temps réel pour soirée à thème Gossip Girl.  
 Stack : **Flask · Flask-SocketIO · APScheduler · SQLite · Docker**
 
-> **Version actuelle : v4.6.1** — 2026-05-18
+> **Version actuelle : v4.6.2** — 2026-05-19
 
 ---
 
@@ -35,20 +35,23 @@ gossip-girl-party/
 │   ├── __init__.py             # Initialisation du package
 │   ├── __main__.py             # Point d'entrée : python -m app
 │   ├── main.py                 # ★ Flask app factory + routes HTTP + logique métier
-│   │                           #   (machine à états, timers APScheduler, routes admin)
+│   │                           #   (machine à états, timers APScheduler, routes admin, routes VIP)
 │   ├── events.py               # ★ Tous les handlers Socket.io (connect, quiz, scoops…)
 │   └── models.py               # ★ SQLAlchemy : Player, GameSession, Score, Scoop,
 │                               #   ActivityLog, ReservedSlot + helpers DB
 │
 ├── templates/                  # Jinja2 HTML (servis par Flask)
 │   ├── mobile.html             # Interface invité — style iPhone / Upper East Side
+│   ├── vip.html                # Interface Blair VIP — clone de mobile + overlay 4 tuiles VIP
 │   ├── projector.html          # Grand écran — animations plein écran
 │   ├── admin.html              # Chuck Mode — dashboard temps réel
 │   ├── admin_login.html        # Page de connexion admin (mot de passe)
 │   └── qr.html                 # QR Code plein écran (pour pointer les invités)
 │
 ├── static/
-│   └── sounds/                 # Fichiers MP3 (à fournir — voir section Sons)
+│   ├── sounds/                 # Fichiers MP3 (à fournir — voir section Sons)
+│   │   └── vip/                # Sons VIP Soundboard : champagne/drama/gossip/scandale/suspens/victoire.mp3
+│   └── dino/                   # Photos Dino Gallery : drop *.jpg/*.png/*.webp ici
 │
 ├── questions/
 │   └── gossipgirl_qcm.jsonl    # Base de questions (format JSON Lines — 259 questions, 8 catégories)
@@ -174,9 +177,9 @@ python -m app
 
 # Accès (avec APP_PORT=7777 dans .env)
 # Interface invités  → http://localhost:7777/mobile
+# VIP Blair          → http://localhost:7777/vip  (après auth /blair-vip?token=…)
 # Projecteur         → http://localhost:7777/projector
 # Chuck Mode (admin) → http://localhost:7777/xoxo-admin
-# VIP Mode Blair     → http://localhost:7777/mobile?vip=blair
 # QR Code            → http://localhost:7777/qr
 ```
 
@@ -197,16 +200,16 @@ make up
 
 # Accès LOCAL (avec APP_PORT=7777 dans .env)
 # Interface invités  → http://192.168.0.10:7777/mobile
+# VIP Blair          → http://192.168.0.10:7777/vip  (après auth /blair-vip?token=…)
 # Projecteur         → http://192.168.0.10:7777/projector
 # Chuck Mode (admin) → http://192.168.0.10:7777/xoxo-admin
-# VIP Mode Blair     → http://192.168.0.10:7777/mobile?vip=blair
 # QR Code            → http://192.168.0.10:7777/qr
 
 # Accès NAS (avec APP_PORT=7777 dans .env)
 # Interface invités  → http://192.168.0.13:7777/mobile
+# VIP Blair          → http://192.168.0.13:7777/vip  (après auth /blair-vip?token=…)
 # Projecteur         → http://192.168.0.13:7777/projector
 # Chuck Mode (admin) → http://192.168.0.13:7777/xoxo-admin
-# VIP Mode Blair     → http://192.168.0.13:7777/mobile?vip=blair
 # QR Code            → http://192.168.0.13:7777/qr
 ```
 
@@ -219,7 +222,7 @@ make up
 | `SECRET_KEY` | Clé de session Flask (changer absolument) | *(obligatoire)* |
 | `ADMIN_PASSWORD` | Mot de passe Chuck Mode | `ChuckBassGodMode2026` |
 | `BLAIR_SECRET_CODE` | Code secret pour jouer Blair Waldorf | `24042024` |
-| `BLAIR_VIP_TOKEN` | Token QR VIP Blair (lien direct sans code) | *(long token unique)* |
+| `BLAIR_VIP_TOKEN` | Token QR VIP Blair (lien direct sans code, ouvre aussi `/vip`) | *(long token unique)* |
 | `APP_HOST` | Hôte d'écoute Flask | `0.0.0.0` |
 | `APP_PORT` | Port unique Flask + Docker (interne = externe) | `7777` |
 | `DEBUG` | Mode debug Flask | `false` |
@@ -229,6 +232,49 @@ make up
 | `DB_PATH` | Chemin relatif vers la base SQLite | `data/db/gossip.db` |
 | `UPLOAD_PATH` | Dossier de stockage des photos | `data/uploads` |
 | `QUESTIONS_PATH` | Chemin vers le fichier de questions | `questions/gossipgirl_qcm.jsonl` |
+
+---
+
+## 💎 VIP Mode — Blair Waldorf
+
+### Accès
+
+Le VIP Mode est exclusif à Blair Waldorf. L'accès se fait via le **lien QR VIP** :
+
+```
+/blair-vip?token=<BLAIR_VIP_TOKEN>
+```
+
+Ce lien :
+1. Vérifie le token
+2. Pose `session["blair_vip_verified"] = True`
+3. Redirige vers `/vip`
+
+Toutes les routes `/vip` et `/api/vip/*` sont protégées par le décorateur `@vip_required` — sans la session vérifiée, la requête est redirigée vers `/mobile`.
+
+### Dashboard VIP — 4 tuiles
+
+| Tuile | Panneau | Description |
+|---|---|---|
+| 🐱 Dino Gallery | `vip-panel-gallery` | Carrousel photo avec gestes swipe, indicateurs de points, transition fondu |
+| 🔊 VIP Soundboard | `vip-panel-soundboard` | 6 boutons audio ; MP3 si disponibles, sinon tonalités Web Audio API |
+| 📰 Scoops Manager | `vip-panel-scoops-manager` | Liste des scoops avec actions Épingler / Supprimer + toggle QR Code |
+| ✨ Custom Blast | `vip-panel-blast` | Poster un scoop officiel Gossip Girl avec animation wow sur tous les mobiles |
+
+### Ajouter des médias (drop-in, sans modifier le code)
+
+| Dossier | Contenu | Effet |
+|---|---|---|
+| `static/dino/` | `*.jpg` / `*.png` / `*.webp` | Remplace les emojis fallback dans la galerie |
+| `static/sounds/vip/` | `champagne.mp3` · `drama.mp3` · `gossip.mp3` · `scandale.mp3` · `suspens.mp3` · `victoire.mp3` | Active la lecture MP3 sur le soundboard (fallback Web Audio API si absent) |
+
+### Événements Socket.io VIP
+
+| Événement | Direction | Description |
+|---|---|---|
+| `vip_blast` | Serveur → Tous | Déclenche l'overlay Blast animé sur tous les mobiles |
+| `scoop_pinned` | Serveur → Tous | Scoop épinglé re-affiché en popup sur le projecteur |
+| `scoop_deleted` | Serveur → Tous | Scoop retiré du flux |
 
 ---
 
@@ -305,12 +351,12 @@ Dépose tes fichiers dans `static/sounds/` :
 | `xoxo.mp3` | 5.4s | Nouveau scoop publié |
 | `quiz_start.mp3` | 22.2s | Début de phase QUIZ |
 | `correct.mp3` | 2.7s | Révélation de réponse |
-| `new_gg.mp3` | 6.06s | Nouveau Gossip Girl désigné |
+| `new_gg.mp3` | 6.06s | Nouveau Gossip Girl désigné / Blast VIP |
 | `phase2_start.mp3` | 14.9s | Début de phase LIBRE |
 | `timer_end.mp3` | 21.3s | Fin du timer LIBRE |
 | `countdown.mp3` | 2.3s | Manuel uniquement (Chuck Mode) |
 
-> La durée de `new_gg.mp3` est utilisée comme constante `NEW_GG_AUDIO_DURATION = 6.06` dans `main.py` pour synchroniser le démarrage du Mode Libre avec la fin de l'animation.
+> La durée de `new_gg.mp3` est utilisée comme constante `NEW_GG_AUDIO_DURATION = 6.06` dans `main.py` pour synchroniser le démarrage du Mode Libre avec la fin de l'animation. Ce même son est déclenché lors d'un **Blast VIP** pour l'effet wow-factor.
 
 ### Architecture audio — flux complet
 
@@ -458,6 +504,9 @@ Un personnage ne peut être sélectionné que si son slot n'est pas déjà occup
 | `answer_error` | Joueur | Réponse refusée (doublon, hors délai…) |
 | `timer_update` | Tous | Modification du timer Mode Libre |
 | `client_reload` | Joueur ciblé | Rechargement ciblé d'un mobile spécifique |
+| `vip_blast` | Tous | Overlay Blast animé déclenché par Blair VIP |
+| `scoop_pinned` | Tous | Scoop épinglé re-affiché sur le projecteur |
+| `scoop_deleted` | Tous | Scoop supprimé du flux |
 
 ### Clients → Serveur
 
@@ -495,6 +544,21 @@ Toutes les routes sont protégées par `@admin_required` (session Flask).
 | `GET`  | `/api/admin/scoops` | Liste des scoops |
 | `GET`  | `/api/admin/logs` | Journal d'activité admin |
 | `GET`  | `/api/qr-code` | QR Code base64 (pour overlay projecteur) |
+
+## 💎 Routes API VIP (Blair Waldorf)
+
+Toutes les routes sont protégées par `@vip_required` (session Flask — `blair_vip_verified`).
+
+| Méthode | Route | Description |
+|---|---|---|
+| `GET`  | `/vip` | Interface VIP Blair (template `vip.html`) |
+| `GET`  | `/blair-vip` | Auth token VIP → pose session + redirige vers `/vip` |
+| `GET`  | `/api/vip/gallery` | Liste des photos Dino Gallery (JSON) |
+| `GET`  | `/api/vip/sounds` | Liste des sons du Soundboard avec URLs MP3 (JSON) |
+| `GET`  | `/api/vip/scoops` | Liste des scoops publiés (JSON) |
+| `POST` | `/api/vip/scoops/<id>/pin` | Épingle un scoop (émet `scoop_pinned`) |
+| `POST` | `/api/vip/scoops/<id>/delete` | Supprime un scoop (émet `scoop_deleted`) |
+| `POST` | `/api/vip/blast` | Publie un scoop officiel GG + émet `vip_blast` sur tous les mobiles |
 
 ---
 
