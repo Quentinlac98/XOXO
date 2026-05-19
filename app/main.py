@@ -142,6 +142,15 @@ def admin_required(f):
     return decorated
 
 
+def vip_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("blair_vip_verified"):
+            return redirect(url_for("mobile"))
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ============================================================
 #  ROUTES PUBLIQUES
 # ============================================================
@@ -176,8 +185,14 @@ def blair_vip():
     token = request.args.get("token", "")
     if token == app.config["BLAIR_VIP_TOKEN"]:
         session["blair_vip_verified"] = True
-        return redirect(url_for("mobile") + "?vip=blair")
+        return redirect(url_for("vip_page"))
     return redirect(url_for("mobile"))
+
+
+@app.route("/vip")
+@vip_required
+def vip_page():
+    return render_template("vip.html")
 
 
 # ============================================================

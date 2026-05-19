@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>VIP 💎 — Gossip Girl Party</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold:       #C9A84C;
+      --gold-light: #E2C97E;
+      --gold-dim:   rgba(201,168,76,.12);
+      --black:      #060606;
+      --dark:       #0D0D0D;
+      --dark2:      #131313;
+      --cream:      #F5F0E8;
+      --stone:      #7A7060;
+      --stone2:     #504840;
+      --red:        #C0504D;
+      --green:      #22c55e;
+      --safe:       env(safe-area-inset-bottom, 0px);
+    }
+
+    html { height: 100%; background: var(--black); }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--black); color: var(--cream);
+      height: 100%; overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ════ APP SHELL ════ */
+    #app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+    /* ════ SCREENS ════ */
+    .screen { display: none; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
+    .screen.active { display: flex; }
+    .scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+
+    /* ════ BG ════ */
+    .screen-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 40% at 50% 0%, rgba(201,168,76,.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(201,168,76,.04) 0%, transparent 60%);
+    }
+
+    /* ════ LOGIN ════ */
+    #screen-login { justify-content: flex-start; background: var(--black); }
+    #screen-login .scroll-area { padding: 0; }
+    .login-inner { display: flex; flex-direction: column; align-items: center; padding: 48px 28px 40px; min-height: 100%; }
+    .login-eyebrow { font-size: 8px; letter-spacing: .5em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; }
+    .login-logo { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 800; letter-spacing: .12em; line-height: .9; text-align: center; color: white; margin-bottom: 8px; }
+    .login-logo span { display: block; background: linear-gradient(135deg, #C9A84C 0%, #E2C97E 50%, #C9A84C 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .login-tagline { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-style: italic; font-weight: 300; color: var(--stone); text-align: center; margin-bottom: 36px; line-height: 1.6; }
+    .login-divider { width: 100%; display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .login-divider-line { flex: 1; height: 1px; background: rgba(201,168,76,.15); }
+    .login-divider-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(201,168,76,.3); }
+    .field-label { font-size: 8px; letter-spacing: .35em; text-transform: uppercase; color: var(--stone); margin-bottom: 8px; align-self: flex-start; width: 100%; }
+    .login-input { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(201,168,76,.18); border-radius: 14px; padding: 14px 18px; color: white; font-family: 'Montserrat', sans-serif; font-size: 16px; outline: none; transition: border-color .25s; margin-bottom: 20px; }
+    .login-input:focus { border-color: rgba(201,168,76,.5); }
+    .login-input::placeholder { color: var(--stone2); }
+    .perso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-bottom: 16px; max-height: 340px; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(201,168,76,.2) transparent; padding-right: 2px; }
+    .perso-grid::-webkit-scrollbar { width: 3px; }
+    .perso-grid::-webkit-scrollbar-thumb { background: rgba(201,168,76,.2); border-radius: 2px; }
+    .perso-chip { background: rgba(255,255,255,.03); border: 1px solid rgba(201,168,76,.1); border-radius: 12px; padding: 11px 10px; cursor: pointer; text-align: center; transition: all .2s; user-select: none; }
+    .perso-chip:active { transform: scale(.97); }
+    .perso-chip.selected { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.45); }
+    .perso-chip.locked { opacity: .35; cursor: not-allowed; }
+    .perso-chip.blair-unlock { opacity: 1; cursor: pointer; border-style: dashed; border-color: rgba(201,168,76,.3); }
+    .chip-name { font-family: 'Playfair Display', serif; font-size: 13px; color: white; font-weight: 500; }
+    .chip-family { font-size: 8.5px; letter-spacing: .1em; color: var(--stone); margin-top: 2px; }
+    .chip-badge { font-size: 8px; color: var(--gold); margin-top: 3px; letter-spacing: .05em; }
+    .chip-desc { font-size: 8px; color: var(--stone2); margin-top: 2px; line-height: 1.3; font-style: italic; }
+    #blair-code-wrap { display: none; width: 100%; background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.2); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+    .blair-code-label { font-size: 8px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .btn-login { width: 100%; background: var(--gold); color: var(--black); border: none; border-radius: 14px; padding: 16px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; cursor: pointer; transition: background .2s, transform .15s, box-shadow .2s; box-shadow: 0 6px 20px rgba(201,168,76,.2); margin-top: 4px; }
+    .btn-login:active { transform: scale(.98); }
+    .btn-login:hover { background: var(--gold-light); }
+
+    /* ════ BOTTOM NAV ════ */
+    .bottom-nav { display: none; flex-shrink: 0; flex-direction: row; background: rgba(10,10,10,.95); border-top: 1px solid rgba(201,168,76,.08); padding: 8px 0 calc(8px + var(--safe)); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 100; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 0; background: none; border: none; cursor: pointer; transition: opacity .2s; position: relative; }
+    .nav-item:active { opacity: .6; }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--stone); transition: color .2s; }
+    .nav-item.active .nav-label { color: var(--gold); }
+    .nav-badge { position: absolute; top: 2px; right: 50%; transform: translateX(12px); width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: none; }
+    .nav-badge.show { display: block; }
+
+    /* ════ HOME ════ */
+    #screen-home .scroll-area { padding: 20px 20px 16px; }
+    .home-header { text-align: center; padding: 20px 0 24px; border-bottom: 1px solid rgba(201,168,76,.08); margin-bottom: 20px; }
+    .home-perso { font-family: 'Playfair Display', serif; font-size: 26px; color: white; font-weight: 700; }
+    .home-prenom { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--stone); margin-top: 4px; }
+    .home-eyebrow { font-size: 8px; letter-spacing: .4em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .gg-banner { background: linear-gradient(135deg, rgba(201,168,76,.18) 0%, rgba(201,168,76,.06) 100%); border: 1px solid rgba(201,168,76,.35); border-radius: 16px; padding: 16px 18px; margin-bottom: 16px; display: none; animation: ggBannerIn .4s ease; }
+    @keyframes ggBannerIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .gg-banner-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); }
+    .gg-banner-sub { font-size: 11px; color: var(--stone); margin-top: 4px; }
+    .phase-card { border-radius: 16px; padding: 16px 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 14px; border: 1px solid rgba(201,168,76,.1); background: rgba(255,255,255,.02); }
+    .phase-card.quiz { background: rgba(201,168,76,.06); border-color: rgba(201,168,76,.2); }
+    .phase-card.free { background: rgba(255,255,255,.03); }
+    .phase-icon { font-size: 26px; flex-shrink: 0; }
+    .phase-title { font-family: 'Playfair Display', serif; font-size: 16px; color: white; }
+    .phase-sub { font-size: 11px; color: var(--stone); margin-top: 2px; }
+    .free-timer-display { font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--stone); margin-top: 8px; }
+    .free-timer-display.urgent { color: var(--red); }
+    .gg-start-wrap { display: none; background: rgba(201,168,76,.04); border: 1px solid rgba(201,168,76,.15); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+    .gg-start-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); margin-bottom: 4px; }
+    .gg-start-sub { font-size: 11px; color: var(--stone); }
+    .card { background: rgba(255,255,255,.02); border: 1px solid rgba(201,168,76,.08); border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; }
+    .eyebrow { font-size: 8px; letter-spacing: .35em; text-transform: uppercase; color: var(--stone); }
+
+    /* ════ BUTTONS ════ */
+    .btn-gold { width: 100%; background: var(--gold); color: var(--black); border: none; border-radius: 12px; padding: 14px; font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .25em; text-transform: uppercase; cursor: pointer; transition: background .2s, transform .15s; box-shadow: 0 4px 16px rgba(201,168,76,.2); }
+    .btn-gold:active { transform: scale(.98); }
+    .btn-gold:hover { background: var(--gold-light); }
+    .btn-outline { width: 100%; background: transparent; border: 1px solid rgba(201,168,76,.3); color: var(--gold); border-radius: 12px; padding: 13px; font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .btn-outline:active { background: var(--gold-dim); }
+
+    /* ════ QUIZ ════ */
+    #screen-quiz .scroll-area { padding: 0; }
+    .quiz-waiting { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 40px 28px; }
+    .quiz-waiting-icon { font-size: 56px; margin-bottom: 20px; animation: waitPulse 2s ease-in-out infinite; }
+    @keyframes waitPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    .quiz-waiting-title { font-family: 'Playfair Display', serif; font-size: 24px; color: white; margin-bottom: 8px; }
+    .quiz-waiting-sub { font-size: 12px; color: var(--stone); line-height: 1.7; }
+
+    /* GG Pick Panel */
+    .gg-pick-panel { background: linear-gradient(135deg, #1a1a1a 0%, #2a1f0a 100%); border: 1px solid var(--gold); border-radius: 16px; padding: 20px; margin: 16px; display: none; animation: fadeIn .3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .gg-pick-header { text-align: center; margin-bottom: 16px; }
+    .gg-crown { font-size: 2rem; margin-bottom: 4px; }
+    .gg-pick-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--gold); letter-spacing: .05em; }
+    .gg-pick-subtitle { font-size: 0.85rem; color: var(--stone); margin-top: 2px; }
+    .gg-pick-timer { font-size: 0.9rem; color: #f97316; margin-top: 8px; font-weight: bold; }
+    .gg-pick-candidates { display: flex; flex-direction: column; gap: 10px; }
+    .gg-candidate-btn { background: rgba(201,168,76,.08); border: 1px solid rgba(201,168,76,.3); border-radius: 12px; padding: 14px 16px; color: var(--cream); font-size: 0.9rem; text-align: left; cursor: pointer; transition: all .2s; line-height: 1.4; width: 100%; font-family: 'Montserrat', sans-serif; }
+    .gg-candidate-btn:hover, .gg-candidate-btn:active { background: rgba(201,168,76,.2); border-color: var(--gold); transform: scale(1.01); }
+    .gg-candidate-num { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 0.8rem; display: block; margin-bottom: 4px; }
+    .gg-candidate-cat { font-size: 0.7rem; color: var(--stone); letter-spacing: .06em; text-transform: uppercase; display: block; margin-bottom: 6px; opacity: .8; }
+
+    /* GG waiting panel (pour autres joueurs pendant le pick GG) */
+    .gg-waiting-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 40px 28px; }
+
+    /* Active quiz */
+    .quiz-active-wrap { padding: 16px 20px 20px; display: none; flex-direction: column; gap: 14px; }
+    .quiz-top { display: flex; align-items: center; justify-content: space-between; }
+    .quiz-badge { font-size: 8px; letter-spacing: .35em; text-transform: uppercase; color: var(--red); display: flex; align-items: center; gap: 7px; }
+    .quiz-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: tdPulse 1s infinite; }
+    @keyframes tdPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .quiz-gg-line { font-size: 10px; color: var(--stone); letter-spacing: .04em; }
+    .quiz-progress-wrap { }
+    .quiz-progress-labels { display: flex; justify-content: space-between; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--stone); margin-bottom: 6px; }
+    .quiz-progress-bar { height: 3px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
+    .quiz-progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+    .timer-wrap { display: flex; justify-content: center; }
+    .timer-ring { position: relative; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; }
+    .timer-svg { position: absolute; inset: 0; width: 72px; height: 72px; transform: rotate(-90deg); }
+    .timer-bg { fill: none; stroke: rgba(255,255,255,.06); stroke-width: 4; }
+    .timer-arc { fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 188.5; stroke-dashoffset: 0; transition: stroke-dashoffset .9s linear, stroke .3s; }
+    .timer-arc.urgent { stroke: var(--red); }
+    .timer-num { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--gold-light); position: relative; z-index: 1; }
+    .timer-num.urgent { color: var(--red); }
+    .question-card { background: rgba(201,168,76,.04); border: 1px solid rgba(201,168,76,.16); border-radius: 16px; padding: 18px; }
+    .question-text { font-family: 'Playfair Display', serif; font-size: 18px; color: white; line-height: 1.4; font-weight: 700; }
+    .answers-grid { display: flex; flex-direction: column; gap: 8px; }
+    .answer-btn { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 13px 14px; cursor: pointer; text-align: left; transition: all .2s; color: var(--cream); font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .answer-btn:active { transform: scale(.98); }
+    .answer-btn.selected { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.4); }
+    .answer-btn.correct { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.4); pointer-events: none; }
+    .answer-btn.wrong { background: rgba(192,80,77,.08); border-color: rgba(192,80,77,.3); pointer-events: none; }
+    .answer-btn.revealed { opacity: .45; pointer-events: none; }
+    .answer-btn:disabled { opacity: .5; cursor: default; pointer-events: none; }
+    .answer-key { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold); flex-shrink: 0; width: 22px; }
+    .answer-btn.correct .answer-key { color: var(--green); }
+    .answer-text { font-size: 13px; line-height: 1.35; }
+    .answer-result { display: none; border-radius: 14px; padding: 16px 18px; text-align: center; }
+    .answer-result.show { display: block; animation: resultIn .35s ease; }
+    @keyframes resultIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .answer-result.correct-bg { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3); }
+    .answer-result.wrong-bg { background: rgba(192,80,77,.08); border: 1px solid rgba(192,80,77,.25); }
+    .result-icon { font-size: 28px; margin-bottom: 6px; }
+    .result-title { font-family: 'Playfair Display', serif; font-size: 18px; color: white; margin-bottom: 4px; }
+    .result-pts { font-size: 12px; color: var(--stone); }
+    .result-expl { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-style: italic; color: var(--stone); margin-top: 8px; line-height: 1.5; }
+
+    /* ════ SCOOPS ════ */
+    #screen-scoops .scroll-area { padding: 16px 20px; }
+    .scoops-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+    .scoops-title { font-family: 'Playfair Display', serif; font-size: 26px; color: white; }
+    .scoops-locked { display: none; text-align: center; padding: 60px 20px; }
+    .scoops-locked-icon { font-size: 44px; margin-bottom: 14px; }
+    .scoops-locked-title { font-family: 'Playfair Display', serif; font-size: 20px; color: white; margin-bottom: 8px; }
+    .scoops-locked-sub { font-size: 12px; color: var(--stone); line-height: 1.7; }
+    .scoops-active { display: none; }
+    .compose-box { background: rgba(255,255,255,.02); border: 1px solid rgba(201,168,76,.12); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; }
+    .compose-textarea { width: 100%; background: transparent; border: none; outline: none; color: var(--cream); font-family: 'Cormorant Garamond', serif; font-size: 16px; line-height: 1.5; resize: none; min-height: 72px; }
+    .compose-textarea::placeholder { color: var(--stone2); font-style: italic; }
+    .compose-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+    .compose-img-btn { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 9px 12px; color: var(--stone); font-size: 11px; cursor: pointer; transition: all .2s; }
+    .compose-img-btn:active { background: rgba(255,255,255,.08); }
+    .gg-post-btn { display: none; background: rgba(201,168,76,.08); border: 1px solid rgba(201,168,76,.25); border-radius: 10px; padding: 9px 12px; color: var(--gold); font-size: 10px; letter-spacing: .1em; cursor: pointer; transition: all .2s; }
+    .gg-post-btn:active { background: rgba(201,168,76,.15); }
+    .img-preview-wrap { display: none; position: relative; margin-top: 10px; }
+    .img-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; }
+    .img-remove-btn { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.7); border: none; border-radius: 50%; width: 24px; height: 24px; color: white; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .scoop-feed { display: flex; flex-direction: column; gap: 10px; margin-bottom: 80px; }
+    .scoop-item { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); border-radius: 14px; padding: 13px 15px; animation: scoopIn .4s ease; }
+    @keyframes scoopIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+    .scoop-item.official { background: rgba(201,168,76,.05); border-color: rgba(201,168,76,.2); }
+    .scoop-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+    .scoop-author { font-size: 8px; letter-spacing: .2em; text-transform: uppercase; color: var(--stone); }
+    .scoop-author.gg { color: var(--gold); }
+    .scoop-time { font-size: 9px; color: var(--stone2); }
+    .scoop-content { font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--cream); line-height: 1.6; }
+    .scoop-img { width: 100%; max-height: 240px; object-fit: cover; border-radius: 10px; margin-top: 10px; }
+
+    /* ════ SCORES ════ */
+    #screen-scores .scroll-area { padding: 16px 20px; }
+    .scores-header { text-align: center; padding: 20px 0 24px; }
+    .my-score-card { background: linear-gradient(135deg, rgba(201,168,76,.15) 0%, rgba(6,6,6,.4) 100%); border: 1px solid rgba(201,168,76,.3); border-radius: 20px; padding: 24px; text-align: center; margin-bottom: 16px; }
+    .my-score-val { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 700; color: var(--gold-light); line-height: 1; }
+    .my-score-label { font-size: 8.5px; letter-spacing: .35em; text-transform: uppercase; color: var(--stone); margin-top: 6px; }
+    .my-rank { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-style: italic; color: var(--stone); margin-top: 8px; }
+    .lb-full-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; margin-bottom: 6px; background: rgba(255,255,255,.02); border: 1px solid transparent; }
+    .lb-full-row.rank-1 { background: rgba(201,168,76,.07); border-color: rgba(201,168,76,.15); }
+    .lb-full-rank { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--stone); width: 26px; text-align: center; flex-shrink: 0; }
+    .lb-full-rank.gold { color: var(--gold); }
+    .lb-full-info { flex: 1; min-width: 0; }
+    .lb-full-name { font-size: 13px; font-weight: 500; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-full-char { font-size: 10px; color: var(--gold); opacity: .82; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-full-pts { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold); font-weight: 700; }
+    .lb-me { border-color: rgba(201,168,76,.2) !important; }
+    .lb-mini-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
+    .lb-mini-rank { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--stone); width: 24px; text-align: center; flex-shrink: 0; }
+    .lb-mini-rank.gold { color: var(--gold); font-size: 16px; }
+    .lb-mini-info { flex: 1; min-width: 0; }
+    .lb-mini-name { font-size: 12px; font-weight: 500; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-mini-char { font-size: 9px; color: var(--gold); opacity: .82; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-mini-pts { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--gold); font-weight: 700; flex-shrink: 0; }
+    .lb-gg { font-size: 8px; color: var(--gold); background: var(--gold-dim); padding: 1px 5px; border-radius: 10px; vertical-align: middle; }
+
+    /* ════ TOAST ════ */
+    #toast { position: fixed; bottom: calc(80px + var(--safe)); left: 50%; transform: translateX(-50%); background: rgba(14,14,14,.95); border: 1px solid rgba(201,168,76,.25); border-radius: 20px; padding: 10px 20px; font-size: 12px; color: var(--cream); z-index: 9999; white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; transform: translateX(-50%) translateY(8px); }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ════ RECONNECT OVERLAY ════ */
+    #reconnect-overlay { display: none; position: fixed; inset: 0; background: rgba(6,6,6,.97); z-index: 500; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; backdrop-filter: blur(12px); }
+    #reconnect-overlay.show { display: flex; }
+    .reconnect-icon { font-size: 44px; margin-bottom: 16px; animation: spin 2s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .reconnect-title { font-family: 'Playfair Display', serif; font-size: 22px; color: white; margin-bottom: 8px; }
+    .reconnect-sub { font-size: 12px; color: var(--stone); }
+
+    #file-input { display: none; }
+
+    /* ════ VIP OVERLAY ════ */
+    #vip-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: var(--black);
+      display: flex; flex-direction: column;
+      transform: translateY(100%);
+      transition: transform .35s cubic-bezier(.4,0,.2,1);
+      will-change: transform;
+    }
+    #vip-overlay.open { transform: translateY(0); }
+
+    .vip-header {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid rgba(201,168,76,.12);
+      background: rgba(10,10,10,.98);
+      backdrop-filter: blur(16px);
+    }
+    .vip-header-left { display: flex; flex-direction: column; }
+    .vip-header-eyebrow { font-size: 8px; letter-spacing: .45em; text-transform: uppercase; color: var(--gold); margin-bottom: 3px; }
+    .vip-header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, #C9A84C 0%, #E2C97E 50%, #C9A84C 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .vip-close-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+      color: var(--stone); font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, color .2s;
+    }
+    .vip-close-btn:active { background: rgba(201,168,76,.15); color: var(--gold); }
+
+    .vip-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 24px 20px 40px; }
+    .vip-scroll::-webkit-scrollbar { display: none; }
+
+    .vip-tile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .vip-tile {
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(201,168,76,.12);
+      border-radius: 20px;
+      padding: 22px 16px 20px;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 10px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .15s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 140px; justify-content: center;
+    }
+    .vip-tile:active { transform: scale(.97); background: rgba(201,168,76,.08); border-color: rgba(201,168,76,.35); }
+    .vip-tile-icon { font-size: 34px; line-height: 1; }
+    .vip-tile-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 14px; font-weight: 700; color: white; line-height: 1.2;
+    }
+    .vip-tile-desc { font-size: 9.5px; color: var(--stone); line-height: 1.4; letter-spacing: .02em; }
+
+    /* VIP nav item special glow */
+    .nav-item.vip-tab .nav-icon { filter: drop-shadow(0 0 6px rgba(201,168,76,.5)); }
+    .nav-item.vip-tab.active .nav-label { color: var(--gold-light); }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="screen-bg"></div>
+
+  <!-- ══════════════ LOGIN ══════════════ -->
+  <div id="screen-login" class="screen active">
+    <div class="scroll-area">
+      <div class="login-inner">
+        <div class="login-eyebrow">Manhattan Elite Network</div>
+        <div class="login-logo">GOSSIP<br><span>GIRL</span></div>
+        <div class="login-tagline">The one and only source into the<br>scandalous lives of Manhattan's elite.</div>
+        <div class="login-divider"><div class="login-divider-line"></div><div class="login-divider-dot"></div><div class="login-divider-line"></div></div>
+        <div class="field-label">Ton prénom</div>
+        <input id="input-prenom" class="login-input" type="text" placeholder="Comment t'appelle-t-on ce soir ?" maxlength="32" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="next"/>
+        <div class="field-label">Ton personnage <span style="color:var(--stone2);font-size:8px;letter-spacing:.1em;">— fais défiler pour voir tous les persos</span></div>
+        <div class="perso-grid" id="perso-grid"></div>
+        <div id="blair-code-wrap">
+          <div class="blair-code-label">🐱 Code secret Blair — Chuchote-le…</div>
+          <input id="input-blair-code" class="login-input" type="password" placeholder="••••••" style="margin-bottom:0;"/>
+        </div>
+        <button class="btn-login" onclick="doLogin()">Entrer dans l'Upper East Side ✦</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ HOME ══════════════ -->
+  <div id="screen-home" class="screen">
+    <div class="scroll-area">
+      <div class="home-header">
+        <div class="home-eyebrow">Bienvenue ce soir</div>
+        <div class="home-perso" id="home-perso">—</div>
+        <div class="home-prenom" id="home-prenom">—</div>
+      </div>
+      <div style="padding:0 20px 20px;">
+        <div class="gg-banner" id="gg-banner">
+          <div class="gg-banner-title">👑 Tu es Gossip Girl !</div>
+          <div class="gg-banner-sub" id="gg-banner-sub">Lance le quiz quand tu es prête.</div>
+        </div>
+        <div class="phase-card waiting" id="phase-card">
+          <div class="phase-icon">⏳</div>
+          <div>
+            <div class="phase-title">En attente…</div>
+            <div class="phase-sub">Gossip Girl va bientôt lancer la soirée. XOXO.</div>
+          </div>
+        </div>
+        <div class="free-timer-display" id="free-timer-display" style="display:none;text-align:center;margin-bottom:14px;"></div>
+        <div class="gg-start-wrap" id="gg-start-wrap">
+          <div class="gg-start-title">C'est ton moment, Gossip Girl.</div>
+          <div class="gg-start-sub" style="margin-bottom:14px;">Tous les invités attendent.</div>
+          <button class="btn-gold" onclick="startQuiz()">⚡ Lancer le Flash Quiz</button>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+            <div>
+              <div class="eyebrow">Social Ranking</div>
+              <div style="font-family:'Playfair Display',serif;font-size:20px;color:white;">Elite Circle</div>
+            </div>
+            <span style="font-size:20px;">👑</span>
+          </div>
+          <div id="home-leaderboard">
+            <div style="text-align:center;padding:16px;color:var(--stone);font-size:12px;">Aucun score pour l'instant.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ QUIZ ══════════════ -->
+  <div id="screen-quiz" class="screen">
+    <div class="scroll-area">
+
+      <!-- Waiting (invités normaux) -->
+      <div id="quiz-waiting" class="quiz-waiting">
+        <div class="quiz-waiting-icon">⚡</div>
+        <div class="quiz-waiting-title">Flash Quiz</div>
+        <div class="quiz-waiting-sub">La question arrive…<br>Tiens-toi prêt·e, darling.</div>
+      </div>
+
+      <!-- GG Pick Panel (NOUVEAU — visible uniquement pour le GG) -->
+      <div id="gg-pick-panel" class="gg-pick-panel">
+        <div class="gg-pick-header">
+          <div class="gg-crown">👑</div>
+          <div class="gg-pick-title">Tu es le Gossip Girl</div>
+          <div class="gg-pick-subtitle">Choisis la prochaine question !</div>
+          <div class="gg-pick-timer">⏱ <span id="gg-pick-countdown">15</span>s</div>
+        </div>
+        <div id="gg-pick-candidates" class="gg-pick-candidates"></div>
+      </div>
+
+      <!-- Active -->
+      <div id="quiz-active" class="quiz-active-wrap">
+        <div class="quiz-top">
+          <div class="quiz-badge">
+            <div class="quiz-badge-dot"></div>
+            <span id="quiz-badge-label">⚡ Quiz</span>
+          </div>
+          <div class="quiz-gg-line" id="quiz-gg-name"></div>
+        </div>
+        <div class="quiz-progress-wrap">
+          <div class="quiz-progress-labels">
+            <span id="q-num-label">Question 1</span>
+            <span id="q-total-label">sur 10</span>
+          </div>
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="progress-fill" style="width:10%"></div>
+          </div>
+        </div>
+        <div class="timer-wrap">
+          <div class="timer-ring">
+            <svg class="timer-svg" viewBox="0 0 72 72">
+              <circle class="timer-bg" cx="36" cy="36" r="30"/>
+              <circle class="timer-arc" id="timer-arc" cx="36" cy="36" r="30"/>
+            </svg>
+            <div class="timer-num" id="timer-num">10</div>
+          </div>
+        </div>
+        <div class="question-card">
+          <div class="question-text" id="q-text">Chargement…</div>
+        </div>
+        <div class="answers-grid" id="answers-grid"></div>
+        <div class="answer-result" id="answer-result">
+          <div class="result-icon" id="result-icon">✓</div>
+          <div class="result-title" id="result-title">Bonne réponse !</div>
+          <div class="result-pts" id="result-pts">+3 points</div>
+          <div class="result-expl" id="result-expl"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SCOOPS ══════════════ -->
+  <div id="screen-scoops" class="screen">
+    <div class="scroll-area">
+      <div style="padding:16px 20px 80px;">
+        <div class="scoops-header">
+          <div class="scoops-title">Scoops 🖤</div>
+          <div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);" id="scoops-phase-label">—</div>
+        </div>
+        <div class="scoops-locked" id="scoops-locked">
+          <div class="scoops-locked-icon">🔒</div>
+          <div class="scoops-locked-title">Pas encore, darling.</div>
+          <div class="scoops-locked-sub">Les scoops sont réservés au Mode Libre.<br>Attends la fin du quiz. XOXO.</div>
+        </div>
+        <div class="scoops-active" id="scoops-active">
+          <div class="compose-box">
+            <textarea id="compose-text" class="compose-textarea" placeholder="Spotted someone interesting ? Spill it…" rows="3"></textarea>
+            <div class="img-preview-wrap" id="img-preview-wrap">
+              <img id="img-preview" class="img-preview" src="" alt=""/>
+              <button class="img-remove-btn" onclick="removeImage()">✕</button>
+            </div>
+            <div class="compose-actions">
+              <button class="compose-img-btn" onclick="document.getElementById('file-input').click()">📸 Photo</button>
+              <button class="gg-post-btn" id="gg-post-btn" onclick="state.asGG = !state.asGG; this.textContent = state.asGG ? '✦ En tant que GG ✓' : '✦ Poster en GG';">✦ Poster en GG</button>
+              <button class="btn-gold" style="flex:1;" onclick="submitScoop()">Envoyer XOXO</button>
+            </div>
+          </div>
+          <div class="scoop-feed" id="scoop-feed"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SCORES ══════════════ -->
+  <div id="screen-scores" class="screen">
+    <div class="scroll-area">
+      <div style="padding:16px 20px 20px;">
+        <div class="scores-header">
+          <div class="eyebrow" style="margin-bottom:6px;">Classement</div>
+          <div style="font-family:'Playfair Display',serif;font-size:28px;color:white;">Elite Circle</div>
+        </div>
+        <div class="my-score-card">
+          <div class="my-score-val" id="my-score-val">0</div>
+          <div class="my-score-label">Mes points</div>
+          <div class="my-rank" id="my-rank">— pas encore classé·e —</div>
+        </div>
+        <div class="card">
+          <div id="full-leaderboard">
+            <div style="text-align:center;padding:16px;color:var(--stone);font-size:12px;">Aucun score pour l'instant.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ BOTTOM NAV ══════════════ -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-item active" onclick="goScreen('home',this)">
+      <span class="nav-icon">🏠</span><span class="nav-label">Accueil</span>
+    </button>
+    <button class="nav-item" onclick="goScreen('quiz',this)">
+      <div class="nav-badge" id="nav-badge-quiz"></div>
+      <span class="nav-icon">⚡</span><span class="nav-label">Quiz</span>
+    </button>
+    <button class="nav-item" onclick="goScreen('scoops',this)">
+      <div class="nav-badge" id="nav-badge-scoops"></div>
+      <span class="nav-icon">📸</span><span class="nav-label">Scoops</span>
+    </button>
+    <button class="nav-item" onclick="goScreen('scores',this)">
+      <span class="nav-icon">🏆</span><span class="nav-label">Scores</span>
+    </button>
+    <button class="nav-item vip-tab" id="vip-nav-btn" onclick="openVip(this)">
+      <span class="nav-icon">💎</span><span class="nav-label">VIP</span>
+    </button>
+  </nav>
+
+  <!-- ══════════════ VIP OVERLAY ══════════════ -->
+  <div id="vip-overlay">
+    <div class="vip-header">
+      <div class="vip-header-left">
+        <div class="vip-header-eyebrow">Blair Waldorf · Accès Exclusif</div>
+        <div class="vip-header-title">VIP 💎</div>
+      </div>
+      <button class="vip-close-btn" onclick="closeVip()">✕</button>
+    </div>
+    <div class="vip-scroll">
+      <div class="vip-tile-grid">
+
+        <div class="vip-tile" onclick="vipTileClick('gallery')">
+          <div class="vip-tile-icon">🐱</div>
+          <div class="vip-tile-name">Dino Gallery</div>
+          <div class="vip-tile-desc">Galerie photos exclusive</div>
+        </div>
+
+        <div class="vip-tile" onclick="vipTileClick('soundboard')">
+          <div class="vip-tile-icon">🔊</div>
+          <div class="vip-tile-name">Soundboard VIP</div>
+          <div class="vip-tile-desc">Sons exclusifs</div>
+        </div>
+
+        <div class="vip-tile" onclick="vipTileClick('scoops-manager')">
+          <div class="vip-tile-icon">📰</div>
+          <div class="vip-tile-name">Scoops Manager</div>
+          <div class="vip-tile-desc">Pin, delete & QR code</div>
+        </div>
+
+        <div class="vip-tile" onclick="vipTileClick('blast')">
+          <div class="vip-tile-icon">✨</div>
+          <div class="vip-tile-name">Custom Blast</div>
+          <div class="vip-tile-desc">Broadcast exclusif</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ OVERLAYS ══════════════ -->
+  <div id="reconnect-overlay">
+    <div class="reconnect-icon">🔄</div>
+    <div class="reconnect-title">Reconnexion…</div>
+    <div class="reconnect-sub">On te ramène à Manhattan. XOXO.</div>
+  </div>
+
+  <div id="toast"></div>
+  <input type="file" id="file-input" accept="image/*" onchange="handleImageSelect(event)"/>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+/* ═══════════════════════════════════════
+   PERSONNAGES
+═══════════════════════════════════════ */
+const PERSONNAGES = [
+  {name:"Dan",       family:"Humphrey",         locked:false, desc:"Le premier Gossip Girl", badge:"✦ GG Original"},
+  {name:"Serena",    family:"van der Woodsen",   locked:false, desc:"L'it-girl de l'UES"},
+  {name:"Nate",      family:"Archibald",         locked:false, desc:"Le beau gosse"},
+  {name:"Jenny",     family:"Humphrey",          locked:false, desc:"La petite sœur rebelle"},
+  {name:"Eric",      family:"van der Woodsen",   locked:false, desc:"Frère de Serena"},
+  {name:"Rufus",     family:"Humphrey",          locked:false, desc:"Le père cool"},
+  {name:"Lily",      family:"van der Woodsen",   locked:false, desc:"La mère glamour"},
+  {name:"Georgina",  family:"Sparks",            locked:false, desc:"La manipulatrice"},
+  {name:"Vanessa",   family:"Abrams",            locked:false, desc:"L'amie alternative"},
+  {name:"Chuck",     family:"Bass",              locked:true,  desc:"God Mode uniquement", badge:"🔒 Admin"},
+  {name:"Blair",     family:"Waldorf",           locked:true,  blair:true, desc:"La reine de l'UES", badge:"🌹 VIP"},
+  {name:"Aaron",     family:"Rose",              locked:false, desc:"L'artiste"},
+  {name:"Carter",    family:"Baizen",            locked:false, desc:"Le séducteur"},
+  {name:"Juliet",    family:"Sharp",             locked:false, desc:"Antagoniste saison 4"},
+  {name:"Ben",       family:"Donovan",           locked:false, desc:"Frère de Juliet"},
+  {name:"Bree",      family:"Buckley",           locked:false, desc:"Relation secrète de Nate"},
+  {name:"Sage",      family:"Spence",            locked:false, desc:"Influenceuse rebelle"},
+  {name:"Steven",    family:"Spence",            locked:false, desc:"Petit ami de Serena"},
+  {name:"Louis",     family:"Grimaldi",          locked:false, desc:"Prince, fiancé de Blair"},
+  {name:"Beatrice",  family:"Grimaldi",          locked:false, desc:"Sœur de Louis"},
+  {name:"Penelope",  family:"Shafai",            locked:false, desc:"Reine B du lycée"},
+  {name:"Hazel",     family:"Williams",          locked:false, desc:"Clan de Blair"},
+  {name:"Isabel",    family:"Coates",            locked:false, desc:"Clan de Blair"},
+  {name:"Jonathan",  family:"Whitney",           locked:false, desc:"Petit ami d'Eric"},
+  {name:"Damien",    family:"Dalgaard",          locked:false, desc:"Dealer & manipulateur"},
+  {name:"Agnes",     family:"Andrews",           locked:false, desc:"Styliste instable"},
+  {name:"Scott",     family:"Rosson",            locked:false, desc:"Fils caché de Rufus"},
+  {name:"Poppy",     family:"Lifton",            locked:false, desc:"Escroc mondaine"},
+];
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+const state = {
+  player:            null,
+  currentPhase:      'waiting',
+  isGG:              false,
+  selectedPerso:     null,
+  currentQuestion:   null,
+  hasAnswered:       false,
+  myAnswer:          null,
+  uploadedImagePath: null,
+  _uploadAbort:      null,
+  asGG:              false,
+  timerInterval:     null,
+  questionDuration:  10,
+  // ✅ FIX: token persistant (localStorage) — plus de oldSid
+  playerToken:       localStorage.getItem('gg_player_token') || null,
+};
+
+/* ═══════════════════════════════════════
+   SOCKET
+═══════════════════════════════════════ */
+const socket = io({
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  reconnectionAttempts: Infinity,
+});
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+let _toastT = null;
+function showToast(msg, duration = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+function goScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (name === 'quiz')   document.getElementById('nav-badge-quiz').classList.remove('show');
+  if (name === 'scoops') document.getElementById('nav-badge-scoops').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════
+   PERSO GRID
+═══════════════════════════════════════ */
+function buildPersoGrid() {
+  const grid    = document.getElementById('perso-grid');
+  grid.innerHTML = '';
+  const blairVIP = sessionStorage.getItem('blair_vip') === '1';
+
+  PERSONNAGES.forEach(p => {
+    const chip         = document.createElement('div');
+    const isBlairUnlock = p.blair && blairVIP;
+    const isLocked      = p.locked && !isBlairUnlock;
+
+    chip.className = 'perso-chip' + (isLocked ? ' locked' : '') + (isBlairUnlock ? ' blair-unlock' : '');
+    chip.innerHTML = `
+      <div class="chip-name">${p.name}</div>
+      <div class="chip-family">${p.family}${isLocked ? ' 🔒' : ''}</div>
+      ${p.desc  ? `<div class="chip-desc">${p.desc}</div>` : ''}
+      ${p.badge ? `<div class="chip-badge">${p.badge}</div>` : ''}
+    `;
+    if (!isLocked) {
+      chip.onclick = () => selectPerso(chip, p.name, p.family, p.blair || false);
+    }
+    grid.appendChild(chip);
+  });
+}
+
+function selectPerso(chip, name, family, isBlair) {
+  document.querySelectorAll('.perso-chip').forEach(c => c.classList.remove('selected'));
+  chip.classList.add('selected');
+  state.selectedPerso = name + ' ' + family;
+  // Le champ code s'affiche toujours quand Blair est sélectionnée (VIP ou non)
+  document.getElementById('blair-code-wrap').style.display = isBlair ? 'block' : 'none';
+}
+
+/* ═══════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════ */
+function doLogin() {
+  const prenom = document.getElementById('input-prenom').value.trim();
+  if (!prenom)              { showToast('Entre ton prénom, darling. 👀'); return; }
+  if (!state.selectedPerso) { showToast('Choisis ton personnage.');       return; }
+
+  const blairVIP  = sessionStorage.getItem('blair_vip') === '1';
+  const blairCode = document.getElementById('input-blair-code').value;
+
+  // 🔒 Lien VIP réservé exclusivement à Blair Waldorf
+  if (blairVIP && !state.selectedPerso.includes('Blair')) {
+    showToast('Ce lien est réservé à Blair Waldorf. XOXO. 🌹');
+    return;
+  }
+
+  // ✅ FIX: émission sur 'join_player' (conforme events.py)
+  socket.emit('join_player', {
+    prenom,
+    personnage: state.selectedPerso,
+    blair_vip:  blairVIP,
+    blair_code: blairCode,
+  });
+}
+
+/* ═══════════════════════════════════════
+   NORMALISATION DE PHASE
+   Accepte LOBBY/QUIZ/LIBRE (V3) ou waiting/quiz/free (legacy)
+═══════════════════════════════════════ */
+function normalizePhase(phase) {
+  if (!phase) return 'waiting';
+  const map = { LOBBY: 'waiting', QUIZ: 'quiz', QUIZ_PAUSED: 'quiz_paused', LIBRE: 'free' };
+  return map[phase] || phase;
+}
+
+/* ═══════════════════════════════════════
+   PHASE CARD
+═══════════════════════════════════════ */
+function updatePhaseCard(rawPhase, endsAt) {
+  const phase   = normalizePhase(rawPhase);
+  const card    = document.getElementById('phase-card');
+  const icon    = card.querySelector('.phase-icon');
+  const title   = card.querySelector('.phase-title');
+  const sub     = card.querySelector('.phase-sub');
+  const timerEl = document.getElementById('free-timer-display');
+
+  card.className    = 'phase-card ' + (phase || 'waiting');
+  timerEl.style.display = 'none';
+
+  if (phase === 'quiz') {
+    icon.textContent  = '⚡';
+    title.textContent = 'Flash Quiz en cours !';
+    sub.textContent   = state.isGG ? 'Tu choisis les questions. 👑' : "Va sur l'onglet Quiz pour répondre.";
+    document.getElementById('nav-badge-quiz').classList.add('show');
+  } else if (phase === 'free') {
+    icon.textContent  = '🖤';
+    title.textContent = 'Mode Libre';
+    sub.textContent   = 'Poste tes scoops et profite de la soirée.';
+    document.getElementById('scoops-locked').style.display = 'none';
+    document.getElementById('scoops-active').style.display = 'block';
+    document.getElementById('scoops-phase-label').textContent = 'Mode Libre';
+    document.getElementById('nav-badge-scoops').classList.add('show');
+    if (endsAt) { timerEl.style.display = 'block'; startFreeTimer(endsAt); }
+  } else {
+    icon.textContent  = '⏳';
+    title.textContent = 'En attente…';
+    sub.textContent   = 'Gossip Girl va bientôt lancer la soirée. XOXO.';
+  }
+}
+
+/* ═══════════════════════════════════════
+   FREE TIMER
+═══════════════════════════════════════ */
+function startFreeTimer(endsAt) {
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  const end = new Date(endsAt).getTime();
+  function tick() {
+    const r = Math.max(0, Math.floor((end - Date.now()) / 1000));
+    const m = String(Math.floor(r / 60)).padStart(2,'0');
+    const s = String(r % 60).padStart(2,'0');
+    const el = document.getElementById('free-timer-display');
+    if (el) { el.textContent = `⏱ ${m}:${s} restantes`; el.className = 'free-timer-display' + (r <= 120 ? ' urgent' : ''); }
+    if (r <= 0) clearInterval(state.timerInterval);
+  }
+  tick();
+  state.timerInterval = setInterval(tick, 1000);
+}
+
+/* ═══════════════════════════════════════
+   QUIZ — Lancer
+═══════════════════════════════════════ */
+function startQuiz() {
+  socket.emit('gg_start_quiz', {});
+}
+
+/* ═══════════════════════════════════════
+   QUIZ — GG confirme qu'il est prêt
+   (après le son d'intro / bouton "Je suis prêt")
+═══════════════════════════════════════ */
+function ggReadyToPick() {
+  socket.emit('gg_ready_to_pick', {});
+  // Retire le panneau d'attente intro pour afficher le pick GG
+  const waitPanel = document.getElementById('gg-quiz-intro-panel');
+  if (waitPanel) waitPanel.style.display = 'none';
+}
+
+/* ── Handler : serveur notifie le GG qu'il peut choisir ── */
+socket.on('gg_quiz_ready', data => {
+  if (!state.isGG) return;
+  // Affiche un panneau d'intro avec bouton "Je suis prêt"
+  document.getElementById('quiz-waiting').style.display  = 'none';
+  document.getElementById('quiz-active').style.display   = 'none';
+  document.getElementById('gg-pick-panel').style.display = 'none';
+
+  // Crée ou réutilise le panneau intro GG
+  let panel = document.getElementById('gg-quiz-intro-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'gg-quiz-intro-panel';
+    panel.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px 28px;gap:16px;';
+    document.getElementById('screen-quiz').appendChild(panel);
+  }
+  panel.style.display = 'flex';
+  panel.innerHTML = `
+    <div style="font-size:3rem;animation:waitPulse 2s ease-in-out infinite;">👑</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--gold);margin-bottom:4px;">Flash Quiz #${data.quiz_number}</div>
+    <div style="color:var(--stone);font-size:0.9rem;line-height:1.6;max-width:280px;">
+      Attends que les invités se préparent,<br>puis choisis la première question.
+    </div>
+    <div style="font-size:0.75rem;color:var(--stone2);letter-spacing:.15em;text-transform:uppercase;">${typeof data.total === 'number' ? data.total + ' questions au total' : 'Quiz en cours…'}</div>
+    <button
+      onclick="ggReadyToPick()"
+      style="
+        margin-top:12px;
+        background:var(--gold);color:var(--black);
+        border:none;border-radius:14px;
+        padding:16px 32px;
+        font-family:'Montserrat',sans-serif;
+        font-size:10px;font-weight:600;
+        letter-spacing:.25em;text-transform:uppercase;
+        cursor:pointer;box-shadow:0 6px 20px rgba(201,168,76,.25);
+      "
+    >Je suis prêt — Choisir la question</button>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-style:italic;color:var(--stone2);">
+      La sélection démarre automatiquement si tu ne réponds pas.
+    </div>
+  `;
+  document.getElementById('nav-badge-quiz').classList.add('show');
+  showToast('👑 Le quiz commence ! Prépare-toi.', 3500);
+});
+
+/* ═══════════════════════════════════════
+   QUIZ — Render question (joueurs normaux)
+═══════════════════════════════════════ */
+function renderQuestion(data) {
+  state.currentQuestion  = data;
+  state.hasAnswered       = false;
+  state.myAnswer          = null;
+  state.questionDuration  = data.duration || 30;
+
+  document.getElementById('quiz-waiting').style.display   = 'none';
+  document.getElementById('gg-pick-panel').style.display  = 'none';
+  document.getElementById('quiz-active').style.display    = 'flex';
+  document.getElementById('nav-badge-quiz').classList.add('show');
+
+  document.getElementById('q-num-label').textContent  = `Question ${data.question_number}`;
+  document.getElementById('q-total-label').textContent = (typeof data.total === 'number') ? `sur ${data.total}` : '';
+  document.getElementById('q-text').textContent        = data.question;
+  document.getElementById('quiz-gg-name').textContent  = `GG : ${data.gg_prenom || '—'}`;
+  const _pct = (typeof data.total === 'number' && data.total > 0)
+    ? Math.round((data.question_number / data.total) * 100) : 0;
+  document.getElementById('progress-fill').style.width = `${_pct}%`;
+
+  // Le timer est piloté exclusivement par socket.on('question_tick') — pas de setInterval local
+  updateTimerDisplay(state.questionDuration, state.questionDuration);
+  document.getElementById('answer-result').className = 'answer-result';
+
+  // ✅ FIX: boutons gelés après premier clic (anti-double-click, anti-fausse-manip)
+  const grid = document.getElementById('answers-grid');
+
+  // ✅ FIX : normalise choices côté client (défense si cache serveur non rechargé)
+  let choices = data.choices;
+  if (Array.isArray(choices)) {
+    const letters = ['A','B','C','D'];
+    const obj = {};
+    choices.forEach((v, i) => { if (i < 4) obj[letters[i]] = v; });
+    choices = obj;
+  }
+
+  if (choices && typeof choices === 'object') {
+    grid.innerHTML = Object.entries(choices).map(([k, v]) => `
+      <button class="answer-btn" id="ans-${k}" data-key="${k}">
+        <span class="answer-key">${k}</span>
+        <span class="answer-text">${esc(v)}</span>
+      </button>
+    `).join('');
+
+    grid.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        if (state.hasAnswered) return;
+        submitAnswer(this.dataset.key);
+      });
+    });
+  }
+}
+
+/* ═══════════════════════════════════════
+   TIMER SVG
+   Source de vérité : question_tick serveur uniquement.
+   Pas de setInterval local — évite la désync sur 4G instable.
+═══════════════════════════════════════ */
+const CIRCUM = 188.5;
+
+function updateTimerDisplay(remaining, total) {
+  const arc   = document.getElementById('timer-arc');
+  const num   = document.getElementById('timer-num');
+  const ratio = remaining / total;
+  arc.style.strokeDashoffset = CIRCUM * (1 - ratio);
+  num.textContent = remaining;
+  arc.classList.toggle('urgent', remaining <= 5);
+  num.classList.toggle('urgent', remaining <= 5);
+}
+
+/* ═══════════════════════════════════════
+   SUBMIT ANSWER
+═══════════════════════════════════════ */
+function submitAnswer(key) {
+  if (state.hasAnswered || !state.currentQuestion) return;
+  state.hasAnswered = true;
+  state.myAnswer    = key;
+
+  // Gèle tous les boutons immédiatement
+  document.querySelectorAll('.answer-btn').forEach(b => {
+    b.disabled = true;
+    b.style.opacity = '0.5';
+    b.style.cursor  = 'default';
+  });
+  const btn = document.getElementById('ans-' + key);
+  if (btn) { btn.classList.add('selected'); btn.style.opacity = '1'; btn.style.borderColor = 'var(--gold)'; }
+
+  // Pas de feedback intermédiaire : answer_confirmed arrive dans les ~100ms
+  // et affiche directement ✓ ou ✕ (suppression de l'ancien "⏳ Réponse envoyée…")
+
+  socket.emit('submit_answer', { question_id: state.currentQuestion.question_id, answer: key });
+}
+
+/* ═══════════════════════════════════════
+   REVEAL ANSWER
+═══════════════════════════════════════ */
+function revealAnswer(data) {
+  document.querySelectorAll('.answer-btn').forEach(btn => {
+    const key = btn.dataset.key;
+    btn.disabled = true;
+    if (key === data.answer)                          btn.classList.add('correct');
+    else if (btn.classList.contains('selected'))       btn.classList.add('wrong');
+    else                                              btn.classList.add('revealed');
+  });
+}
+
+/* ═══════════════════════════════════════
+   LEADERBOARD
+═══════════════════════════════════════ */
+function renderLeaderboard(data, targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  if (!data || !data.length) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--stone);font-size:12px;">Aucun score pour l\'instant.</div>';
+    return;
+  }
+  if (targetId === 'home-leaderboard') {
+    el.innerHTML = data.slice(0, 5).map((p, i) => `
+      <div class="lb-mini-row">
+        <div class="lb-mini-rank ${i===0?'gold':''}">${i===0?'👑':i+1}</div>
+        <div class="lb-mini-info">
+          <div class="lb-mini-name">${esc(p.prenom)}</div>
+          <div class="lb-mini-char">${esc(p.personnage)}${p.is_gg?' <span class="lb-gg">GG</span>':''}</div>
+        </div>
+        <div class="lb-mini-pts">${p.score_total} pts</div>
+      </div>
+    `).join('');
+  } else {
+    el.innerHTML = data.map((p, i) => `
+      <div class="lb-full-row ${i===0?'rank-1':''} ${state.player&&p.id===state.player.id?'lb-me':''}">
+        <div class="lb-full-rank ${i===0?'gold':''}">${i===0?'👑':i+1}</div>
+        <div class="lb-full-info">
+          <div class="lb-full-name">${esc(p.prenom)}</div>
+          <div class="lb-full-char">${esc(p.personnage)}${p.is_gg?' <span class="lb-gg">GG</span>':''}</div>
+        </div>
+        <div class="lb-full-pts">${p.score_total} pts</div>
+      </div>
+    `).join('');
+  }
+}
+
+function updateMyScore(data) {
+  if (!state.player || !data) return;
+  const me = data.find(p => p.id === state.player.id);
+  if (!me) return;
+  document.getElementById('my-score-val').textContent = me.score_total;
+  const rank = data.findIndex(p => p.id === state.player.id) + 1;
+  document.getElementById('my-rank').textContent = rank > 0 ? `#${rank} sur ${data.length}` : '— pas encore classé·e —';
+}
+
+/* ═══════════════════════════════════════
+   SCOOPS
+═══════════════════════════════════════ */
+function submitScoop() {
+  const content = (document.getElementById('compose-text').value || '').trim();
+  const imagePath = state.uploadedImagePath || null;
+  if (!content && !imagePath) { showToast('Ton scoop est vide. Manhattan mérite mieux.'); return; }
+  socket.emit('post_scoop', { content, image_path: imagePath, as_gg: state.asGG });
+  document.getElementById('compose-text').value = '';
+  removeImage();
+  state.asGG = false;
+  const ggBtn = document.getElementById('gg-post-btn');
+  if (ggBtn) ggBtn.textContent = '✦ Poster en GG';
+}
+
+// Compresse une image côté client avant upload (non-bloquant via toBlob)
+function _compressImage(file, maxPx, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxPx || height > maxPx) {
+        const ratio = Math.min(maxPx / width, maxPx / height);
+        width  = Math.round(width  * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      // toBlob est asynchrone → ne bloque pas le thread UI (contrairement à toDataURL)
+      canvas.toBlob(
+        blob => blob ? resolve(blob) : reject(new Error('Compression échouée')),
+        'image/webp', quality
+      );
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function handleImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Annule l'upload précédent en cours (évite la race condition image A/B)
+  if (state._uploadAbort) { state._uploadAbort.abort(); state._uploadAbort = null; }
+  state.uploadedImagePath = null;
+
+  // Affiche la preview via ObjectURL (ne charge pas le fichier en mémoire deux fois)
+  const previewUrl = URL.createObjectURL(file);
+  const previewEl  = document.getElementById('img-preview');
+  previewEl.src    = previewUrl;
+  previewEl.onload = () => URL.revokeObjectURL(previewUrl);
+  document.getElementById('img-preview-wrap').style.display = 'block';
+
+  try {
+    const compressed  = await _compressImage(file, 1024, 0.82);
+    const controller  = new AbortController();
+    state._uploadAbort = controller;
+    const fd = new FormData();
+    fd.append('image', compressed, file.name.replace(/\.[^.]+$/, '.webp'));
+    const r = await fetch('/api/upload-image', { method: 'POST', body: fd, signal: controller.signal });
+    const d = await r.json();
+    if (d.image_path) state.uploadedImagePath = d.image_path;
+  } catch (err) {
+    if (err.name !== 'AbortError') showToast('Erreur upload image.');
+  }
+}
+
+function removeImage() {
+  if (state._uploadAbort) { state._uploadAbort.abort(); state._uploadAbort = null; }
+  state.uploadedImagePath = null;
+  document.getElementById('img-preview-wrap').style.display = 'none';
+  document.getElementById('img-preview').src = '';
+  document.getElementById('file-input').value = '';
+}
+
+function addScoopToFeed(scoop) {
+  const feed = document.getElementById('scoop-feed');
+  if (!feed) return;
+  const time = new Date(scoop.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  const div  = document.createElement('div');
+  div.className = 'scoop-item' + (scoop.is_official ? ' official' : '');
+  div.id = `scoop-${scoop.id}`;
+  div.innerHTML = `
+    <div class="scoop-meta">
+      <div class="scoop-author ${scoop.is_official?'gg':''}">${scoop.is_official?'✦ Gossip Girl':esc(scoop.author_name)}</div>
+      <div class="scoop-time">${time}</div>
+    </div>
+    ${scoop.content  ? `<div class="scoop-content">${esc(scoop.content)}</div>` : ''}
+    ${scoop.image_path ? `<img class="scoop-img" src="${scoop.image_path}" alt=""/>` : ''}
+  `;
+  feed.insertBefore(div, feed.firstChild);
+}
+
+/* ═══════════════════════════════════════
+   UTILS
+═══════════════════════════════════════ */
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function applyLoginState(playerData, isGG, phase, endsAt, leaderboard) {
+  state.player       = playerData;
+  state.isGG         = isGG || playerData.is_gg;
+  state.currentPhase = phase;
+
+  document.getElementById('home-perso').textContent  = playerData.personnage;
+  document.getElementById('home-prenom').textContent = playerData.prenom.toUpperCase();
+
+  if (state.isGG) {
+    document.getElementById('gg-banner').style.display     = 'block';
+    document.getElementById('gg-start-wrap').style.display = 'block';
+    document.getElementById('gg-post-btn').style.display   = 'flex';
+  }
+  document.getElementById('bottom-nav').style.display = 'flex';
+  goScreen('home', document.querySelector('.nav-item'));
+  updatePhaseCard(phase, endsAt);
+
+  if (leaderboard) {
+    renderLeaderboard(leaderboard, 'home-leaderboard');
+    renderLeaderboard(leaderboard, 'full-leaderboard');
+    updateMyScore(leaderboard);
+  }
+}
+
+/* ═══════════════════════════════════════
+   GG PICK — Compteur local
+═══════════════════════════════════════ */
+let _ggPickCountdownInterval = null;
+
+function startGGPickCountdown(seconds) {
+  if (_ggPickCountdownInterval) clearInterval(_ggPickCountdownInterval);
+  let countdown = seconds;
+  document.getElementById('gg-pick-countdown').textContent = countdown;
+  _ggPickCountdownInterval = setInterval(() => {
+    countdown--;
+    const el = document.getElementById('gg-pick-countdown');
+    if (el) el.textContent = countdown;
+    if (countdown <= 0) {
+      clearInterval(_ggPickCountdownInterval);
+      // Le serveur auto-pick de toute façon — on revient en waiting
+      document.getElementById('gg-pick-panel').style.display  = 'none';
+      document.getElementById('quiz-waiting').style.display   = 'flex';
+      document.getElementById('quiz-waiting').innerHTML = `
+        <div class="quiz-waiting-icon">⚡</div>
+        <div class="quiz-waiting-title">Question en cours…</div>
+        <div class="quiz-waiting-sub">Profite du spectacle en tant que GG. 🍸</div>
+      `;
+    }
+  }, 1000);
+}
+
+/* ═══════════════════════════════════════
+   SOCKET EVENTS
+═══════════════════════════════════════ */
+
+// ✅ FIX: reconnexion via token (plus de old_sid)
+socket.on('connect', () => {
+  if (state.playerToken) {
+    socket.emit('reconnect_player', { token: state.playerToken });
+  }
+  socket.emit('get_game_state');
+  document.getElementById('reconnect-overlay').classList.remove('show');
+});
+
+socket.on('disconnect', () => {
+  if (state.player) {
+    document.getElementById('reconnect-overlay').classList.add('show');
+  }
+});
+
+socket.on('game_state', data => {
+  state.currentPhase = normalizePhase(data.phase);
+  if (data.leaderboard) {
+    renderLeaderboard(data.leaderboard, 'home-leaderboard');
+    renderLeaderboard(data.leaderboard, 'full-leaderboard');
+    updateMyScore(data.leaderboard);
+  }
+  if (state.player) updatePhaseCard(data.phase, data.ends_at);
+});
+
+// ✅ Login normal
+socket.on('login_success', data => {
+  // Sauvegarde le token pour reconnexions futures
+  if (data.player.player_token) {
+    state.playerToken = data.player.player_token;
+    localStorage.setItem('gg_player_token', data.player.player_token);
+  }
+  applyLoginState(data.player, data.is_gg, data.phase, data.ends_at, data.leaderboard);
+  showToast(`Bienvenue, ${data.player.prenom}. XOXO. 🖤`);
+});
+
+socket.on('login_error', data => {
+  showToast(data.message, 3500);
+});
+
+// ✅ FIX: reconnexion silencieuse
+socket.on('reconnect_success', data => {
+  if (data.player.player_token) {
+    state.playerToken = data.player.player_token;
+    localStorage.setItem('gg_player_token', data.player.player_token);
+  }
+  applyLoginState(data.player, data.is_gg, data.phase, data.ends_at, data.leaderboard);
+  document.getElementById('reconnect-overlay').classList.remove('show');
+  showToast(`Content de te revoir, ${data.player.prenom}. XOXO. 🖤`, 3000);
+  // Auto-switch vers onglet Quiz si on se reconnecte pendant un quiz actif
+  const rPhase = data.phase ? data.phase.toUpperCase() : '';
+  if (rPhase === 'QUIZ' || rPhase === 'QUIZ_PAUSED') {
+    goScreen('quiz', document.querySelector('.nav-item[onclick*=\"quiz\"]'));
+  }
+});
+
+socket.on('reconnect_failed', () => {
+  localStorage.removeItem('gg_player_token');
+  state.playerToken = null;
+  document.getElementById('reconnect-overlay').classList.remove('show');
+  showToast('Session expirée. Reconnecte-toi.', 3500);
+});
+
+socket.on('phase_changed', data => {
+  const phase = normalizePhase(data.phase);
+  state.currentPhase = phase;
+  if (!state.player) return;
+  updatePhaseCard(data.phase, data.ends_at);
+
+  if (phase === 'quiz') {
+    document.getElementById('quiz-waiting').style.display  = 'flex';
+    document.getElementById('quiz-active').style.display   = 'none';
+    document.getElementById('gg-pick-panel').style.display = 'none';
+    if (!data.resumed) showToast('⚡ Flash Quiz lancé !', 3500);
+    document.getElementById('nav-badge-quiz').classList.add('show');
+    // Auto-switch vers onglet Quiz
+    goScreen('quiz', document.querySelector('.nav-item[onclick*="quiz"]'));
+  }
+
+  if (phase === 'free') {
+    if (data.gg && state.player && state.player.id === data.gg.id) {
+      state.isGG = true;
+      document.getElementById('gg-banner').style.display     = 'block';
+      document.getElementById('gg-post-btn').style.display   = 'flex';
+      document.getElementById('gg-start-wrap').style.display = 'block';
+      document.getElementById('gg-banner-sub').textContent   = 'Tu es le Gossip Girl ! Lance le prochain quiz quand tu veux.';
+    } else if (state.isGG) {
+      document.getElementById('gg-banner').style.display     = 'block';
+      document.getElementById('gg-post-btn').style.display   = 'flex';
+      document.getElementById('gg-start-wrap').style.display = 'block';
+      document.getElementById('gg-banner-sub').textContent   = 'Lance le prochain quiz quand tu veux.';
+    }
+    // Auto-switch vers onglet Scoops
+    goScreen('scoops', document.querySelector('.nav-item[onclick*="scoops"]'));
+  }
+});
+
+socket.on('quiz_paused', data => {
+  if (data.paused) {
+    // Gèle les boutons de réponse sans les cacher
+    document.querySelectorAll('.answer-btn').forEach(b => {
+      b.disabled = true;
+      b.style.opacity = '0.45';
+      b.style.cursor  = 'not-allowed';
+    });
+
+    // Overlay pause sur l'écran quiz
+    let overlay = document.getElementById('quiz-pause-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'quiz-pause-overlay';
+      overlay.style.cssText = 'position:absolute;inset:0;background:rgba(6,6,6,.82);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border-radius:16px;';
+      overlay.innerHTML = '<div style="font-size:2.2rem;">⏸</div><div style="font-family:\'Playfair Display\',serif;color:var(--gold);font-size:1.1rem;letter-spacing:.05em;">Quiz en pause</div><div style="font-size:.75rem;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;">L\'admin reprend bientôt · XOXO</div>';
+      const quizActive = document.getElementById('quiz-active');
+      if (quizActive) { quizActive.style.position = 'relative'; quizActive.appendChild(overlay); }
+    }
+    overlay.style.display = 'flex';
+    // Cas 1 — GG en train de choisir une question : bloque le pick panel
+    if (state.isGG) {
+      const pickPanel = document.getElementById('gg-pick-panel');
+      if (pickPanel && pickPanel.style.display !== 'none') {
+        if (_ggPickCountdownInterval) clearInterval(_ggPickCountdownInterval);
+        pickPanel.style.display = 'none';
+        const w = document.getElementById('quiz-waiting');
+        w.style.display = 'flex';
+        w.innerHTML = `
+          <div style="text-align:center;padding:20px 28px;">
+            <div style="font-size:2rem;margin-bottom:12px;">⏸</div>
+            <div style="font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem;margin-bottom:8px;">Quiz en pause</div>
+            <div style="color:var(--stone);font-size:0.85rem;font-style:italic;">L'admin reprend bientôt · XOXO</div>
+          </div>
+        `;
+      }
+    } else {
+      // B4 — Cas 1 (joueur normal) : si quiz-waiting est visible (pick en cours), affiche pause
+      const w = document.getElementById('quiz-waiting');
+      const quizActive = document.getElementById('quiz-active');
+      if (w && w.style.display !== 'none' && quizActive && quizActive.style.display === 'none') {
+        w.innerHTML = `
+          <div style="text-align:center;padding:20px 28px;">
+            <div style="font-size:2rem;margin-bottom:12px;">⏸</div>
+            <div style="font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem;margin-bottom:8px;">Quiz en pause</div>
+            <div style="color:var(--stone);font-size:0.85rem;font-style:italic;">L'admin reprend bientôt · XOXO</div>
+          </div>
+        `;
+      }
+    }
+    showToast('⏸ Quiz en pause.', 4000);
+  } else {
+    // Retire l'overlay pause
+    const overlay = document.getElementById('quiz-pause-overlay');
+    if (overlay) overlay.style.display = 'none';
+
+    // Réactive les boutons (ils seront reconstruits par new_question de toute façon)
+    document.querySelectorAll('.answer-btn').forEach(b => {
+      b.disabled = false;
+      b.style.opacity = '';
+      b.style.cursor  = '';
+    });
+    showToast('▶ Quiz relancé ! XOXO.', 3000);
+  }
+});
+
+socket.on('quiz_stopped', data => {
+  showToast('✕ Quiz arrêté par l\'admin. Les points ont été annulés. XOXO.', 5000);
+  // Retour à l'écran d'attente quiz
+  document.getElementById('quiz-waiting').style.display  = 'flex';
+  document.getElementById('quiz-active').style.display   = 'none';
+  document.getElementById('gg-pick-panel').style.display = 'none';
+});
+
+// ✅ FIX: le GG voit "en attente", pas les réponses
+socket.on('new_question', data => {
+  if (_ggPickCountdownInterval) clearInterval(_ggPickCountdownInterval);
+  document.getElementById('gg-pick-panel').style.display = 'none';
+
+  if (state.isGG) {
+    // Le GG est maître du jeu : il ne répond pas
+    document.getElementById('quiz-active').style.display  = 'none';
+    document.getElementById('quiz-waiting').style.display = 'flex';
+    document.getElementById('quiz-waiting').innerHTML = `
+      <div style="text-align:center;padding:20px 28px;">
+        <div style="font-size:2rem;margin-bottom:12px;">👑</div>
+        <div style="font-family:'Playfair Display',serif;color:var(--gold);font-size:1.2rem;margin-bottom:8px;">
+          Question ${data.question_number}
+        </div>
+        <div style="color:var(--stone);font-size:0.85rem;font-style:italic;margin-bottom:14px;line-height:1.5;">
+          "${esc(data.question)}"
+        </div>
+        <div style="color:var(--stone2);font-size:0.8rem;">Tu es le Maître du Jeu. Profite du spectacle. 🍸</div>
+      </div>
+    `;
+  } else {
+    renderQuestion(data);
+  }
+
+  // Auto-switch vers onglet Quiz quand une question arrive
+  goScreen('quiz', document.querySelector('.nav-item[onclick*=\"quiz\"]'));
+});
+
+socket.on('question_tick', data => {
+  if (data.question_id !== state.currentQuestion?.question_id) return;
+  updateTimerDisplay(data.remaining, state.questionDuration);
+});
+
+// R3 — Mode Libre : écoute timer_update pour rafraîchir le décompte mobile
+socket.on('timer_update', data => {
+  if (data.ends_at) startFreeTimer(data.ends_at);
+});
+
+socket.on('answer_confirmed', data => {
+  // Affiche directement le résultat ✓ ou ✕ dès réception (plus de feedback intermédiaire)
+  const r = document.getElementById('answer-result');
+  r.style.background = '';
+  r.style.border = '';
+  r.className = 'answer-result show ' + (data.is_correct ? 'correct-bg' : 'wrong-bg');
+  document.getElementById('result-icon').textContent  = data.is_correct ? '✓' : '✕';
+  document.getElementById('result-title').textContent = data.is_correct ? 'Bonne réponse !' : 'Raté…';
+  document.getElementById('result-pts').textContent   = data.points > 0
+    ? `+${data.points} point${data.points > 1 ? 's' : ''}`
+    : 'Pas de points cette fois.';
+  // Colore aussi le bouton sélectionné immédiatement (sans attendre question_answer)
+  const selBtn = document.getElementById('ans-' + (state.myAnswer || ''));
+  if (selBtn) selBtn.classList.add(data.is_correct ? 'correct' : 'wrong');
+  // Scroll vers le feedback (était dans submitAnswer, déplacé ici pour garantir le timing)
+  setTimeout(() => r.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+});
+
+socket.on('question_answer', data => {
+  revealAnswer(data);
+  document.getElementById('result-expl').textContent = data.explanation || '';
+
+  if (state.isGG) {
+    // Prépare l'UI GG pour le prochain pick
+    document.getElementById('quiz-waiting').style.display = 'flex';
+    document.getElementById('quiz-waiting').innerHTML = `
+      <div style="text-align:center;padding:20px 28px;">
+        <div style="font-size:2rem;margin-bottom:8px;">👑</div>
+        <div style="color:var(--stone);font-size:0.9rem;">La réponse était : <strong style="color:var(--gold)">${data.answer}</strong></div>
+        <div style="color:var(--stone2);font-size:0.8rem;margin-top:8px;">Prépare ta prochaine question…</div>
+      </div>
+    `;
+  } else if (!state.hasAnswered) {
+    // B5 — abstentionnistes : affiche la bonne réponse avec fond "raté"
+    const r = document.getElementById('answer-result');
+    r.className = 'answer-result show wrong-bg';
+    document.getElementById('result-icon').textContent  = '💤';
+    document.getElementById('result-title').textContent = 'Pas de réponse';
+    document.getElementById('result-pts').textContent   = `La bonne réponse était : ${data.answer}`;
+  }
+});
+
+socket.on('leaderboard_update', data => {
+  renderLeaderboard(data.leaderboard, 'home-leaderboard');
+  renderLeaderboard(data.leaderboard, 'full-leaderboard');
+  updateMyScore(data.leaderboard);
+});
+
+socket.on('quiz_ended', data => {
+  renderLeaderboard(data.leaderboard, 'home-leaderboard');
+  renderLeaderboard(data.leaderboard, 'full-leaderboard');
+  updateMyScore(data.leaderboard);
+  if (data.new_gg) showToast(`👑 Nouveau GG : ${data.new_gg.prenom} !`, 4500);
+  goScreen('home', document.querySelector('.nav-item'));
+  document.getElementById('quiz-waiting').style.display  = 'flex';
+  document.getElementById('quiz-active').style.display   = 'none';
+  document.getElementById('gg-pick-panel').style.display = 'none';
+  // Reset le quiz-waiting
+  document.getElementById('quiz-waiting').innerHTML = `
+    <div class="quiz-waiting-icon">⚡</div>
+    <div class="quiz-waiting-title">Flash Quiz</div>
+    <div class="quiz-waiting-sub">La question arrive…<br>Tiens-toi prêt·e, darling.</div>
+  `;
+});
+
+socket.on('new_gg', data => {
+  showToast(`👑 ${data.prenom} est le nouveau Gossip Girl !`, 4000);
+  _applyGGChange(data);
+});
+
+// Transfert GG silencieux (ré-attribution interne) — met à jour l'état sans toast ni overlay
+socket.on('gg_updated_silent', data => {
+  _applyGGChange(data);
+});
+
+function _applyGGChange(data) {
+  if (state.player && data.id === state.player.id) {
+    state.isGG = true;
+    document.getElementById('gg-banner').style.display     = 'block';
+    document.getElementById('gg-start-wrap').style.display = 'block';
+    document.getElementById('gg-post-btn').style.display   = 'flex';
+    document.getElementById('gg-banner-sub').textContent   = 'Lance le prochain quiz quand tu veux.';
+  } else if (state.isGG && state.player && data.id !== state.player.id) {
+    // Ce joueur n'est plus GG
+    state.isGG = false;
+    document.getElementById('gg-banner').style.display     = 'none';
+    document.getElementById('gg-start-wrap').style.display = 'none';
+    document.getElementById('gg-post-btn').style.display   = 'none';
+  }
+}
+
+// Entre deux questions : remet l'écran d'attente pour les joueurs non-GG
+// (efface le résultat de la question précédente)
+socket.on('waiting_for_gg_pick', data => {
+  if (state.isGG) return; // Le GG a son propre écran de sélection
+  document.getElementById('quiz-active').style.display  = 'none';
+  document.getElementById('gg-pick-panel').style.display = 'none';
+  const w = document.getElementById('quiz-waiting');
+  w.style.display = 'flex';
+  w.innerHTML = `
+    <div class="quiz-waiting-icon">⚡</div>
+    <div class="quiz-waiting-title">Flash Quiz</div>
+    <div class="quiz-waiting-sub">La question arrive…<br>Tiens-toi prêt·e, darling.</div>
+  `;
+});
+
+// ✅ NOUVEAU — GG pick question
+socket.on('gg_pick_question', data => {
+  if (!state.isGG) return;
+
+  // Masque tout (y compris le panneau intro GG) et affiche le panneau de sélection
+  document.getElementById('quiz-waiting').style.display  = 'none';
+  document.getElementById('quiz-active').style.display   = 'none';
+  document.getElementById('gg-pick-panel').style.display = 'block';
+  const introPanel = document.getElementById('gg-quiz-intro-panel');
+  if (introPanel) introPanel.style.display = 'none';
+
+  // Lance le décompte visuel (le serveur auto-pick après timeout)
+  startGGPickCountdown(data.timeout || 15);  // F12 — timeout 10s → 15s
+
+  // Génère les boutons candidats
+  const container = document.getElementById('gg-pick-candidates');
+  container.innerHTML = '';
+  data.candidates.forEach((q, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'gg-candidate-btn';
+    // F11 — affiche la catégorie si disponible
+    const catLabel = q.category ? `<span class="gg-candidate-cat">${esc(q.category)}</span>` : '';
+    btn.innerHTML = `<span class="gg-candidate-num">Option ${i + 1}</span>${catLabel}${esc(q.question)}`;
+    btn.addEventListener('click', () => {
+      if (_ggPickCountdownInterval) clearInterval(_ggPickCountdownInterval);
+      socket.emit('gg_choose_question', { question_id: q.id });
+      document.getElementById('gg-pick-panel').style.display = 'none';
+      document.getElementById('quiz-waiting').style.display  = 'flex';
+      document.getElementById('quiz-waiting').innerHTML = `
+        <div class="quiz-waiting-icon">⚡</div>
+        <div class="quiz-waiting-title">Question lancée !</div>
+        <div class="quiz-waiting-sub">Les invités répondent. Profite. 🥂</div>
+      `;
+    });
+    container.appendChild(btn);
+  });
+});
+
+// Expulsion admin
+socket.on('force_logout', () => {
+  localStorage.removeItem('player_token');
+  state.player = null;
+  state.isGG   = false;
+  showToast('Tu as été expulsé(e) par Chuck Bass. XOXO.', 5000);
+  setTimeout(() => { window.location.reload(); }, 3000);
+});
+
+// Reset session (admin)
+socket.on('session_reset', () => {
+  localStorage.removeItem('player_token');
+  state.player = null;
+  state.isGG   = false;
+  window.location.reload();
+});
+
+// Rechargement forcé de tous les clients (admin)
+socket.on('client_reload', () => {
+  window.location.reload();
+});
+
+// F13 — Erreur de réponse (double submit, GG qui tente de répondre, etc.)
+socket.on('answer_error', data => {
+  showToast(data.message || 'Erreur de réponse.', 3000);
+});
+
+/* Page /vip — Blair VIP toujours authentifiée côté serveur */
+sessionStorage.setItem('blair_vip', '1');
+
+buildPersoGrid();
+
+/* HEARTBEAT */
+setInterval(() => {
+  if (socket.connected) socket.emit('ping_client', { ts: Date.now() });
+}, 20000);
+
+/* ═══════════════════════════════════════
+   VIP OVERLAY
+═══════════════════════════════════════ */
+let _vipPreviousScreen = 'home';
+let _vipPreviousNavBtn = null;
+
+function openVip(btn) {
+  // Remember which screen we were on so we can restore on close
+  const activeScreen = document.querySelector('.screen.active');
+  if (activeScreen) _vipPreviousScreen = activeScreen.id.replace('screen-', '');
+  _vipPreviousNavBtn = document.querySelector('.nav-item.active:not(.vip-tab)');
+
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('vip-overlay').classList.add('open');
+}
+
+function closeVip() {
+  document.getElementById('vip-overlay').classList.remove('open');
+  // Restore the screen + nav item that was active before
+  goScreen(_vipPreviousScreen, _vipPreviousNavBtn);
+}
+
+function vipTileClick(tile) {
+  // Placeholder — each tile will open its own sub-panel in future steps
+  showToast(`💎 ${tile} — bientôt disponible`, 2000);
+}
+
+  </script>
+</body>
+</html>
