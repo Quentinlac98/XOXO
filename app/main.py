@@ -216,6 +216,30 @@ def api_vip_sounds():
     return jsonify({"sounds": sounds})
 
 
+@app.route("/api/vip/blast", methods=["POST"])
+@vip_required
+def api_vip_blast():
+    data    = request.json or {}
+    content = (data.get("content", "") or "").strip()[:300]
+    if not content:
+        return jsonify({"ok": False, "error": "Message vide. XOXO."})
+
+    scoop = Scoop(
+        player_id   = None,
+        author_name = "Gossip Girl",
+        is_official = True,
+        content     = content,
+    )
+    db.session.add(scoop)
+    db.session.commit()
+
+    socketio.emit("new_scoop",   scoop.to_dict())
+    socketio.emit("play_sound",  {"sound": "new_gg"})
+    socketio.emit("vip_blast",   {"content": content, "scoop_id": scoop.id})
+    log_activity("vip_blast", "Blair VIP", content[:80])
+    return jsonify({"ok": True, "scoop_id": scoop.id})
+
+
 @app.route("/api/vip/scoops")
 @vip_required
 def api_vip_scoops():

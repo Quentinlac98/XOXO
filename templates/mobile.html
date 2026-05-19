@@ -260,6 +260,60 @@
     .reconnect-sub { font-size: 12px; color: var(--stone); }
 
     #file-input { display: none; }
+
+    /* ════ VIP BLAST OVERLAY ════ */
+    .blast-overlay {
+      position: fixed; inset: 0; z-index: 600;
+      background: rgba(6,6,6,.96);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s ease;
+      overflow: hidden;
+    }
+    .blast-overlay.show { opacity: 1; pointer-events: auto; }
+    .blast-overlay::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 65% 55% at 50% 50%, rgba(201,168,76,.14) 0%, transparent 70%);
+      animation: blastGlow 4.5s ease forwards;
+    }
+    @keyframes blastGlow {
+      0%  { opacity:0; transform:scale(.7); }
+      20% { opacity:1; transform:scale(1);  }
+      80% { opacity:1; }
+      100%{ opacity:0; }
+    }
+    .blast-content {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 32px; gap: 14px;
+    }
+    .blast-gem { font-size: 80px; line-height: 1; animation: blastGemIn .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+    @keyframes blastGemIn {
+      0%   { transform:scale(0) rotate(-120deg); opacity:0; }
+      100% { transform:scale(1) rotate(0deg);    opacity:1; }
+    }
+    .blast-eyebrow { font-size: 9px; letter-spacing:.6em; text-transform:uppercase; color:var(--gold); opacity:0; animation:blastFadeUp .4s .4s ease forwards; }
+    .blast-message { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:white; line-height:1.35; max-width:300px; opacity:0; animation:blastFadeUp .4s .6s ease forwards; }
+    .blast-sig { font-family:'Cormorant Garamond',serif; font-size:14px; font-style:italic; color:var(--gold); opacity:0; animation:blastFadeUp .4s .85s ease forwards; }
+    @keyframes blastFadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .blast-particles { position:absolute; inset:0; pointer-events:none; z-index:1; }
+    .blast-particles span {
+      position:absolute; top:50%; left:50%;
+      width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:0;
+      animation:blastParticle 1.4s ease-out forwards;
+    }
+    .blast-particles span:nth-child(1){ --dx:-140px; --dy:-100px; animation-delay:.05s; }
+    .blast-particles span:nth-child(2){ --dx:0px;    --dy:-160px; animation-delay:.10s; width:5px; height:5px; background:var(--gold-light); }
+    .blast-particles span:nth-child(3){ --dx:140px;  --dy:-100px; animation-delay:.05s; }
+    .blast-particles span:nth-child(4){ --dx:170px;  --dy:10px;   animation-delay:.15s; width:5px; height:5px; }
+    .blast-particles span:nth-child(5){ --dx:110px;  --dy:130px;  animation-delay:.08s; }
+    .blast-particles span:nth-child(6){ --dx:-30px;  --dy:165px;  animation-delay:.12s; background:var(--gold-light); }
+    .blast-particles span:nth-child(7){ --dx:-140px; --dy:110px;  animation-delay:.06s; }
+    .blast-particles span:nth-child(8){ --dx:-170px; --dy:10px;   animation-delay:.18s; width:5px; height:5px; }
+    @keyframes blastParticle {
+      0%   { transform:translate(-50%,-50%) scale(1.5); opacity:1; }
+      100% { transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0); opacity:0; }
+    }
   </style>
 </head>
 <body>
@@ -473,6 +527,20 @@
 
   <div id="toast"></div>
   <input type="file" id="file-input" accept="image/*" onchange="handleImageSelect(event)"/>
+
+  <!-- VIP BLAST OVERLAY — reçu via socket vip_blast -->
+  <div id="blast-overlay" class="blast-overlay">
+    <div class="blast-particles">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="blast-content">
+      <div class="blast-gem">💎</div>
+      <div class="blast-eyebrow">VIP BLAST</div>
+      <div class="blast-message" id="blast-message"></div>
+      <div class="blast-sig">✦ Blair Waldorf ✦</div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -1463,6 +1531,20 @@ buildPersoGrid();
 setInterval(() => {
   if (socket.connected) socket.emit('ping_client', { ts: Date.now() });
 }, 20000);
+
+/* VIP Blast — overlay plein écran déclenché par Blair */
+let _blastTimer = null;
+function showBlastOverlay(data) {
+  const overlay = document.getElementById('blast-overlay');
+  if (!overlay) return;
+  document.getElementById('blast-message').textContent = data.content || '';
+  overlay.classList.remove('show');
+  void overlay.offsetWidth; // force reflow pour relancer les animations CSS
+  overlay.classList.add('show');
+  clearTimeout(_blastTimer);
+  _blastTimer = setTimeout(() => overlay.classList.remove('show'), 4500);
+}
+socket.on('vip_blast', showBlastOverlay);
 
   </script>
 </body>

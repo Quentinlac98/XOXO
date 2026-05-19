@@ -530,6 +530,83 @@
     }
     .sm-del-btn:active { background: rgba(192,80,77,.12); color: var(--red); border-color: var(--red); }
     .sm-empty { text-align: center; padding: 40px 20px; color: var(--stone); font-size: 13px; font-style: italic; }
+
+    /* ════ BLAST COMPOSE PANEL ════ */
+    .blast-compose {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 24px 40px; text-align: center; gap: 14px;
+    }
+    .blast-compose-gem { font-size: 56px; animation: waitPulse 2.5s ease-in-out infinite; }
+    .blast-compose-title {
+      font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, #C9A84C 0%, #E2C97E 50%, #C9A84C 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .blast-compose-sub { font-size: 11px; color: var(--stone); line-height: 1.6; max-width: 260px; }
+    .blast-input {
+      width: 100%; background: rgba(255,255,255,.03);
+      border: 1px solid rgba(201,168,76,.18); border-radius: 14px;
+      padding: 16px; color: white;
+      font-family: 'Cormorant Garamond', serif; font-size: 17px; font-style: italic;
+      line-height: 1.5; resize: none; outline: none;
+      transition: border-color .25s;
+    }
+    .blast-input:focus { border-color: rgba(201,168,76,.5); }
+    .blast-input::placeholder { color: var(--stone2); }
+    .blast-count-row { font-size: 9px; color: var(--stone2); letter-spacing: .1em; align-self: flex-end; }
+    .blast-send-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+      color: var(--black); border: none; border-radius: 14px;
+      padding: 18px; font-family: 'Montserrat', sans-serif;
+      font-size: 10px; font-weight: 600; letter-spacing: .28em; text-transform: uppercase;
+      cursor: pointer; transition: opacity .2s, transform .15s;
+      box-shadow: 0 6px 24px rgba(201,168,76,.28);
+    }
+    .blast-send-btn:active { transform: scale(.98); }
+    .blast-send-btn:disabled { opacity: .5; cursor: default; }
+
+    /* ════ VIP BLAST OVERLAY ════ */
+    .blast-overlay {
+      position: fixed; inset: 0; z-index: 600;
+      background: rgba(6,6,6,.96);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s ease; overflow: hidden;
+    }
+    .blast-overlay.show { opacity: 1; pointer-events: auto; }
+    .blast-overlay::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 65% 55% at 50% 50%, rgba(201,168,76,.14) 0%, transparent 70%);
+      animation: blastGlow 4.5s ease forwards;
+    }
+    @keyframes blastGlow {
+      0%  { opacity:0; transform:scale(.7); }
+      20% { opacity:1; transform:scale(1);  }
+      80% { opacity:1; }
+      100%{ opacity:0; }
+    }
+    .blast-content { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; text-align:center; padding:32px; gap:14px; }
+    .blast-gem { font-size:80px; line-height:1; animation:blastGemIn .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+    @keyframes blastGemIn { 0%{transform:scale(0) rotate(-120deg);opacity:0} 100%{transform:scale(1) rotate(0deg);opacity:1} }
+    .blast-eyebrow { font-size:9px; letter-spacing:.6em; text-transform:uppercase; color:var(--gold); opacity:0; animation:blastFadeUp .4s .4s ease forwards; }
+    .blast-message { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:white; line-height:1.35; max-width:300px; opacity:0; animation:blastFadeUp .4s .6s ease forwards; }
+    .blast-sig { font-family:'Cormorant Garamond',serif; font-size:14px; font-style:italic; color:var(--gold); opacity:0; animation:blastFadeUp .4s .85s ease forwards; }
+    @keyframes blastFadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .blast-particles { position:absolute; inset:0; pointer-events:none; z-index:1; }
+    .blast-particles span { position:absolute; top:50%; left:50%; width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:0; animation:blastParticle 1.4s ease-out forwards; }
+    .blast-particles span:nth-child(1){ --dx:-140px; --dy:-100px; animation-delay:.05s; }
+    .blast-particles span:nth-child(2){ --dx:0px;    --dy:-160px; animation-delay:.10s; width:5px; height:5px; background:var(--gold-light); }
+    .blast-particles span:nth-child(3){ --dx:140px;  --dy:-100px; animation-delay:.05s; }
+    .blast-particles span:nth-child(4){ --dx:170px;  --dy:10px;   animation-delay:.15s; width:5px; height:5px; }
+    .blast-particles span:nth-child(5){ --dx:110px;  --dy:130px;  animation-delay:.08s; }
+    .blast-particles span:nth-child(6){ --dx:-30px;  --dy:165px;  animation-delay:.12s; background:var(--gold-light); }
+    .blast-particles span:nth-child(7){ --dx:-140px; --dy:110px;  animation-delay:.06s; }
+    .blast-particles span:nth-child(8){ --dx:-170px; --dy:10px;   animation-delay:.18s; width:5px; height:5px; }
+    @keyframes blastParticle {
+      0%  { transform:translate(-50%,-50%) scale(1.5); opacity:1; }
+      100%{ transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0); opacity:0; }
+    }
   </style>
 </head>
 <body>
@@ -809,6 +886,25 @@
       </div>
     </div>
 
+    <!-- Panel: Custom Blast -->
+    <div class="vip-panel hidden" id="vip-panel-blast">
+      <div class="vip-scroll">
+        <div class="blast-compose">
+          <div class="blast-compose-gem">✨</div>
+          <div class="blast-compose-title">Custom Blast</div>
+          <div class="blast-compose-sub">Diffuse un message exclusif à tous les invités, accompagné d'une animation VIP et d'un son dramatique. XOXO.</div>
+          <textarea id="blast-input" class="blast-input"
+            placeholder="Spotted : ton message exclusif pour Manhattan…"
+            maxlength="300" rows="4"
+            oninput="blastUpdateCount()"></textarea>
+          <div class="blast-count-row"><span id="blast-count">0</span>/300</div>
+          <button class="blast-send-btn" id="blast-send-btn" onclick="blastSend()">
+            <span id="blast-btn-text">💎 Envoyer le Blast</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Panel: Scoops Manager -->
     <div class="vip-panel hidden" id="vip-panel-scoops-manager">
       <div class="sm-head">
@@ -839,6 +935,20 @@
 
   <div id="toast"></div>
   <input type="file" id="file-input" accept="image/*" onchange="handleImageSelect(event)"/>
+
+  <!-- VIP BLAST OVERLAY -->
+  <div id="blast-overlay" class="blast-overlay">
+    <div class="blast-particles">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="blast-content">
+      <div class="blast-gem">💎</div>
+      <div class="blast-eyebrow">VIP BLAST</div>
+      <div class="blast-message" id="blast-message"></div>
+      <div class="blast-sig">✦ Blair Waldorf ✦</div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -1882,6 +1992,7 @@ function _showVipPanel(name) {
   if (name === 'gallery')         initGallery();
   if (name === 'soundboard')      initSoundboard();
   if (name === 'scoops-manager')  initScoopsManager();
+  if (name === 'blast')           initBlastPanel();
 }
 
 /* ═══════════════════════════════════════
@@ -2141,6 +2252,73 @@ async function _smLoadQR() {
 function _smFmt(iso) {
   return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
+
+/* ═══════════════════════════════════════
+   CUSTOM BLAST
+═══════════════════════════════════════ */
+function initBlastPanel() {
+  const input = document.getElementById('blast-input');
+  const btn   = document.getElementById('blast-send-btn');
+  const txt   = document.getElementById('blast-btn-text');
+  if (input) input.value = '';
+  if (btn)   btn.disabled = false;
+  if (txt)   txt.textContent = '💎 Envoyer le Blast';
+  blastUpdateCount();
+}
+
+function blastUpdateCount() {
+  const val = document.getElementById('blast-input')?.value || '';
+  const el  = document.getElementById('blast-count');
+  if (el) el.textContent = val.length;
+}
+
+async function blastSend() {
+  const input   = document.getElementById('blast-input');
+  const btn     = document.getElementById('blast-send-btn');
+  const btnText = document.getElementById('blast-btn-text');
+  const content = (input?.value || '').trim();
+  if (!content) { showToast('Ton blast est vide. Manhattan mérite mieux. 💎'); return; }
+
+  btn.disabled = true;
+  btnText.textContent = '✨ Envoi en cours…';
+
+  try {
+    const res  = await fetch('/api/vip/blast', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ content }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      input.value = '';
+      blastUpdateCount();
+      btnText.textContent = '✓ Blast envoyé !';
+      setTimeout(() => { btnText.textContent = '💎 Envoyer le Blast'; btn.disabled = false; }, 3000);
+    } else {
+      showToast(data.error || 'Erreur envoi blast.', 3000);
+      btnText.textContent = '💎 Envoyer le Blast';
+      btn.disabled = false;
+    }
+  } catch {
+    showToast('Erreur réseau.', 3000);
+    btnText.textContent = '💎 Envoyer le Blast';
+    btn.disabled = false;
+  }
+}
+
+/* Blast overlay — reçu par TOUS les clients */
+let _blastTimer = null;
+function showBlastOverlay(data) {
+  const overlay = document.getElementById('blast-overlay');
+  if (!overlay) return;
+  document.getElementById('blast-message').textContent = data.content || '';
+  overlay.classList.remove('show');
+  void overlay.offsetWidth; // force reflow → restarted CSS animations
+  overlay.classList.add('show');
+  clearTimeout(_blastTimer);
+  _blastTimer = setTimeout(() => overlay.classList.remove('show'), 4500);
+}
+socket.on('vip_blast', showBlastOverlay);
 
 /* Keep scoops list in sync with live game events */
 socket.on('scoop_published', () => {
