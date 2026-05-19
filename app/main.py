@@ -142,6 +142,15 @@ def admin_required(f):
     return decorated
 
 
+def vip_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("blair_vip_verified"):
+            return redirect(url_for("mobile"))
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ============================================================
 #  ROUTES PUBLIQUES
 # ============================================================
@@ -176,8 +185,107 @@ def blair_vip():
     token = request.args.get("token", "")
     if token == app.config["BLAIR_VIP_TOKEN"]:
         session["blair_vip_verified"] = True
-        return redirect(url_for("mobile") + "?vip=blair")
+        return redirect(url_for("vip_page"))
     return redirect(url_for("mobile"))
+
+
+@app.route("/vip")
+@vip_required
+def vip_page():
+    return render_template("vip.html")
+
+
+VIP_SOUNDS = [
+    {"id": "champagne", "name": "Champagne", "icon": "🥂"},
+    {"id": "drama",     "name": "Drama",     "icon": "🎭"},
+    {"id": "gossip",    "name": "Gossip",    "icon": "🤫"},
+    {"id": "scandale",  "name": "Scandale",  "icon": "😱"},
+    {"id": "suspens",   "name": "Suspens",   "icon": "⏱"},
+    {"id": "victoire",  "name": "Victoire",  "icon": "🏆"},
+]
+
+
+@app.route("/api/vip/sounds")
+@vip_required
+def api_vip_sounds():
+    sounds = []
+    for s in VIP_SOUNDS:
+        fpath = os.path.join(app.static_folder, "sounds", "vip", f"{s['id']}.mp3")
+        url   = f"/static/sounds/vip/{s['id']}.mp3" if os.path.exists(fpath) else None
+        sounds.append({**s, "url": url})
+    return jsonify({"sounds": sounds})
+
+
+@app.route("/api/vip/blast", methods=["POST"])
+@vip_required
+def api_vip_blast():
+    data    = request.json or {}
+    content = (data.get("content", "") or "").strip()[:300]
+    if not content:
+        return jsonify({"ok": False, "error": "Message vide. XOXO."})
+
+    scoop = Scoop(
+        player_id   = None,
+        author_name = "Gossip Girl",
+        is_official = True,
+        content     = content,
+    )
+    db.session.add(scoop)
+    db.session.commit()
+
+    socketio.emit("new_scoop",   scoop.to_dict())
+    socketio.emit("play_sound",  {"sound": "new_gg"})
+    socketio.emit("vip_blast",   {"content": content, "scoop_id": scoop.id})
+    log_activity("vip_blast", "Blair VIP", content[:80])
+    return jsonify({"ok": True, "scoop_id": scoop.id})
+
+
+@app.route("/api/vip/scoops")
+@vip_required
+def api_vip_scoops():
+    scoops = (Scoop.query
+              .filter_by(is_deleted=False)
+              .order_by(Scoop.is_pinned.desc(), Scoop.created_at.desc())
+              .all())
+    return jsonify({"scoops": [s.to_dict() for s in scoops]})
+
+
+@app.route("/api/vip/scoops/<int:scoop_id>/pin", methods=["POST"])
+@vip_required
+def api_vip_pin_scoop(scoop_id):
+    scoop = db.session.get(Scoop, scoop_id)
+    if scoop and not scoop.is_deleted:
+        scoop.is_pinned = not scoop.is_pinned
+        db.session.commit()
+        socketio.emit("scoop_pinned", scoop.to_dict())
+        log_activity("vip_pin", "Blair VIP", f"Scoop #{scoop_id} {'épinglé' if scoop.is_pinned else 'désépinglé'}")
+        return jsonify({"ok": True, "is_pinned": scoop.is_pinned})
+    return jsonify({"ok": False})
+
+
+@app.route("/api/vip/scoops/<int:scoop_id>/delete", methods=["POST"])
+@vip_required
+def api_vip_delete_scoop(scoop_id):
+    scoop = db.session.get(Scoop, scoop_id)
+    if scoop:
+        scoop.is_deleted = True
+        db.session.commit()
+        socketio.emit("scoop_deleted", {"scoop_id": scoop_id})
+        log_activity("vip_delete", "Blair VIP", f"Scoop #{scoop_id} supprimé")
+    return jsonify({"ok": True})
+
+
+@app.route("/api/vip/gallery")
+@vip_required
+def api_vip_gallery():
+    dino_dir = os.path.join(app.static_folder, "dino")
+    photos = []
+    if os.path.isdir(dino_dir):
+        for f in sorted(os.listdir(dino_dir)):
+            if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
+                name = f.rsplit('.', 1)[0].replace('-', ' ').replace('_', ' ').title()
+                photos.append({"url": f"/static/dino/{f}", "name": name})
+    return jsonify({"photos": photos})
 
 
 # ============================================================

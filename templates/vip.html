@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <title>Gossip Girl Party</title>
+  <title>VIP 💎 — Gossip Girl Party</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -261,14 +261,318 @@
 
     #file-input { display: none; }
 
+    /* ════ VIP OVERLAY ════ */
+    #vip-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: var(--black);
+      display: flex; flex-direction: column;
+      transform: translateY(100%);
+      transition: transform .35s cubic-bezier(.4,0,.2,1);
+      will-change: transform;
+    }
+    #vip-overlay.open { transform: translateY(0); }
+
+    .vip-header {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid rgba(201,168,76,.12);
+      background: rgba(10,10,10,.98);
+      backdrop-filter: blur(16px);
+    }
+    .vip-header-left { display: flex; flex-direction: column; }
+    .vip-header-eyebrow { font-size: 8px; letter-spacing: .45em; text-transform: uppercase; color: var(--gold); margin-bottom: 3px; }
+    .vip-header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, #C9A84C 0%, #E2C97E 50%, #C9A84C 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .vip-close-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+      color: var(--stone); font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, color .2s;
+    }
+    .vip-close-btn:active { background: rgba(201,168,76,.15); color: var(--gold); }
+
+    .vip-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 24px 20px 40px; }
+    .vip-scroll::-webkit-scrollbar { display: none; }
+
+    .vip-tile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .vip-tile {
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(201,168,76,.12);
+      border-radius: 20px;
+      padding: 22px 16px 20px;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 10px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .15s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 140px; justify-content: center;
+    }
+    .vip-tile:active { transform: scale(.97); background: rgba(201,168,76,.08); border-color: rgba(201,168,76,.35); }
+    .vip-tile-icon { font-size: 34px; line-height: 1; }
+    .vip-tile-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 14px; font-weight: 700; color: white; line-height: 1.2;
+    }
+    .vip-tile-desc { font-size: 9.5px; color: var(--stone); line-height: 1.4; letter-spacing: .02em; }
+
+    /* VIP nav item special glow */
+    .nav-item.vip-tab .nav-icon { filter: drop-shadow(0 0 6px rgba(201,168,76,.5)); }
+    .nav-item.vip-tab.active .nav-label { color: var(--gold-light); }
+
+    /* ════ VIP PANELS ════ */
+    .vip-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .vip-panel.hidden { display: none; }
+
+    .vip-back-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+      color: var(--stone); font-size: 18px; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      transition: background .2s, color .2s;
+    }
+    .vip-back-btn.show { display: flex; }
+    .vip-back-btn:active { background: rgba(201,168,76,.15); color: var(--gold); }
+
+    /* ════ GALLERY PANEL ════ */
+    .gallery-stage {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 20px 20px 10px; min-height: 0; overflow: hidden;
+      position: relative;
+    }
+    .gallery-card {
+      width: 100%; max-width: 340px;
+      border-radius: 24px; overflow: hidden;
+      border: 1px solid rgba(201,168,76,.18);
+      transition: opacity .22s ease;
+      position: relative;
+    }
+    .gallery-card.fading { opacity: 0; }
+    .gallery-card-placeholder {
+      background: linear-gradient(145deg, rgba(201,168,76,.12) 0%, rgba(6,6,6,.6) 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 48px 24px 40px; text-align: center; gap: 14px;
+      min-height: 280px;
+    }
+    .gallery-emoji {
+      font-size: 80px; line-height: 1;
+      animation: catPulse 3s ease-in-out infinite;
+    }
+    @keyframes catPulse {
+      0%,100% { transform: scale(1) rotate(-2deg); }
+      50%      { transform: scale(1.06) rotate(2deg); }
+    }
+    .gallery-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, #C9A84C 0%, #E2C97E 60%, #C9A84C 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .gallery-caption {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px; font-style: italic; color: var(--stone);
+      line-height: 1.5; max-width: 220px;
+    }
+    .gallery-img {
+      width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block;
+    }
+    .gallery-img-caption {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(6,6,6,.85));
+      padding: 32px 18px 16px;
+    }
+
+    .gallery-footer {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 24px calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+    .gallery-nav-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(201,168,76,.15);
+      color: var(--gold-light); font-size: 22px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, transform .1s;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .gallery-nav-btn:active { transform: scale(.92); background: rgba(201,168,76,.12); }
+    .gallery-nav-btn:disabled { opacity: .25; cursor: default; }
+    .gallery-dots { display: flex; gap: 7px; align-items: center; }
+    .gallery-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(201,168,76,.25); transition: all .25s;
+    }
+    .gallery-dot.active { background: var(--gold); width: 18px; border-radius: 3px; }
+
+    /* ════ SOUNDBOARD PANEL ════ */
+    .sb-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      padding: 20px 20px 8px;
+    }
+    .sb-btn {
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(201,168,76,.12);
+      border-radius: 18px;
+      padding: 20px 8px 16px;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 8px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .12s;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .sb-btn:active { transform: scale(.94); }
+    .sb-btn.playing {
+      background: rgba(201,168,76,.1);
+      border-color: rgba(201,168,76,.4);
+      animation: sbPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes sbPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+      50%      { box-shadow: 0 0 0 10px rgba(201,168,76,.08); }
+    }
+    .sb-icon { font-size: 30px; line-height: 1; }
+    .sb-name { font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--stone); line-height: 1.3; }
+    .sb-btn.playing .sb-name { color: var(--gold); }
+    .sb-footer { padding: 12px 20px calc(20px + env(safe-area-inset-bottom, 0px)); text-align: center; }
+    .sb-stop-btn {
+      background: transparent;
+      border: 1px solid rgba(192,80,77,.3);
+      color: var(--red);
+      border-radius: 12px;
+      padding: 11px 32px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px; letter-spacing: .2em; text-transform: uppercase;
+      cursor: pointer; transition: background .2s;
+    }
+    .sb-stop-btn:active { background: rgba(192,80,77,.1); }
+
+    /* ════ SCOOPS MANAGER ════ */
+    .sm-head {
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(201,168,76,.08);
+    }
+    .sm-toolbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px 10px;
+    }
+    .sm-toolbar-btn {
+      flex: 1; background: rgba(255,255,255,.03);
+      border: 1px solid rgba(201,168,76,.15); border-radius: 10px;
+      padding: 9px 12px; color: var(--stone);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px; letter-spacing: .15em; text-transform: uppercase;
+      cursor: pointer; transition: background .2s, color .2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .sm-toolbar-btn:active { background: rgba(201,168,76,.1); color: var(--gold); }
+    .sm-toolbar-btn.qr-active { border-color: rgba(201,168,76,.4); color: var(--gold); background: rgba(201,168,76,.06); }
+    .sm-qr-wrap {
+      padding: 0 16px 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .sm-qr-wrap.hidden { display: none; }
+    .sm-qr-img {
+      width: 160px; height: 160px;
+      border-radius: 12px; border: 2px solid rgba(201,168,76,.3);
+      background: white; display: block;
+    }
+    .sm-qr-url {
+      font-size: 9px; color: var(--stone2); letter-spacing: .08em;
+      text-align: center; word-break: break-all;
+    }
+    .sm-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .sm-scroll::-webkit-scrollbar { display: none; }
+    .sm-list { padding: 10px 14px 40px; display: flex; flex-direction: column; gap: 8px; }
+    .sm-scoop {
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 14px; padding: 12px 14px;
+      transition: border-color .2s;
+    }
+    .sm-scoop.pinned { border-color: rgba(201,168,76,.35); background: rgba(201,168,76,.04); }
+    .sm-scoop-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .sm-author { font-size: 8px; letter-spacing: .2em; text-transform: uppercase; color: var(--stone); }
+    .sm-author.gg { color: var(--gold); }
+    .sm-time { font-size: 9px; color: var(--stone2); flex-shrink: 0; margin-left: 8px; }
+    .sm-pin-badge { font-size: 8px; color: var(--gold); }
+    .sm-body {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px; color: var(--cream); line-height: 1.4;
+      margin-bottom: 10px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .sm-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    .sm-pin-btn {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(201,168,76,.2);
+      color: var(--stone); border-radius: 8px;
+      padding: 5px 10px; font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+      cursor: pointer; transition: all .2s; font-family: 'Montserrat', sans-serif;
+    }
+    .sm-pin-btn.pinned { color: var(--gold); border-color: rgba(201,168,76,.5); background: rgba(201,168,76,.08); }
+    .sm-pin-btn:active { background: rgba(201,168,76,.15); }
+    .sm-del-btn {
+      background: transparent; border: 1px solid rgba(192,80,77,.2);
+      color: var(--stone2); border-radius: 8px;
+      padding: 5px 10px; font-size: 12px;
+      cursor: pointer; transition: all .2s;
+    }
+    .sm-del-btn:active { background: rgba(192,80,77,.12); color: var(--red); border-color: var(--red); }
+    .sm-empty { text-align: center; padding: 40px 20px; color: var(--stone); font-size: 13px; font-style: italic; }
+
+    /* ════ BLAST COMPOSE PANEL ════ */
+    .blast-compose {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 24px 40px; text-align: center; gap: 14px;
+    }
+    .blast-compose-gem { font-size: 56px; animation: waitPulse 2.5s ease-in-out infinite; }
+    .blast-compose-title {
+      font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, #C9A84C 0%, #E2C97E 50%, #C9A84C 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .blast-compose-sub { font-size: 11px; color: var(--stone); line-height: 1.6; max-width: 260px; }
+    .blast-input {
+      width: 100%; background: rgba(255,255,255,.03);
+      border: 1px solid rgba(201,168,76,.18); border-radius: 14px;
+      padding: 16px; color: white;
+      font-family: 'Cormorant Garamond', serif; font-size: 17px; font-style: italic;
+      line-height: 1.5; resize: none; outline: none;
+      transition: border-color .25s;
+    }
+    .blast-input:focus { border-color: rgba(201,168,76,.5); }
+    .blast-input::placeholder { color: var(--stone2); }
+    .blast-count-row { font-size: 9px; color: var(--stone2); letter-spacing: .1em; align-self: flex-end; }
+    .blast-send-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+      color: var(--black); border: none; border-radius: 14px;
+      padding: 18px; font-family: 'Montserrat', sans-serif;
+      font-size: 10px; font-weight: 600; letter-spacing: .28em; text-transform: uppercase;
+      cursor: pointer; transition: opacity .2s, transform .15s;
+      box-shadow: 0 6px 24px rgba(201,168,76,.28);
+    }
+    .blast-send-btn:active { transform: scale(.98); }
+    .blast-send-btn:disabled { opacity: .5; cursor: default; }
+
     /* ════ VIP BLAST OVERLAY ════ */
     .blast-overlay {
       position: fixed; inset: 0; z-index: 600;
       background: rgba(6,6,6,.96);
       display: flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none;
-      transition: opacity .25s ease;
-      overflow: hidden;
+      transition: opacity .25s ease; overflow: hidden;
     }
     .blast-overlay.show { opacity: 1; pointer-events: auto; }
     .blast-overlay::before {
@@ -282,26 +586,15 @@
       80% { opacity:1; }
       100%{ opacity:0; }
     }
-    .blast-content {
-      position: relative; z-index: 2;
-      display: flex; flex-direction: column; align-items: center;
-      text-align: center; padding: 32px; gap: 14px;
-    }
-    .blast-gem { font-size: 80px; line-height: 1; animation: blastGemIn .6s cubic-bezier(.34,1.56,.64,1) forwards; }
-    @keyframes blastGemIn {
-      0%   { transform:scale(0) rotate(-120deg); opacity:0; }
-      100% { transform:scale(1) rotate(0deg);    opacity:1; }
-    }
-    .blast-eyebrow { font-size: 9px; letter-spacing:.6em; text-transform:uppercase; color:var(--gold); opacity:0; animation:blastFadeUp .4s .4s ease forwards; }
+    .blast-content { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; text-align:center; padding:32px; gap:14px; }
+    .blast-gem { font-size:80px; line-height:1; animation:blastGemIn .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+    @keyframes blastGemIn { 0%{transform:scale(0) rotate(-120deg);opacity:0} 100%{transform:scale(1) rotate(0deg);opacity:1} }
+    .blast-eyebrow { font-size:9px; letter-spacing:.6em; text-transform:uppercase; color:var(--gold); opacity:0; animation:blastFadeUp .4s .4s ease forwards; }
     .blast-message { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:white; line-height:1.35; max-width:300px; opacity:0; animation:blastFadeUp .4s .6s ease forwards; }
     .blast-sig { font-family:'Cormorant Garamond',serif; font-size:14px; font-style:italic; color:var(--gold); opacity:0; animation:blastFadeUp .4s .85s ease forwards; }
     @keyframes blastFadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
     .blast-particles { position:absolute; inset:0; pointer-events:none; z-index:1; }
-    .blast-particles span {
-      position:absolute; top:50%; left:50%;
-      width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:0;
-      animation:blastParticle 1.4s ease-out forwards;
-    }
+    .blast-particles span { position:absolute; top:50%; left:50%; width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:0; animation:blastParticle 1.4s ease-out forwards; }
     .blast-particles span:nth-child(1){ --dx:-140px; --dy:-100px; animation-delay:.05s; }
     .blast-particles span:nth-child(2){ --dx:0px;    --dy:-160px; animation-delay:.10s; width:5px; height:5px; background:var(--gold-light); }
     .blast-particles span:nth-child(3){ --dx:140px;  --dy:-100px; animation-delay:.05s; }
@@ -311,8 +604,8 @@
     .blast-particles span:nth-child(7){ --dx:-140px; --dy:110px;  animation-delay:.06s; }
     .blast-particles span:nth-child(8){ --dx:-170px; --dy:10px;   animation-delay:.18s; width:5px; height:5px; }
     @keyframes blastParticle {
-      0%   { transform:translate(-50%,-50%) scale(1.5); opacity:1; }
-      100% { transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0); opacity:0; }
+      0%  { transform:translate(-50%,-50%) scale(1.5); opacity:1; }
+      100%{ transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0); opacity:0; }
     }
   </style>
 </head>
@@ -516,7 +809,122 @@
     <button class="nav-item" onclick="goScreen('scores',this)">
       <span class="nav-icon">🏆</span><span class="nav-label">Scores</span>
     </button>
+    <button class="nav-item vip-tab" id="vip-nav-btn" onclick="openVip(this)">
+      <span class="nav-icon">💎</span><span class="nav-label">VIP</span>
+    </button>
   </nav>
+
+  <!-- ══════════════ VIP OVERLAY ══════════════ -->
+  <div id="vip-overlay">
+
+    <!-- Shared header — title + eyebrow update per panel -->
+    <div class="vip-header">
+      <div class="vip-header-left">
+        <div class="vip-header-eyebrow" id="vip-header-eyebrow">Blair Waldorf · Accès Exclusif</div>
+        <div class="vip-header-title" id="vip-header-title">VIP 💎</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="vip-back-btn" id="vip-back-btn" onclick="vipGoBack()">‹</button>
+        <button class="vip-close-btn" onclick="closeVip()">✕</button>
+      </div>
+    </div>
+
+    <!-- Panel: Tile Grid (default) -->
+    <div class="vip-panel" id="vip-panel-tiles">
+      <div class="vip-scroll">
+        <div class="vip-tile-grid">
+
+          <div class="vip-tile" onclick="openVipPanel('gallery')">
+            <div class="vip-tile-icon">🐱</div>
+            <div class="vip-tile-name">Dino Gallery</div>
+            <div class="vip-tile-desc">Galerie photos exclusive</div>
+          </div>
+
+          <div class="vip-tile" onclick="openVipPanel('soundboard')">
+            <div class="vip-tile-icon">🔊</div>
+            <div class="vip-tile-name">Soundboard VIP</div>
+            <div class="vip-tile-desc">Sons exclusifs</div>
+          </div>
+
+          <div class="vip-tile" onclick="openVipPanel('scoops-manager')">
+            <div class="vip-tile-icon">📰</div>
+            <div class="vip-tile-name">Scoops Manager</div>
+            <div class="vip-tile-desc">Pin, delete & QR code</div>
+          </div>
+
+          <div class="vip-tile" onclick="openVipPanel('blast')">
+            <div class="vip-tile-icon">✨</div>
+            <div class="vip-tile-name">Custom Blast</div>
+            <div class="vip-tile-desc">Broadcast exclusif</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Dino Gallery -->
+    <div class="vip-panel hidden" id="vip-panel-gallery">
+      <div class="gallery-stage" id="gallery-stage">
+        <!-- Populated by JS -->
+      </div>
+      <div class="gallery-footer">
+        <button class="gallery-nav-btn" id="gallery-prev" onclick="galleryStep(-1)">‹</button>
+        <div class="gallery-dots" id="gallery-dots"></div>
+        <button class="gallery-nav-btn" id="gallery-next" onclick="galleryStep(1)">›</button>
+      </div>
+    </div>
+
+    <!-- Panel: VIP Soundboard -->
+    <div class="vip-panel hidden" id="vip-panel-soundboard">
+      <div class="vip-scroll">
+        <div class="sb-grid" id="sb-grid">
+          <!-- Populated by JS -->
+        </div>
+        <div class="sb-footer">
+          <button class="sb-stop-btn" onclick="sbStopAll()">⏹ Stop</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Custom Blast -->
+    <div class="vip-panel hidden" id="vip-panel-blast">
+      <div class="vip-scroll">
+        <div class="blast-compose">
+          <div class="blast-compose-gem">✨</div>
+          <div class="blast-compose-title">Custom Blast</div>
+          <div class="blast-compose-sub">Diffuse un message exclusif à tous les invités, accompagné d'une animation VIP et d'un son dramatique. XOXO.</div>
+          <textarea id="blast-input" class="blast-input"
+            placeholder="Spotted : ton message exclusif pour Manhattan…"
+            maxlength="300" rows="4"
+            oninput="blastUpdateCount()"></textarea>
+          <div class="blast-count-row"><span id="blast-count">0</span>/300</div>
+          <button class="blast-send-btn" id="blast-send-btn" onclick="blastSend()">
+            <span id="blast-btn-text">💎 Envoyer le Blast</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Scoops Manager -->
+    <div class="vip-panel hidden" id="vip-panel-scoops-manager">
+      <div class="sm-head">
+        <div class="sm-toolbar">
+          <button class="sm-toolbar-btn" id="sm-qr-btn" onclick="smToggleQR()">📲 QR Code</button>
+          <button class="sm-toolbar-btn" onclick="smRefresh()">↻ Actualiser</button>
+        </div>
+        <div class="sm-qr-wrap hidden" id="sm-qr-wrap">
+          <img id="sm-qr-img" class="sm-qr-img" src="" alt="QR Code"/>
+          <div class="sm-qr-url" id="sm-qr-url"></div>
+        </div>
+      </div>
+      <div class="sm-scroll">
+        <div class="sm-list" id="sm-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
 
   <!-- ══════════════ OVERLAYS ══════════════ -->
   <div id="reconnect-overlay">
@@ -528,7 +936,7 @@
   <div id="toast"></div>
   <input type="file" id="file-input" accept="image/*" onchange="handleImageSelect(event)"/>
 
-  <!-- VIP BLAST OVERLAY — reçu via socket vip_blast -->
+  <!-- VIP BLAST OVERLAY -->
   <div id="blast-overlay" class="blast-overlay">
     <div class="blast-particles">
       <span></span><span></span><span></span><span></span>
@@ -1513,17 +1921,8 @@ socket.on('answer_error', data => {
   showToast(data.message || 'Erreur de réponse.', 3000);
 });
 
-/* Initialisation au chargement */
-// ✅ FIX Blair VIP : lit le paramètre ?vip=blair dans l'URL et l'inscrit en sessionStorage
-(function initBlairVIP() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('vip') === 'blair') {
-    sessionStorage.setItem('blair_vip', '1');
-    // Nettoie l'URL sans recharger la page
-    const cleanUrl = window.location.pathname;
-    window.history.replaceState({}, '', cleanUrl);
-  }
-})();
+/* Page /vip — Blair VIP toujours authentifiée côté serveur */
+sessionStorage.setItem('blair_vip', '1');
 
 buildPersoGrid();
 
@@ -1532,19 +1931,405 @@ setInterval(() => {
   if (socket.connected) socket.emit('ping_client', { ts: Date.now() });
 }, 20000);
 
-/* VIP Blast — overlay plein écran déclenché par Blair */
+/* ═══════════════════════════════════════
+   VIP OVERLAY — Panel System
+═══════════════════════════════════════ */
+let _vipPreviousScreen = 'home';
+let _vipPreviousNavBtn = null;
+let _vipCurrentPanel   = 'tiles';
+
+const VIP_PANEL_META = {
+  tiles:            { eyebrow: 'Blair Waldorf · Accès Exclusif',  title: 'VIP 💎',      back: false },
+  gallery:          { eyebrow: 'Dino Gallery · Collection Privée', title: '🐱 Galerie', back: true  },
+  soundboard:       { eyebrow: 'VIP Soundboard · Exclusif',       title: '🔊 Sons VIP', back: true  },
+  'scoops-manager': { eyebrow: 'Scoops Manager · Modération',     title: '📰 Scoops',   back: true  },
+  blast:            { eyebrow: 'Custom Blast · Diffusion',         title: '✨ Blast',    back: true  },
+};
+
+function openVip(btn) {
+  const activeScreen = document.querySelector('.screen.active');
+  if (activeScreen) _vipPreviousScreen = activeScreen.id.replace('screen-', '');
+  _vipPreviousNavBtn = document.querySelector('.nav-item.active:not(.vip-tab)');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  _showVipPanel('tiles');
+  document.getElementById('vip-overlay').classList.add('open');
+}
+
+function closeVip() {
+  document.getElementById('vip-overlay').classList.remove('open');
+  goScreen(_vipPreviousScreen, _vipPreviousNavBtn);
+}
+
+function vipGoBack() {
+  _showVipPanel('tiles');
+}
+
+function openVipPanel(name) {
+  if (document.getElementById('vip-panel-' + name)) {
+    _showVipPanel(name);
+  } else {
+    showToast(`💎 ${name} — bientôt disponible`, 2000);
+  }
+}
+
+function _showVipPanel(name) {
+  // Hide all panels
+  document.querySelectorAll('.vip-panel').forEach(p => p.classList.add('hidden'));
+  const target = document.getElementById('vip-panel-' + name);
+  if (target) target.classList.remove('hidden');
+
+  // Update header
+  const meta = VIP_PANEL_META[name] || VIP_PANEL_META.tiles;
+  document.getElementById('vip-header-eyebrow').textContent = meta.eyebrow;
+  document.getElementById('vip-header-title').textContent   = meta.title;
+  const backBtn = document.getElementById('vip-back-btn');
+  meta.back ? backBtn.classList.add('show') : backBtn.classList.remove('show');
+
+  _vipCurrentPanel = name;
+
+  // Panel-specific init
+  if (name === 'gallery')         initGallery();
+  if (name === 'soundboard')      initSoundboard();
+  if (name === 'scoops-manager')  initScoopsManager();
+  if (name === 'blast')           initBlastPanel();
+}
+
+/* ═══════════════════════════════════════
+   DINO GALLERY
+═══════════════════════════════════════ */
+const GALLERY_FALLBACK = [
+  { type: 'placeholder', emoji: '🐱', name: 'Dino',          caption: 'Le chat officiel de Blair Waldorf' },
+  { type: 'placeholder', emoji: '😸', name: 'Gossip Cat',     caption: 'Spotted on the Upper East Side…' },
+  { type: 'placeholder', emoji: '😺', name: 'Chuck Bass Jr.', caption: '"I\'m Chuck Bass. Even my cat knows it."' },
+];
+
+let _galleryItems  = [];
+let _galleryIndex  = 0;
+let _galleryLoaded = false;
+
+async function initGallery() {
+  if (!_galleryLoaded) {
+    try {
+      const res  = await fetch('/api/vip/gallery');
+      const data = await res.json();
+      _galleryItems = data.photos && data.photos.length
+        ? data.photos.map(p => ({ type: 'photo', ...p }))
+        : GALLERY_FALLBACK;
+    } catch {
+      _galleryItems = GALLERY_FALLBACK;
+    }
+    _galleryLoaded = true;
+  }
+  _galleryIndex = 0;
+  _galleryRender();
+  _galleryInitSwipe();
+}
+
+function _galleryRender() {
+  const item  = _galleryItems[_galleryIndex];
+  const stage = document.getElementById('gallery-stage');
+  const total = _galleryItems.length;
+
+  // Build card HTML
+  let cardInner = '';
+  if (item.type === 'photo') {
+    cardInner = `
+      <img class="gallery-img" src="${item.url}" alt="${esc(item.name)}"/>
+      <div class="gallery-img-caption">
+        <div class="gallery-name">${esc(item.name)}</div>
+      </div>`;
+  } else {
+    cardInner = `
+      <div class="gallery-card-placeholder">
+        <div class="gallery-emoji">${item.emoji}</div>
+        <div class="gallery-name">${esc(item.name)}</div>
+        <div class="gallery-caption">${esc(item.caption)}</div>
+      </div>`;
+  }
+
+  // Fade out → swap → fade in
+  const existing = stage.querySelector('.gallery-card');
+  if (existing) {
+    existing.classList.add('fading');
+    setTimeout(() => {
+      stage.innerHTML = `<div class="gallery-card">${cardInner}</div>`;
+    }, 200);
+  } else {
+    stage.innerHTML = `<div class="gallery-card">${cardInner}</div>`;
+  }
+
+  // Dots
+  const dots = document.getElementById('gallery-dots');
+  dots.innerHTML = _galleryItems.map((_, i) =>
+    `<div class="gallery-dot ${i === _galleryIndex ? 'active' : ''}"></div>`
+  ).join('');
+
+  // Prev / next buttons
+  document.getElementById('gallery-prev').disabled = _galleryIndex === 0;
+  document.getElementById('gallery-next').disabled = _galleryIndex === total - 1;
+}
+
+function galleryStep(dir) {
+  const next = _galleryIndex + dir;
+  if (next < 0 || next >= _galleryItems.length) return;
+  _galleryIndex = next;
+  _galleryRender();
+}
+
+function _galleryInitSwipe() {
+  const stage = document.getElementById('gallery-stage');
+  let startX = 0;
+  stage.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 48) galleryStep(dx < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
+/* ═══════════════════════════════════════
+   VIP SOUNDBOARD
+═══════════════════════════════════════ */
+const SB_DEFS = [
+  { id: 'champagne', name: 'Champagne', icon: '🥂', freq: 880, wave: 'sine',     dur: 1.2 },
+  { id: 'drama',     name: 'Drama',     icon: '🎭', freq: 196, wave: 'sawtooth', dur: 1.6 },
+  { id: 'gossip',    name: 'Gossip',    icon: '🤫', freq: 528, wave: 'triangle', dur: 1.0 },
+  { id: 'scandale',  name: 'Scandale',  icon: '😱', freq: 659, wave: 'square',   dur: 0.5 },
+  { id: 'suspens',   name: 'Suspens',   icon: '⏱',  freq: 330, wave: 'sine',     dur: 2.2 },
+  { id: 'victoire',  name: 'Victoire',  icon: '🏆', freq: 523, wave: 'sine',     dur: 1.4 },
+];
+
+let _sbReady     = false;
+let _sbUrls      = {};   // id → url string or null
+let _sbAudio     = null;
+let _sbAudioCtx  = null;
+let _sbToneTimer = null;
+let _sbPlayingId = null;
+
+async function initSoundboard() {
+  if (!_sbReady) {
+    try {
+      const res  = await fetch('/api/vip/sounds');
+      const data = await res.json();
+      (data.sounds || []).forEach(s => { _sbUrls[s.id] = s.url || null; });
+    } catch { /* use tones only */ }
+    _sbReady = true;
+  }
+  _sbRender();
+}
+
+function _sbRender() {
+  document.getElementById('sb-grid').innerHTML = SB_DEFS.map(s => `
+    <button class="sb-btn" id="sb-btn-${s.id}" onclick="sbPlay('${s.id}')">
+      <div class="sb-icon">${s.icon}</div>
+      <div class="sb-name">${esc(s.name)}</div>
+    </button>
+  `).join('');
+}
+
+function sbPlay(id) {
+  const def = SB_DEFS.find(d => d.id === id);
+  if (!def) return;
+
+  sbStopAll();
+  _sbPlayingId = id;
+  document.getElementById('sb-btn-' + id)?.classList.add('playing');
+
+  const url = _sbUrls[id];
+  if (url) {
+    _sbAudio = new Audio(url);
+    _sbAudio.play().catch(() => {});
+    _sbAudio.onended = _sbDone;
+  } else {
+    // Web Audio API tone fallback
+    _sbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = _sbAudioCtx.createOscillator();
+    const gain = _sbAudioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(_sbAudioCtx.destination);
+    osc.type = def.wave;
+    osc.frequency.setValueAtTime(def.freq, _sbAudioCtx.currentTime);
+    gain.gain.setValueAtTime(0.22, _sbAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _sbAudioCtx.currentTime + def.dur);
+    osc.start();
+    osc.stop(_sbAudioCtx.currentTime + def.dur);
+    _sbToneTimer = setTimeout(_sbDone, def.dur * 1000);
+  }
+}
+
+function sbStopAll() {
+  if (_sbAudio)    { _sbAudio.pause(); _sbAudio = null; }
+  if (_sbAudioCtx) { _sbAudioCtx.close().catch(() => {}); _sbAudioCtx = null; }
+  if (_sbToneTimer){ clearTimeout(_sbToneTimer); _sbToneTimer = null; }
+  _sbDone();
+}
+
+function _sbDone() {
+  if (_sbPlayingId) {
+    document.getElementById('sb-btn-' + _sbPlayingId)?.classList.remove('playing');
+    _sbPlayingId = null;
+  }
+}
+
+/* ═══════════════════════════════════════
+   SCOOPS MANAGER
+═══════════════════════════════════════ */
+let _smQRLoaded  = false;
+let _smQRVisible = false;
+
+async function initScoopsManager() {
+  smRefresh();
+  if (!_smQRLoaded) { _smLoadQR(); _smQRLoaded = true; }
+}
+
+async function smRefresh() {
+  try {
+    const res  = await fetch('/api/vip/scoops');
+    const data = await res.json();
+    _smRender(data.scoops || []);
+  } catch {
+    _smRender([]);
+  }
+}
+
+function _smRender(scoops) {
+  const list = document.getElementById('sm-list');
+  if (!list) return;
+  if (!scoops.length) {
+    list.innerHTML = '<div class="sm-empty">Aucun scoop pour l\'instant. XOXO.</div>';
+    return;
+  }
+  list.innerHTML = scoops.map(s => `
+    <div class="sm-scoop${s.is_pinned ? ' pinned' : ''}" id="sm-s-${s.id}">
+      <div class="sm-scoop-top">
+        <div>
+          <span class="sm-author${s.is_official ? ' gg' : ''}">${s.is_official ? '✦ Gossip Girl' : esc(s.author_name)}</span>
+          ${s.is_pinned ? '<span class="sm-pin-badge"> 📌</span>' : ''}
+        </div>
+        <span class="sm-time">${_smFmt(s.created_at)}</span>
+      </div>
+      ${s.content ? `<div class="sm-body">${esc(s.content)}</div>` : ''}
+      <div class="sm-actions">
+        <button class="sm-pin-btn${s.is_pinned ? ' pinned' : ''}" onclick="smPin(${s.id})">
+          ${s.is_pinned ? '📌 Épinglé' : '📌 Épingler'}
+        </button>
+        <button class="sm-del-btn" onclick="smDelete(${s.id})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function smPin(id) {
+  await fetch(`/api/vip/scoops/${id}/pin`, { method: 'POST' });
+  smRefresh();
+}
+
+async function smDelete(id) {
+  // Optimistic remove from DOM
+  document.getElementById('sm-s-' + id)?.remove();
+  await fetch(`/api/vip/scoops/${id}/delete`, { method: 'POST' });
+}
+
+function smToggleQR() {
+  _smQRVisible = !_smQRVisible;
+  const wrap = document.getElementById('sm-qr-wrap');
+  const btn  = document.getElementById('sm-qr-btn');
+  wrap.classList.toggle('hidden', !_smQRVisible);
+  btn.classList.toggle('qr-active', _smQRVisible);
+}
+
+async function _smLoadQR() {
+  try {
+    const res  = await fetch('/api/qr-code');
+    const data = await res.json();
+    const img  = document.getElementById('sm-qr-img');
+    const url  = document.getElementById('sm-qr-url');
+    if (img) img.src = `data:image/png;base64,${data.qr_base64}`;
+    if (url) url.textContent = data.url;
+  } catch { /* silent */ }
+}
+
+function _smFmt(iso) {
+  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ═══════════════════════════════════════
+   CUSTOM BLAST
+═══════════════════════════════════════ */
+function initBlastPanel() {
+  const input = document.getElementById('blast-input');
+  const btn   = document.getElementById('blast-send-btn');
+  const txt   = document.getElementById('blast-btn-text');
+  if (input) input.value = '';
+  if (btn)   btn.disabled = false;
+  if (txt)   txt.textContent = '💎 Envoyer le Blast';
+  blastUpdateCount();
+}
+
+function blastUpdateCount() {
+  const val = document.getElementById('blast-input')?.value || '';
+  const el  = document.getElementById('blast-count');
+  if (el) el.textContent = val.length;
+}
+
+async function blastSend() {
+  const input   = document.getElementById('blast-input');
+  const btn     = document.getElementById('blast-send-btn');
+  const btnText = document.getElementById('blast-btn-text');
+  const content = (input?.value || '').trim();
+  if (!content) { showToast('Ton blast est vide. Manhattan mérite mieux. 💎'); return; }
+
+  btn.disabled = true;
+  btnText.textContent = '✨ Envoi en cours…';
+
+  try {
+    const res  = await fetch('/api/vip/blast', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ content }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      input.value = '';
+      blastUpdateCount();
+      btnText.textContent = '✓ Blast envoyé !';
+      setTimeout(() => { btnText.textContent = '💎 Envoyer le Blast'; btn.disabled = false; }, 3000);
+    } else {
+      showToast(data.error || 'Erreur envoi blast.', 3000);
+      btnText.textContent = '💎 Envoyer le Blast';
+      btn.disabled = false;
+    }
+  } catch {
+    showToast('Erreur réseau.', 3000);
+    btnText.textContent = '💎 Envoyer le Blast';
+    btn.disabled = false;
+  }
+}
+
+/* Blast overlay — reçu par TOUS les clients */
 let _blastTimer = null;
 function showBlastOverlay(data) {
   const overlay = document.getElementById('blast-overlay');
   if (!overlay) return;
   document.getElementById('blast-message').textContent = data.content || '';
   overlay.classList.remove('show');
-  void overlay.offsetWidth; // force reflow pour relancer les animations CSS
+  void overlay.offsetWidth; // force reflow → restarted CSS animations
   overlay.classList.add('show');
   clearTimeout(_blastTimer);
   _blastTimer = setTimeout(() => overlay.classList.remove('show'), 4500);
 }
 socket.on('vip_blast', showBlastOverlay);
+
+/* Keep scoops list in sync with live game events */
+socket.on('scoop_published', () => {
+  if (_vipCurrentPanel === 'scoops-manager') smRefresh();
+});
+socket.on('scoop_deleted', () => {
+  if (_vipCurrentPanel === 'scoops-manager') smRefresh();
+});
+socket.on('scoop_pinned', () => {
+  if (_vipCurrentPanel === 'scoops-manager') smRefresh();
+});
 
   </script>
 </body>
