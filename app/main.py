@@ -195,6 +195,19 @@ def vip_page():
     return render_template("vip.html")
 
 
+@app.route("/api/vip/gallery")
+@vip_required
+def api_vip_gallery():
+    dino_dir = os.path.join(app.static_folder, "dino")
+    photos = []
+    if os.path.isdir(dino_dir):
+        for f in sorted(os.listdir(dino_dir)):
+            if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
+                name = f.rsplit('.', 1)[0].replace('-', ' ').replace('_', ' ').title()
+                photos.append({"url": f"/static/dino/{f}", "name": name})
+    return jsonify({"photos": photos})
+
+
 # ============================================================
 #  ADMIN — Chuck Mode
 # ============================================================
