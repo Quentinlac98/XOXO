@@ -195,6 +195,27 @@ def vip_page():
     return render_template("vip.html")
 
 
+VIP_SOUNDS = [
+    {"id": "champagne", "name": "Champagne", "icon": "🥂"},
+    {"id": "drama",     "name": "Drama",     "icon": "🎭"},
+    {"id": "gossip",    "name": "Gossip",    "icon": "🤫"},
+    {"id": "scandale",  "name": "Scandale",  "icon": "😱"},
+    {"id": "suspens",   "name": "Suspens",   "icon": "⏱"},
+    {"id": "victoire",  "name": "Victoire",  "icon": "🏆"},
+]
+
+
+@app.route("/api/vip/sounds")
+@vip_required
+def api_vip_sounds():
+    sounds = []
+    for s in VIP_SOUNDS:
+        fpath = os.path.join(app.static_folder, "sounds", "vip", f"{s['id']}.mp3")
+        url   = f"/static/sounds/vip/{s['id']}.mp3" if os.path.exists(fpath) else None
+        sounds.append({**s, "url": url})
+    return jsonify({"sounds": sounds})
+
+
 @app.route("/api/vip/gallery")
 @vip_required
 def api_vip_gallery():
