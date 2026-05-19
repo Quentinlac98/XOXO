@@ -6,6 +6,73 @@ XOXO, Chuck Bass.
 
 ---
 
+## [v4.6.2] — 2026-05-19
+
+VIP Mode complet pour Blair Waldorf — dashboard 4 tuiles accessible via `/vip`, isolé dans son propre template, zéro contamination de `mobile.html`.
+
+### Added
+
+#### Authentification & routage VIP
+
+- **Décorateur `@vip_required`** (`app/main.py`) — protège toutes les routes `/vip` et `/api/vip/*`. Sans `session["blair_vip_verified"]`, redirige vers `/mobile`.
+- **Route `GET /blair-vip`** — vérifie `BLAIR_VIP_TOKEN` dans le query string, pose la session VIP et redirige vers `/vip`. Remplace l'ancien comportement de redirection vers `/mobile?vip=blair`.
+- **Route `GET /vip`** — sert `vip.html` (protégée par `@vip_required`).
+
+#### Template `vip.html` (clone isolé de `mobile.html`)
+
+- Clone complet de `mobile.html` — Blair joue le jeu normalement + overlay VIP additionnel.
+- **Onglet 💎 VIP** dans la bottom nav, positionné à droite de l'onglet Score.
+- **Overlay VIP** (`#vip-overlay`, `z-index: 300`) — monte par slide depuis le bas au tap sur l'onglet.
+- **Système de panneaux extensible** (`VIP_PANEL_META` + `_showVipPanel(name)`) — ajouter une nouvelle tuile = 1 `<div id="vip-panel-X">` + 1 entrée dans `VIP_PANEL_META` + 1 branche `if (name === 'X')`.
+
+#### 🐱 Tuile 1 — Dino Gallery (Step 2)
+
+- Carrousel photo avec fetch `/api/vip/gallery`.
+- Gestes swipe natif (touch start/end avec seuil 40 px).
+- Transition en fondu entre slides ; indicateurs de points synchronisés.
+- Fallback 3 emojis chats si `static/dino/` est vide.
+- **Route `GET /api/vip/gallery`** — retourne les fichiers `*.jpg/*.png/*.webp` présents dans `static/dino/`.
+
+#### 🔊 Tuile 2 — VIP Soundboard (Step 3)
+
+- 6 boutons : Champagne 🥂 · Drama 🎭 · Gossip 🤫 · Scandale 😱 · Suspens ⏱ · Victoire 🏆.
+- Lecture MP3 via `<audio>` si `static/sounds/vip/<id>.mp3` existe.
+- Fallback Web Audio API (fréquence + forme d'onde distincte par bouton) si le fichier est absent.
+- `sbStopAll()` interrompt tout son en cours avant d'en démarrer un nouveau.
+- **Route `GET /api/vip/sounds`** — retourne la liste des sons avec URL MP3 ou `null` selon présence fichier.
+- **Constante `VIP_SOUNDS`** (`app/main.py`) — 6 entrées `{id, name, icon}`, extensible sans modifier le template.
+
+#### 📰 Tuile 3 — Scoops Manager (Step 4)
+
+- Fetch et affichage de la liste des scoops publiés.
+- Actions **Épingler** et **Supprimer** par scoop, avec feedback visuel immédiat.
+- Toggle **QR Code** (base64 depuis `/api/qr-code` existant, sans nouvel endpoint).
+- **Route `GET /api/vip/scoops`** — retourne les scoops non supprimés triés par date décroissante.
+- **Route `POST /api/vip/scoops/<id>/pin`** — marque `pinned=True`, émet `scoop_pinned` sur tous les clients.
+- **Route `POST /api/vip/scoops/<id>/delete`** — marque `deleted=True`, émet `scoop_deleted` sur tous les clients.
+
+#### ✨ Tuile 4 — Custom Blast (Step 5)
+
+- Formulaire de saisie dans l'overlay VIP pour composer un message officiel Gossip Girl.
+- **Route `POST /api/vip/blast`** — enregistre le scoop en DB, émet `new_scoop` + `play_sound(new_gg)` + `vip_blast` (payload : texte + timestamp).
+- **Overlay Blast** (`#blast-overlay`, `z-index: 600`) sur `vip.html` ET `mobile.html` — déclenché par `socket.on('vip_blast')`.
+- Animation CSS wow-factor : burst de 8 particules (`@keyframes blastParticle`) avec vecteurs `--dx`/`--dy` en CSS custom properties, gem centrale (`@keyframes blastGemIn`), texte fade-up (`@keyframes blastFadeUp`), glow pulsant (`@keyframes blastGlow`).
+- Auto-dismiss après 5 s ou clic.
+
+#### Médias drop-in (aucune modification de code requise)
+
+| Dossier | Contenu attendu | Effet |
+|---|---|---|
+| `static/dino/` | `*.jpg` / `*.png` / `*.webp` | Galerie photo réelle (fallback emojis si vide) |
+| `static/sounds/vip/` | `champagne.mp3` · `drama.mp3` · `gossip.mp3` · `scandale.mp3` · `suspens.mp3` · `victoire.mp3` | Audio réel sur le Soundboard (fallback Web Audio API si absent) |
+
+### Changed
+
+- **`/blair-vip`** redirige désormais vers `/vip` (et non plus vers `/mobile?vip=blair`).
+- **`mobile.html`** reçoit le CSS et le HTML de l'overlay Blast uniquement — nécessaire pour que tous les invités voient l'animation au `vip_blast`. Aucun autre changement.
+
+---
+
 ## [v4.6.1] — 2026-05-18
 
 Audit de fiabilité et de performance — corrections de bugs critiques identifiés après v4.6-bots.  
