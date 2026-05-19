@@ -457,6 +457,79 @@
       cursor: pointer; transition: background .2s;
     }
     .sb-stop-btn:active { background: rgba(192,80,77,.1); }
+
+    /* ════ SCOOPS MANAGER ════ */
+    .sm-head {
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(201,168,76,.08);
+    }
+    .sm-toolbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px 10px;
+    }
+    .sm-toolbar-btn {
+      flex: 1; background: rgba(255,255,255,.03);
+      border: 1px solid rgba(201,168,76,.15); border-radius: 10px;
+      padding: 9px 12px; color: var(--stone);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px; letter-spacing: .15em; text-transform: uppercase;
+      cursor: pointer; transition: background .2s, color .2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .sm-toolbar-btn:active { background: rgba(201,168,76,.1); color: var(--gold); }
+    .sm-toolbar-btn.qr-active { border-color: rgba(201,168,76,.4); color: var(--gold); background: rgba(201,168,76,.06); }
+    .sm-qr-wrap {
+      padding: 0 16px 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .sm-qr-wrap.hidden { display: none; }
+    .sm-qr-img {
+      width: 160px; height: 160px;
+      border-radius: 12px; border: 2px solid rgba(201,168,76,.3);
+      background: white; display: block;
+    }
+    .sm-qr-url {
+      font-size: 9px; color: var(--stone2); letter-spacing: .08em;
+      text-align: center; word-break: break-all;
+    }
+    .sm-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .sm-scroll::-webkit-scrollbar { display: none; }
+    .sm-list { padding: 10px 14px 40px; display: flex; flex-direction: column; gap: 8px; }
+    .sm-scoop {
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 14px; padding: 12px 14px;
+      transition: border-color .2s;
+    }
+    .sm-scoop.pinned { border-color: rgba(201,168,76,.35); background: rgba(201,168,76,.04); }
+    .sm-scoop-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .sm-author { font-size: 8px; letter-spacing: .2em; text-transform: uppercase; color: var(--stone); }
+    .sm-author.gg { color: var(--gold); }
+    .sm-time { font-size: 9px; color: var(--stone2); flex-shrink: 0; margin-left: 8px; }
+    .sm-pin-badge { font-size: 8px; color: var(--gold); }
+    .sm-body {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px; color: var(--cream); line-height: 1.4;
+      margin-bottom: 10px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .sm-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    .sm-pin-btn {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(201,168,76,.2);
+      color: var(--stone); border-radius: 8px;
+      padding: 5px 10px; font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+      cursor: pointer; transition: all .2s; font-family: 'Montserrat', sans-serif;
+    }
+    .sm-pin-btn.pinned { color: var(--gold); border-color: rgba(201,168,76,.5); background: rgba(201,168,76,.08); }
+    .sm-pin-btn:active { background: rgba(201,168,76,.15); }
+    .sm-del-btn {
+      background: transparent; border: 1px solid rgba(192,80,77,.2);
+      color: var(--stone2); border-radius: 8px;
+      padding: 5px 10px; font-size: 12px;
+      cursor: pointer; transition: all .2s;
+    }
+    .sm-del-btn:active { background: rgba(192,80,77,.12); color: var(--red); border-color: var(--red); }
+    .sm-empty { text-align: center; padding: 40px 20px; color: var(--stone); font-size: 13px; font-style: italic; }
   </style>
 </head>
 <body>
@@ -732,6 +805,25 @@
         </div>
         <div class="sb-footer">
           <button class="sb-stop-btn" onclick="sbStopAll()">⏹ Stop</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Scoops Manager -->
+    <div class="vip-panel hidden" id="vip-panel-scoops-manager">
+      <div class="sm-head">
+        <div class="sm-toolbar">
+          <button class="sm-toolbar-btn" id="sm-qr-btn" onclick="smToggleQR()">📲 QR Code</button>
+          <button class="sm-toolbar-btn" onclick="smRefresh()">↻ Actualiser</button>
+        </div>
+        <div class="sm-qr-wrap hidden" id="sm-qr-wrap">
+          <img id="sm-qr-img" class="sm-qr-img" src="" alt="QR Code"/>
+          <div class="sm-qr-url" id="sm-qr-url"></div>
+        </div>
+      </div>
+      <div class="sm-scroll">
+        <div class="sm-list" id="sm-list">
+          <!-- Populated by JS -->
         </div>
       </div>
     </div>
@@ -1787,8 +1879,9 @@ function _showVipPanel(name) {
   _vipCurrentPanel = name;
 
   // Panel-specific init
-  if (name === 'gallery')    initGallery();
-  if (name === 'soundboard') initSoundboard();
+  if (name === 'gallery')         initGallery();
+  if (name === 'soundboard')      initSoundboard();
+  if (name === 'scoops-manager')  initScoopsManager();
 }
 
 /* ═══════════════════════════════════════
@@ -1966,6 +2059,99 @@ function _sbDone() {
     _sbPlayingId = null;
   }
 }
+
+/* ═══════════════════════════════════════
+   SCOOPS MANAGER
+═══════════════════════════════════════ */
+let _smQRLoaded  = false;
+let _smQRVisible = false;
+
+async function initScoopsManager() {
+  smRefresh();
+  if (!_smQRLoaded) { _smLoadQR(); _smQRLoaded = true; }
+}
+
+async function smRefresh() {
+  try {
+    const res  = await fetch('/api/vip/scoops');
+    const data = await res.json();
+    _smRender(data.scoops || []);
+  } catch {
+    _smRender([]);
+  }
+}
+
+function _smRender(scoops) {
+  const list = document.getElementById('sm-list');
+  if (!list) return;
+  if (!scoops.length) {
+    list.innerHTML = '<div class="sm-empty">Aucun scoop pour l\'instant. XOXO.</div>';
+    return;
+  }
+  list.innerHTML = scoops.map(s => `
+    <div class="sm-scoop${s.is_pinned ? ' pinned' : ''}" id="sm-s-${s.id}">
+      <div class="sm-scoop-top">
+        <div>
+          <span class="sm-author${s.is_official ? ' gg' : ''}">${s.is_official ? '✦ Gossip Girl' : esc(s.author_name)}</span>
+          ${s.is_pinned ? '<span class="sm-pin-badge"> 📌</span>' : ''}
+        </div>
+        <span class="sm-time">${_smFmt(s.created_at)}</span>
+      </div>
+      ${s.content ? `<div class="sm-body">${esc(s.content)}</div>` : ''}
+      <div class="sm-actions">
+        <button class="sm-pin-btn${s.is_pinned ? ' pinned' : ''}" onclick="smPin(${s.id})">
+          ${s.is_pinned ? '📌 Épinglé' : '📌 Épingler'}
+        </button>
+        <button class="sm-del-btn" onclick="smDelete(${s.id})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function smPin(id) {
+  await fetch(`/api/vip/scoops/${id}/pin`, { method: 'POST' });
+  smRefresh();
+}
+
+async function smDelete(id) {
+  // Optimistic remove from DOM
+  document.getElementById('sm-s-' + id)?.remove();
+  await fetch(`/api/vip/scoops/${id}/delete`, { method: 'POST' });
+}
+
+function smToggleQR() {
+  _smQRVisible = !_smQRVisible;
+  const wrap = document.getElementById('sm-qr-wrap');
+  const btn  = document.getElementById('sm-qr-btn');
+  wrap.classList.toggle('hidden', !_smQRVisible);
+  btn.classList.toggle('qr-active', _smQRVisible);
+}
+
+async function _smLoadQR() {
+  try {
+    const res  = await fetch('/api/qr-code');
+    const data = await res.json();
+    const img  = document.getElementById('sm-qr-img');
+    const url  = document.getElementById('sm-qr-url');
+    if (img) img.src = `data:image/png;base64,${data.qr_base64}`;
+    if (url) url.textContent = data.url;
+  } catch { /* silent */ }
+}
+
+function _smFmt(iso) {
+  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+/* Keep scoops list in sync with live game events */
+socket.on('scoop_published', () => {
+  if (_vipCurrentPanel === 'scoops-manager') smRefresh();
+});
+socket.on('scoop_deleted', () => {
+  if (_vipCurrentPanel === 'scoops-manager') smRefresh();
+});
+socket.on('scoop_pinned', () => {
+  if (_vipCurrentPanel === 'scoops-manager') smRefresh();
+});
 
   </script>
 </body>

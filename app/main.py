@@ -216,6 +216,41 @@ def api_vip_sounds():
     return jsonify({"sounds": sounds})
 
 
+@app.route("/api/vip/scoops")
+@vip_required
+def api_vip_scoops():
+    scoops = (Scoop.query
+              .filter_by(is_deleted=False)
+              .order_by(Scoop.is_pinned.desc(), Scoop.created_at.desc())
+              .all())
+    return jsonify({"scoops": [s.to_dict() for s in scoops]})
+
+
+@app.route("/api/vip/scoops/<int:scoop_id>/pin", methods=["POST"])
+@vip_required
+def api_vip_pin_scoop(scoop_id):
+    scoop = db.session.get(Scoop, scoop_id)
+    if scoop and not scoop.is_deleted:
+        scoop.is_pinned = not scoop.is_pinned
+        db.session.commit()
+        socketio.emit("scoop_pinned", scoop.to_dict())
+        log_activity("vip_pin", "Blair VIP", f"Scoop #{scoop_id} {'épinglé' if scoop.is_pinned else 'désépinglé'}")
+        return jsonify({"ok": True, "is_pinned": scoop.is_pinned})
+    return jsonify({"ok": False})
+
+
+@app.route("/api/vip/scoops/<int:scoop_id>/delete", methods=["POST"])
+@vip_required
+def api_vip_delete_scoop(scoop_id):
+    scoop = db.session.get(Scoop, scoop_id)
+    if scoop:
+        scoop.is_deleted = True
+        db.session.commit()
+        socketio.emit("scoop_deleted", {"scoop_id": scoop_id})
+        log_activity("vip_delete", "Blair VIP", f"Scoop #{scoop_id} supprimé")
+    return jsonify({"ok": True})
+
+
 @app.route("/api/vip/gallery")
 @vip_required
 def api_vip_gallery():
