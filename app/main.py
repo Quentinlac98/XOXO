@@ -146,7 +146,7 @@ def vip_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get("blair_vip_verified"):
-            return redirect(url_for("vip_login"))
+            return redirect(url_for("blair_vip"))
         return f(*args, **kwargs)
     return decorated
 
