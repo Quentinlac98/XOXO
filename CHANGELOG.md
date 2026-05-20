@@ -6,6 +6,40 @@ XOXO, Chuck Bass.
 
 ---
 
+## [v4.7.0] — 2026-05-20
+
+Durcissement issu de l'audit de code v4.7, complété par deux correctifs architecturaux validés en QA (protocole `AXE 1→5`) sur la **gestion de session** et les **timers de la machine à états**. Aucune nouvelle fonctionnalité.
+
+### Fixed
+
+#### Session & reconnexion
+
+- **`reset-scores` ne déconnecte plus les joueurs** (`app/main.py`, `templates/mobile.html`, `templates/vip.html`) — `/api/admin/reset` (wipe complet) et `/api/admin/reset-scores` (reset partiel) émettaient le même `session_reset`, si bien que les clients purgeaient systématiquement leur token de reconnexion et retombaient sur l'écran de login. Sur un reset des scores les profils sont conservés en DB : les joueurs doivent rester connectés. Seule Blair survivait, par accident, via son fallback `blair_vip`. **[AXE 1]**
+- **Clé `localStorage` du kick** (`templates/mobile.html`) — les handlers `force_logout` / `session_reset` ciblaient `player_token` au lieu de `gg_player_token`, permettant une ré-authentification silencieuse après une expulsion. Clé corrigée.
+- **`Player.session_id` `nullable=False` → `nullable=True`** (`app/models.py`) — la libération du SID à la déconnexion (`session_id = None`, anti *ghost emits*) violait la contrainte `NOT NULL`.
+
+#### Timers & machine à états
+
+- **Rollback admin → timer Mode Libre complet** (`app/main.py`) — `_stop_quiz_with_rollback()` basculait en `LIBRE` sans armer `libre_ends_at`, ni le job de fin APScheduler, ni le tick serveur. Conséquences : Chuck Mode restait figé sur `--:--`, un refresh ne resynchronisait pas, et `/api/admin/adjust-timer` était un *no-op* (sa branche LIBRE exige `libre_ends_at`) jusqu'à ce qu'un `↺ Reset 15 min` arme le chrono. La fonction délègue désormais l'entrée en LIBRE à `_start_libre_phase(game, play_sound=False)`, produisant un état pleinement formé : `phase_changed` porte un `ends_at` valide, et admin / mobiles / projecteur affichent le même décompte avec des boutons `-5/+5/+10 min` opérationnels immédiatement. Remplace le correctif partiel (ajout d'un `ends_at` nul à l'emit). **[AXE 3]**
+
+#### Listeners & payloads Socket.io
+
+- **`new_scoop` sur `mobile.html`** — le flux de scoops temps réel était mort côté mobile (handler absent).
+- **`quiz_ended` / `quiz_stopped` sur `admin.html`** — Chuck Mode restait aveugle après une fin de quiz naturelle ou un rollback d'urgence.
+- **`latest_player` dans `answer_progress`** (`app/events.py`) — projecteur et admin ne pouvaient pas afficher le dernier répondant.
+
+#### Visuel & sémantique
+
+- **`var(-z-black)` → `var(--black)`** dans `.btn-gold` (`templates/admin.html`) — coquille CSS rendant le texte des boutons or invisible (noir sur noir). **[AXE 5]**
+- **Sélecteur `.choice-key` → `.choice-letter`** dans le handler `question_answer` (`templates/admin.html`) — la coloration verte de la bonne réponse n'était jamais appliquée sur le panneau admin. **[AXE 5]**
+
+### Changed
+
+- **`_start_libre_phase(game, play_sound: bool = True)`** (`app/main.py`) — nouvel argument permettant de réutiliser l'entrée en LIBRE depuis le rollback sans déclencher l'ambiance sonore `phase2_start` (un arrêt manuel ne doit pas jouer de son).
+- **Protocole `session_reset`** — `/api/admin/reset-scores` émet désormais `session_reset` avec le payload `{"keep_players": true}`. Les clients ne purgent leur token que lorsque le drapeau est absent/faux (reset complet) ; sinon ils conservent le token et se reconnectent directement dans le lobby.
+
+---
+
 ## [v4.6.2] — 2026-05-19
 
 VIP Mode complet pour Blair Waldorf — dashboard 4 tuiles accessible via `/vip`, isolé dans son propre template, zéro contamination de `mobile.html`.
