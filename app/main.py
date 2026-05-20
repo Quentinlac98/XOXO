@@ -447,7 +447,7 @@ def api_reset_scores():
     game.question_started_at   = None
 
     Score.query.delete()
-    ScoopModel.query.delete()
+    Scoop.query.delete()
     Player.query.update({"score_total": 0})
 
     # Réassigner GG à Dan si présent, sinon au premier connecté
@@ -1319,6 +1319,7 @@ def _stop_quiz_with_rollback(game: GameSession):
     socketio.emit("phase_changed", {
         "phase": STATE_LIBRE,
         "gg": _get_current_gg_dict(game),
+        "ends_at": game._ends_at_iso(),
     })
     socketio.emit("leaderboard_update", {"leaderboard": leaderboard})
 

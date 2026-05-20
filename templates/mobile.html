@@ -1492,7 +1492,7 @@ socket.on('gg_pick_question', data => {
 
 // Expulsion admin
 socket.on('force_logout', () => {
-  localStorage.removeItem('player_token');
+  localStorage.removeItem('gg_player_token');
   state.player = null;
   state.isGG   = false;
   showToast('Tu as été expulsé(e) par Chuck Bass. XOXO.', 5000);
@@ -1501,7 +1501,7 @@ socket.on('force_logout', () => {
 
 // Reset session (admin)
 socket.on('session_reset', () => {
-  localStorage.removeItem('player_token');
+  localStorage.removeItem('gg_player_token');
   state.player = null;
   state.isGG   = false;
   window.location.reload();
@@ -1510,6 +1510,11 @@ socket.on('session_reset', () => {
 // Rechargement forcé de tous les clients (admin)
 socket.on('client_reload', () => {
   window.location.reload();
+});
+
+socket.on('new_scoop', scoop => {
+  addScoopToFeed(scoop);
+  document.getElementById('nav-badge-scoops').classList.add('show');
 });
 
 // F13 — Erreur de réponse (double submit, GG qui tente de répondre, etc.)
