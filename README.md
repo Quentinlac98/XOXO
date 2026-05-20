@@ -37,8 +37,9 @@ gossip-girl-party/
 │   ├── main.py                 # ★ Flask app factory + routes HTTP + logique métier
 │   │                           #   (machine à états, timers APScheduler, routes admin, routes VIP)
 │   ├── events.py               # ★ Tous les handlers Socket.io (connect, quiz, scoops…)
-│   └── models.py               # ★ SQLAlchemy : Player, GameSession, Score, Scoop,
-│                               #   ActivityLog, ReservedSlot + helpers DB
+│   ├── models.py               # ★ SQLAlchemy : Player, GameSession, Score, Scoop,
+│   │                           #   ActivityLog, ReservedSlot + helpers DB
+│   └── bot_runner.py           # Bots de simulation joueurs + streaming logs temps réel → Chuck Mode
 │
 ├── templates/                  # Jinja2 HTML (servis par Flask)
 │   ├── mobile.html             # Interface invité — style iPhone / Upper East Side
@@ -60,12 +61,15 @@ gossip-girl-party/
 │   ├── db/                     # gossip.db (SQLite)
 │   └── uploads/                # Photos uploadées par les invités
 │
+├── tests/                      # Tests unitaires (pytest)
+│
 ├── .env                        # ⚠ Ne jamais committer — copié depuis .env.example
 ├── .env.example                # Template de configuration (toutes les variables)
 ├── Dockerfile                  # Image Python 3.11-slim + dépendances système (Pillow)
 ├── docker-compose.yml          # Orchestration : ports, volumes nommés, healthcheck
 ├── Makefile                    # Raccourcis : make up / make down / make logs / make shell
-└── requirements.txt            # Dépendances Python (Flask, SocketIO, APScheduler…)
+├── requirements.txt            # Dépendances Python (Flask, SocketIO, APScheduler…)
+└── requirements-test.txt       # Dépendances de test (pytest, pytest-flask…)
 ```
 
 > **Fichiers à ignorer / à ne pas committer** (déjà dans `.gitignore`) :  
