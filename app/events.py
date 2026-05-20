@@ -542,9 +542,16 @@ def on_submit_answer(data):
     current_answers = app.config.get("current_answers", {})
     total_answered  = sum(1 for s in current_answers if s in eligible_sids)
 
+    last_score = Score.query.filter_by(question_id=question_id).order_by(Score.answered_at.desc()).first()
+    latest_player_data = None
+    if last_score:
+        lp = Player.query.get(last_score.player_id)
+        if lp:
+            latest_player_data = {"prenom": lp.prenom, "personnage": lp.personnage}
     socketio.emit("answer_progress", {
         "answered":      total_answered,
         "total_players": total_players,
+        "latest_player": latest_player_data,
     })
     socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
 

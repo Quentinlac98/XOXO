@@ -41,7 +41,7 @@ class Player(db.Model):
     __tablename__ = "players"
 
     id           = db.Column(db.Integer, primary_key=True)
-    session_id   = db.Column(db.String(128), unique=True, nullable=False)
+    session_id   = db.Column(db.String(128), unique=True, nullable=True)
     player_token = db.Column(db.String(64),  unique=True, nullable=True)
     prenom       = db.Column(db.String(64),  nullable=False)
     personnage   = db.Column(db.String(64),  nullable=False)

@@ -447,7 +447,7 @@ def api_reset_scores():
     game.question_started_at   = None
 
     Score.query.delete()
-    ScoopModel.query.delete()
+    Scoop.query.delete()
     Player.query.update({"score_total": 0})
 
     # Réassigner GG à Dan si présent, sinon au premier connecté
@@ -470,7 +470,10 @@ def api_reset_scores():
     app.config["gg_pick_candidates"] = []
     app.config["gg_pick_index"]      = -1
 
-    socketio.emit("session_reset", {})
+    # keep_players=True : reset partiel — les profils joueurs sont conservés en DB,
+    # donc leur token de reconnexion reste valide. Les clients NE doivent PAS purger
+    # leur token (sinon ils retombent sur l'écran de login au lieu du lobby).
+    socketio.emit("session_reset", {"keep_players": True})
     socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
     log_activity("reset_scores", "admin", "Scores + scoops remis à zéro (joueurs conservés)")
     return jsonify({"ok": True, "message": "Scores réinitialisés."})
@@ -1288,7 +1291,6 @@ def _stop_quiz_with_rollback(game: GameSession):
     game.quiz_number   = max(0, quiz_num - 1)
     game.question_index = 0
     game.set_current_question(None)
-    game.transition_to(STATE_LIBRE)
     game.is_paused = False
 
     # ── Fix GG hors-ligne après rollback ──────────────────────────────────
@@ -1316,11 +1318,13 @@ def _stop_quiz_with_rollback(game: GameSession):
         "message": "Quiz arrêté par l'admin. Les points ont été annulés. XOXO.",
         "quiz_number": quiz_num,
     })
-    socketio.emit("phase_changed", {
-        "phase": STATE_LIBRE,
-        "gg": _get_current_gg_dict(game),
-    })
     socketio.emit("leaderboard_update", {"leaderboard": leaderboard})
+
+    # Entrée propre en LIBRE : établit libre_ends_at + le job de fin + le tick serveur,
+    # et émet phase_changed avec un ends_at VALIDE. Sans cela, l'admin (Chuck Mode) restait
+    # figé sur --:-- et /api/admin/adjust-timer ne faisait rien (libre_ends_at était None).
+    # play_sound=False : un arrêt manuel ne doit pas déclencher l'ambiance Mode Libre.
+    _start_libre_phase(game, play_sound=False)
 
 
 # ─── QUIZ ──────────────────────────────────────────────────
@@ -1712,10 +1716,14 @@ def _end_quiz(game: GameSession):
     socketio.start_background_task(_delayed_libre)
 
 
-def _start_libre_phase(game: GameSession):
+def _start_libre_phase(game: GameSession, play_sound: bool = True):
     """
     Transition → LIBRE.
     Lance un timer de 15 min via APScheduler + tick serveur chaque seconde.
+
+    play_sound : joue le son d'entrée en Mode Libre. Mis à False lors d'un
+    rollback admin (arrêt manuel du quiz) pour ne pas déclencher l'ambiance
+    sonore sur une action de contrôle.
     """
     _cancel_all_timers()
 
@@ -1735,7 +1743,8 @@ def _start_libre_phase(game: GameSession):
         "ends_at": ends_at.isoformat(),
         "gg":      _get_current_gg_dict(game),
     })
-    socketio.emit("play_sound", {"sound": "phase2_start"})
+    if play_sound:
+        socketio.emit("play_sound", {"sound": "phase2_start"})
 
     scheduler.add_job(
         func=_libre_end_job,

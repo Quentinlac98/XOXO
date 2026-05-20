@@ -153,7 +153,7 @@
     .btn:active{transform:scale(.97)}
     
     /* Vrai bouton doré principal (Ombré et opaque) */
-    .btn-gold{background:var(--gold);color:var(-z-black);box-shadow:0 4px 14px rgba(201,168,76,.2)}
+    .btn-gold{background:var(--gold);color:var(--black);box-shadow:0 4px 14px rgba(201,168,76,.2)}
     .btn-gold:hover{background:var(--gold-light);box-shadow:0 4px 20px rgba(201,168,76,.35)}
     
     .btn-outline{background:transparent;border:1px solid rgba(201,168,76,.25);color:var(--gold)}
@@ -1694,7 +1694,7 @@ socket.on('answer_progress', data => {
 socket.on('question_answer', data => {
   const answer = data.answer || '';
   document.querySelectorAll('#quiz-choices .choice-item').forEach(el => {
-    const key = el.querySelector('.choice-key');
+    const key = el.querySelector('.choice-letter, .choice-key');
     if (key && key.textContent.trim() === answer) {
       el.classList.add('correct');
       key.textContent = '✓';
@@ -1705,6 +1705,19 @@ socket.on('question_answer', data => {
 
 socket.on('admin_error', data => {
   showToast(`⚠️ ${data.message || 'Erreur serveur.'}`, 'error', 4000);
+});
+
+socket.on('quiz_ended', data => {
+  document.getElementById('quiz-live-sub').textContent = '✓ Quiz terminé — Mode Libre';
+  updateQuizOnlyButtons('LIBRE');
+  updatePauseButton('LIBRE');
+  if (data.leaderboard) loadScores();
+});
+
+socket.on('quiz_stopped', data => {
+  showToast(`✕ ${data.message || 'Quiz arrêté — rollback scores effectué. XOXO.'}`, 'error', 5000);
+  updateQuizOnlyButtons('LIBRE');
+  updatePauseButton('LIBRE');
 });
 
 socket.on('leaderboard_update', data => {
