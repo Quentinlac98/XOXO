@@ -1500,10 +1500,15 @@ socket.on('force_logout', () => {
 });
 
 // Reset session (admin)
-socket.on('session_reset', () => {
-  localStorage.removeItem('gg_player_token');
-  state.player = null;
-  state.isGG   = false;
+// keep_players=true (reset des scores) : le profil joueur est conservé côté serveur,
+// on garde donc le token pour se reconnecter automatiquement dans le lobby.
+// Sinon (reset complet) : le joueur a été supprimé → on purge le token et on repart au login.
+socket.on('session_reset', (data) => {
+  if (!data || !data.keep_players) {
+    localStorage.removeItem('gg_player_token');
+    state.player = null;
+    state.isGG   = false;
+  }
   window.location.reload();
 });
 
