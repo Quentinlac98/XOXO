@@ -33,7 +33,8 @@ from .models import (
     db, Player, GameSession, Score, Scoop, ActivityLog, ReservedSlot,
     STATE_LOBBY, STATE_QUIZ, STATE_QUIZ_PAUSED, STATE_LIBRE,
     get_or_create_game_session, load_questions, pick_one_per_category,
-    get_leaderboard, log_activity, reset_game_session, init_db
+    get_leaderboard, log_activity, reset_game_session, init_db,
+    load_characters, get_taken_characters
 )
 
 
@@ -51,9 +52,10 @@ def create_app():
     def abs_path(p):
         return os.path.join(BASE_DIR, p) if not os.path.isabs(p) else p
 
-    db_path        = abs_path(os.getenv("DB_PATH",        "data/db/gossip.db"))
-    upload_path    = abs_path(os.getenv("UPLOAD_PATH",    "data/uploads"))
-    questions_path = abs_path(os.getenv("QUESTIONS_PATH", "questions/gossipgirl_qcm.jsonl"))
+    db_path         = abs_path(os.getenv("DB_PATH",         "data/db/gossip.db"))
+    upload_path     = abs_path(os.getenv("UPLOAD_PATH",     "data/uploads"))
+    questions_path  = abs_path(os.getenv("QUESTIONS_PATH",  "questions/gossipgirl_qcm.jsonl"))
+    characters_path = abs_path(os.getenv("CHARACTERS_PATH", "characters.json"))
 
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     os.makedirs(upload_path, exist_ok=True)
@@ -64,6 +66,7 @@ def create_app():
     app.config["MAX_CONTENT_LENGTH"]          = 10 * 1024 * 1024
     app.config["UPLOAD_FOLDER"]               = upload_path
     app.config["QUESTIONS_PATH"]              = questions_path
+    app.config["CHARACTERS_PATH"]             = characters_path
     app.config["QUESTIONS_PER_SESSION"]       = int(os.getenv("QUESTIONS_PER_SESSION", 10))
     app.config["LIBRE_DURATION_MINUTES"]      = int(os.getenv("PHASE2_DURATION_MINUTES", 15))
     app.config["POST_DELAY"]                  = int(os.getenv("POST_DELAY_SECONDS", 3))
@@ -103,7 +106,7 @@ socketio = SocketIO(
 )
 
 # ─── Bot Runner — injection du socketio Flask ───────────────
-from .bot_runner import orchestrator as bot_orchestrator, set_flask_socketio
+from .bot_runner import orchestrator as bot_orchestrator, set_flask_socketio, MAX_BOTS
 set_flask_socketio(socketio, server_url=os.getenv("BOT_SERVER_URL", f"http://127.0.0.1:{os.getenv('APP_PORT', '7777')}"))
 
 # ─── APScheduler (BackgroundScheduler) ─────────────────────
@@ -127,6 +130,16 @@ def get_questions():
     if _questions_cache is None:
         _questions_cache = load_questions(app.config["QUESTIONS_PATH"])
     return _questions_cache
+
+
+def get_characters():
+    """Roster centralisé (mis en cache dans models.load_characters)."""
+    return load_characters(app.config["CHARACTERS_PATH"])
+
+
+def get_character(full_name):
+    """Retourne l'entrée roster correspondant au personnage complet, ou None."""
+    return next((c for c in get_characters() if c["full_name"] == full_name), None)
 
 
 # ============================================================
@@ -174,6 +187,17 @@ def qr_page():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "xoxo": "Gossip Girl"}), 200
+
+
+@app.route("/api/characters")
+def api_characters():
+    """Roster centralisé + état d'occupation courant.
+    Public : consommé par /mobile, /vip et les bots au chargement de la grille.
+    Le suivi temps réel se fait ensuite via l'event Socket.io `roster_state`."""
+    return jsonify({
+        "characters": get_characters(),
+        "taken":      get_taken_characters(),
+    })
 
 
 # ============================================================
@@ -614,6 +638,7 @@ def api_delete_player():
     db.session.commit()
 
     socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
+    _broadcast_roster()
     log_activity("delete_player", "admin", f"{prenom} ({personnage}) supprimé définitivement")
     return jsonify({"ok": True})
 
@@ -636,6 +661,7 @@ def api_kick_player():
     if player.session_id:
         socketio.emit("force_logout", {}, to=player.session_id)
     socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
+    _broadcast_roster()
     log_activity("kick", "admin", f"{player.prenom} expulsé (token invalidé)")
     return jsonify({"ok": True})
 
@@ -648,6 +674,7 @@ def api_free_blair():
         blair.is_connected = False
         db.session.commit()
         socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
+        _broadcast_roster()
         log_activity("free_blair", "admin", "Slot Blair libéré")
     return jsonify({"ok": True})
 
@@ -994,7 +1021,7 @@ def api_bots_list():
     return jsonify({
         "bots":  bots,
         "count": len(bots),
-        "max":   10,
+        "max":   MAX_BOTS,
     })
 
 
@@ -1119,6 +1146,11 @@ def _cancel_all_timers():
 
 
 # ─── Broadcast scoop ───────────────────────────────────────
+
+def _broadcast_roster():
+    """Diffuse l'état d'occupation du roster à tous les clients (grille temps réel)."""
+    socketio.emit("roster_state", {"taken": get_taken_characters()})
+
 
 def _broadcast_scoop(scoop: Scoop):
     """Émet new_scoop après un délai non-bloquant."""

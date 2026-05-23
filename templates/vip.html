@@ -72,6 +72,8 @@
     .perso-chip:active { transform: scale(.97); }
     .perso-chip.selected { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.45); }
     .perso-chip.locked { opacity: .35; cursor: not-allowed; }
+    .perso-chip.taken { opacity: .3; cursor: not-allowed; filter: grayscale(1); }
+    .perso-chip.taken .chip-badge { color: rgba(255,255,255,.45); }
     .perso-chip.blair-unlock { opacity: 1; cursor: pointer; border-style: dashed; border-color: rgba(201,168,76,.3); }
     .chip-name { font-family: 'Playfair Display', serif; font-size: 13px; color: white; font-weight: 500; }
     .chip-family { font-size: 8.5px; letter-spacing: .1em; color: var(--stone); margin-top: 2px; }
@@ -956,36 +958,8 @@
 /* ═══════════════════════════════════════
    PERSONNAGES
 ═══════════════════════════════════════ */
-const PERSONNAGES = [
-  {name:"Dan",       family:"Humphrey",         locked:false, desc:"Le premier Gossip Girl", badge:"✦ GG Original"},
-  {name:"Serena",    family:"van der Woodsen",   locked:false, desc:"L'it-girl de l'UES"},
-  {name:"Nate",      family:"Archibald",         locked:false, desc:"Le beau gosse"},
-  {name:"Jenny",     family:"Humphrey",          locked:false, desc:"La petite sœur rebelle"},
-  {name:"Eric",      family:"van der Woodsen",   locked:false, desc:"Frère de Serena"},
-  {name:"Rufus",     family:"Humphrey",          locked:false, desc:"Le père cool"},
-  {name:"Lily",      family:"van der Woodsen",   locked:false, desc:"La mère glamour"},
-  {name:"Georgina",  family:"Sparks",            locked:false, desc:"La manipulatrice"},
-  {name:"Vanessa",   family:"Abrams",            locked:false, desc:"L'amie alternative"},
-  {name:"Chuck",     family:"Bass",              locked:true,  desc:"God Mode uniquement", badge:"🔒 Admin"},
-  {name:"Blair",     family:"Waldorf",           locked:true,  blair:true, desc:"La reine de l'UES", badge:"🌹 VIP"},
-  {name:"Aaron",     family:"Rose",              locked:false, desc:"L'artiste"},
-  {name:"Carter",    family:"Baizen",            locked:false, desc:"Le séducteur"},
-  {name:"Juliet",    family:"Sharp",             locked:false, desc:"Antagoniste saison 4"},
-  {name:"Ben",       family:"Donovan",           locked:false, desc:"Frère de Juliet"},
-  {name:"Bree",      family:"Buckley",           locked:false, desc:"Relation secrète de Nate"},
-  {name:"Sage",      family:"Spence",            locked:false, desc:"Influenceuse rebelle"},
-  {name:"Steven",    family:"Spence",            locked:false, desc:"Petit ami de Serena"},
-  {name:"Louis",     family:"Grimaldi",          locked:false, desc:"Prince, fiancé de Blair"},
-  {name:"Beatrice",  family:"Grimaldi",          locked:false, desc:"Sœur de Louis"},
-  {name:"Penelope",  family:"Shafai",            locked:false, desc:"Reine B du lycée"},
-  {name:"Hazel",     family:"Williams",          locked:false, desc:"Clan de Blair"},
-  {name:"Isabel",    family:"Coates",            locked:false, desc:"Clan de Blair"},
-  {name:"Jonathan",  family:"Whitney",           locked:false, desc:"Petit ami d'Eric"},
-  {name:"Damien",    family:"Dalgaard",          locked:false, desc:"Dealer & manipulateur"},
-  {name:"Agnes",     family:"Andrews",           locked:false, desc:"Styliste instable"},
-  {name:"Scott",     family:"Rosson",            locked:false, desc:"Fils caché de Rufus"},
-  {name:"Poppy",     family:"Lifton",            locked:false, desc:"Escroc mondaine"},
-];
+// Roster chargé depuis /api/characters (source unique : characters.json)
+let PERSONNAGES = [];
 
 /* ═══════════════════════════════════════
    STATE
@@ -1005,6 +979,7 @@ const state = {
   questionDuration:  10,
   // ✅ FIX: token persistant (localStorage) — plus de oldSid
   playerToken:       localStorage.getItem('gg_player_token') || null,
+  takenChars:        new Set(),   // personnages déjà choisis (sync temps réel)
 };
 
 /* ═══════════════════════════════════════
@@ -1044,28 +1019,50 @@ function goScreen(name, btn) {
 /* ═══════════════════════════════════════
    PERSO GRID
 ═══════════════════════════════════════ */
+function isCharTaken(p) {
+  return state.takenChars.has(p.name + ' ' + p.family);
+}
+
 function buildPersoGrid() {
   const grid    = document.getElementById('perso-grid');
+  if (!grid) return;
   grid.innerHTML = '';
   const blairVIP = sessionStorage.getItem('blair_vip') === '1';
 
   PERSONNAGES.forEach(p => {
-    const chip         = document.createElement('div');
+    const chip          = document.createElement('div');
     const isBlairUnlock = p.blair && blairVIP;
     const isLocked      = p.locked && !isBlairUnlock;
+    const taken         = !isLocked && isCharTaken(p);   // pris par un autre joueur
+    const disabled      = isLocked || taken;
 
-    chip.className = 'perso-chip' + (isLocked ? ' locked' : '') + (isBlairUnlock ? ' blair-unlock' : '');
+    chip.className = 'perso-chip'
+      + (isLocked ? ' locked' : '')
+      + (taken ? ' taken' : '')
+      + (isBlairUnlock ? ' blair-unlock' : '');
     chip.innerHTML = `
       <div class="chip-name">${p.name}</div>
       <div class="chip-family">${p.family}${isLocked ? ' 🔒' : ''}</div>
       ${p.desc  ? `<div class="chip-desc">${p.desc}</div>` : ''}
-      ${p.badge ? `<div class="chip-badge">${p.badge}</div>` : ''}
+      ${taken ? `<div class="chip-badge">Déjà choisi</div>` : (p.badge ? `<div class="chip-badge">${p.badge}</div>` : '')}
     `;
-    if (!isLocked) {
+    if (!disabled) {
       chip.onclick = () => selectPerso(chip, p.name, p.family, p.blair || false);
+      if (state.selectedPerso === p.name + ' ' + p.family) chip.classList.add('selected');
     }
     grid.appendChild(chip);
   });
+}
+
+function applyRosterState(taken) {
+  state.takenChars = new Set(taken || []);
+  if (!state.player && state.selectedPerso && state.takenChars.has(state.selectedPerso)) {
+    state.selectedPerso = null;
+    const wrap = document.getElementById('blair-code-wrap');
+    if (wrap) wrap.style.display = 'none';
+    showToast('Ce personnage vient d\'être choisi. Choisis-en un autre. XOXO.');
+  }
+  buildPersoGrid();
 }
 
 function selectPerso(chip, name, family, isBlair) {
@@ -1580,6 +1577,17 @@ socket.on('login_error', data => {
   showToast(data.message, 3500);
 });
 
+/* ═══════════════════════════════════════
+   ROSTER TEMPS RÉEL — disponibilité personnages
+═══════════════════════════════════════ */
+socket.on('roster_state', data => applyRosterState(data.taken));
+socket.on('player_joined', data => {
+  if (data.personnage) { state.takenChars.add(data.personnage); buildPersoGrid(); }
+});
+socket.on('player_left', data => {
+  if (data.personnage) { state.takenChars.delete(data.personnage); buildPersoGrid(); }
+});
+
 // ✅ FIX: reconnexion silencieuse
 socket.on('reconnect_success', data => {
   if (data.player.player_token) {
@@ -1929,7 +1937,15 @@ socket.on('answer_error', data => {
 /* Page /vip — Blair VIP toujours authentifiée côté serveur */
 sessionStorage.setItem('blair_vip', '1');
 
-buildPersoGrid();
+// Charge le roster centralisé puis construit la grille (occupation temps réel via socket)
+fetch('/api/characters')
+  .then(r => r.json())
+  .then(d => {
+    PERSONNAGES = d.characters || [];
+    if (state.takenChars.size === 0) state.takenChars = new Set(d.taken || []);
+    buildPersoGrid();
+  })
+  .catch(() => buildPersoGrid());
 
 /* HEARTBEAT */
 setInterval(() => {

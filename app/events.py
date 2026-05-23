@@ -9,13 +9,15 @@ from datetime import datetime, timezone
 
 from flask import request, session
 from flask_socketio import emit
+from sqlalchemy.exc import IntegrityError
 
 from .main import app, socketio, _cancel_job
 from .bot_runner import set_admin_sid
 from .models import (
     db, Player, GameSession, Score, Scoop, ActivityLog,
     STATE_LOBBY, STATE_QUIZ, STATE_LIBRE,
-    get_or_create_game_session, get_leaderboard, log_activity
+    get_or_create_game_session, get_leaderboard, log_activity,
+    get_taken_characters
 )
 def _utc_iso(dt):
     """Retourne dt.isoformat() avec tzinfo=UTC garanti, ou None."""
@@ -29,7 +31,7 @@ def _utc_iso(dt):
 from .main import (
     _get_current_gg_dict, _broadcast_scoop, _start_quiz_phase,
     _ask_gg_to_pick, _send_question, _get_question_scores, _start_libre_phase,
-    _cancel_job, _question_timer_job,
+    _cancel_job, _question_timer_job, _broadcast_roster, get_character,
 )
 
 
@@ -39,7 +41,15 @@ from .main import (
 
 @socketio.on("connect")
 def on_connect():
-    pass
+    # Envoie l'occupation courante du roster au client qui vient de se connecter,
+    # pour que la grille de personnages soit à jour avant tout login.
+    emit("roster_state", {"taken": get_taken_characters()})
+
+
+@socketio.on("get_roster")
+def on_get_roster(data=None):
+    """Snapshot d'occupation à la demande (appelé par la grille mobile/vip au build)."""
+    emit("roster_state", {"taken": get_taken_characters()})
 
 
 @socketio.on("admin_identify")
@@ -66,6 +76,7 @@ def on_disconnect():
             "count":      Player.query.filter_by(is_connected=True).count(),
         })
         socketio.emit("leaderboard_update", {"leaderboard": leaderboard})
+        _broadcast_roster()
         log_activity("disconnect", player.prenom, player.personnage)
 
 
@@ -84,7 +95,15 @@ def on_reconnect(data):
         old_sid             = player.session_id
         player.session_id   = sid
         player.is_connected = True
-        db.session.commit()
+        # Le slot a pu être repris par quelqu'un d'autre pendant la déconnexion :
+        # l'index unique partiel rejette alors la reconnexion.
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            emit("reconnect_failed", {"message": "Ton personnage a ete repris. Reconnecte-toi."})
+            return
+        _broadcast_roster()
 
         game = get_or_create_game_session()
         emit("reconnect_success", {
@@ -269,11 +288,15 @@ def on_join_player(data):
         emit("login_error", {"message": "Prenom et personnage requis."})
         return
 
-    if "Chuck" in personnage and "Bass" in personnage:
+    # Verrous pilotés par le roster centralisé (characters.json) plutôt que par
+    # des tests de sous-chaîne en dur.
+    char = get_character(personnage)
+
+    if char and char.get("role") == "admin":
         emit("login_error", {"message": "Chuck Bass est en God Mode. XOXO."})
         return
 
-    if "Blair" in personnage and "Waldorf" in personnage:
+    if char and (char.get("role") == "vip" or char.get("requires_code")):
         if blair_code != app.config.get("BLAIR_SECRET_CODE", ""):
             emit("login_error", {"message": "Blair Waldorf necessite un code secret. XOXO."})
             return
@@ -310,7 +333,10 @@ def on_join_player(data):
     player.is_connected = True
 
     game   = get_or_create_game_session()
-    is_dan = "Dan" in personnage and "Humphrey" in personnage
+    # Dan Humphrey = Gossip Girl original. Détection par rôle OU par nom : le roster
+    # peut ne pas porter le tag de rôle (cohérent avec reset_game_session()).
+    is_dan = bool(char and (char.get("role") == "first_gg"
+                            or (char.get("name") == "Dan" and char.get("family") == "Humphrey")))
 
     if is_dan and not game.current_gg_id:
         player.is_gg = True
@@ -318,7 +344,14 @@ def on_join_player(data):
         game.current_gg_id = player.id
         log_activity("first_gg", prenom, "Dan Humphrey = premier Gossip Girl")
 
-    db.session.commit()
+    # Verrou atomique : si un autre client a réservé ce personnage entre-temps,
+    # l'index unique partiel (is_connected=1) lève IntegrityError → on perd la course.
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        emit("login_error", {"message": f"{personnage} est deja choisi ce soir."})
+        return
 
     emit("login_success", {
         "player":      player.to_dict(),
@@ -338,6 +371,7 @@ def on_join_player(data):
         "leaderboard": lb,   # inclus pour que le projecteur puisse renderLeaderboard immédiatement
     })
     socketio.emit("leaderboard_update", {"leaderboard": lb})
+    _broadcast_roster()
     log_activity("login", prenom, personnage)
 
 
