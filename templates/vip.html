@@ -346,58 +346,67 @@
     .vip-back-btn.show { display: flex; }
     .vip-back-btn:active { background: rgba(201,168,76,.15); color: var(--gold); }
 
-    /* ════ GALLERY PANEL ════ */
-    .gallery-stage {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 20px 20px 10px; min-height: 0; overflow: hidden;
-      position: relative;
+    /* ════ GALLERY GRID ════ */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      padding: 12px;
     }
-    .gallery-card {
-      width: 100%; max-width: 340px;
-      border-radius: 24px; overflow: hidden;
-      border: 1px solid rgba(201,168,76,.18);
-      transition: opacity .22s ease;
-      position: relative;
+    .gallery-thumb {
+      aspect-ratio: 1; border-radius: 12px; overflow: hidden;
+      cursor: pointer; border: 1px solid rgba(201,168,76,.1);
+      background: rgba(255,255,255,.03);
+      transition: transform .15s, border-color .2s;
+      -webkit-tap-highlight-color: transparent;
     }
-    .gallery-card.fading { opacity: 0; }
-    .gallery-card-placeholder {
-      background: linear-gradient(145deg, rgba(201,168,76,.12) 0%, rgba(6,6,6,.6) 100%);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 48px 24px 40px; text-align: center; gap: 14px;
-      min-height: 280px;
+    .gallery-thumb:active { transform: scale(.94); border-color: rgba(201,168,76,.45); }
+    .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gallery-thumb-placeholder {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
     }
-    .gallery-emoji {
-      font-size: 80px; line-height: 1;
-      animation: catPulse 3s ease-in-out infinite;
-    }
+
     @keyframes catPulse {
       0%,100% { transform: scale(1) rotate(-2deg); }
       50%      { transform: scale(1.06) rotate(2deg); }
     }
-    .gallery-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 22px; font-weight: 700;
-      background: linear-gradient(135deg, #C9A84C 0%, #E2C97E 60%, #C9A84C 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .gallery-caption {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 14px; font-style: italic; color: var(--stone);
-      line-height: 1.5; max-width: 220px;
-    }
-    .gallery-img {
-      width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block;
-    }
-    .gallery-img-caption {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(6,6,6,.85));
-      padding: 32px 18px 16px;
-    }
 
-    .gallery-footer {
+    /* ════ LIGHTBOX ════ */
+    #gallery-lightbox {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(6,6,6,.97);
+      display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    #gallery-lightbox.open { opacity: 1; pointer-events: auto; }
+    .lb-header {
       flex-shrink: 0;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 24px calc(16px + env(safe-area-inset-bottom, 0px));
+      padding: 16px 18px 8px;
+    }
+    .lb-counter { font-size: 11px; letter-spacing: .2em; color: var(--stone); text-transform: uppercase; }
+    .lb-close-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.08); border: none;
+      color: white; font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lb-stage {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      overflow: hidden; position: relative; padding: 0 8px;
+    }
+    .lb-img {
+      max-width: 100%; max-height: 100%; object-fit: contain;
+      border-radius: 10px; user-select: none; -webkit-user-drag: none;
+      transition: opacity .15s ease;
+    }
+    .lb-img.fading { opacity: 0; }
+    .lb-footer {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 24px calc(20px + env(safe-area-inset-bottom, 0px));
     }
     .gallery-nav-btn {
       width: 44px; height: 44px; border-radius: 50%;
@@ -866,13 +875,26 @@
 
     <!-- Panel: Dino Gallery -->
     <div class="vip-panel hidden" id="vip-panel-gallery">
-      <div class="gallery-stage" id="gallery-stage">
-        <!-- Populated by JS -->
+      <div class="vip-scroll">
+        <div class="gallery-grid" id="gallery-grid">
+          <!-- Populated by JS -->
+        </div>
       </div>
-      <div class="gallery-footer">
-        <button class="gallery-nav-btn" id="gallery-prev" onclick="galleryStep(-1)">‹</button>
-        <div class="gallery-dots" id="gallery-dots"></div>
-        <button class="gallery-nav-btn" id="gallery-next" onclick="galleryStep(1)">›</button>
+    </div>
+
+    <!-- Lightbox (above vip-overlay) -->
+    <div id="gallery-lightbox">
+      <div class="lb-header">
+        <div class="lb-counter" id="lb-counter"></div>
+        <button class="lb-close-btn" onclick="closeLightbox()">✕</button>
+      </div>
+      <div class="lb-stage" id="lb-stage">
+        <img class="lb-img" id="lb-img" src="" alt="Dino"/>
+      </div>
+      <div class="lb-footer">
+        <button class="gallery-nav-btn" id="lb-prev" onclick="lbStep(-1)">‹</button>
+        <div class="gallery-dots" id="lb-dots"></div>
+        <button class="gallery-nav-btn" id="lb-next" onclick="lbStep(1)">›</button>
       </div>
     </div>
 
@@ -2017,7 +2039,7 @@ function _showVipPanel(name) {
 }
 
 /* ═══════════════════════════════════════
-   DINO GALLERY
+   DINO GALLERY — grid + lightbox
 ═══════════════════════════════════════ */
 const GALLERY_FALLBACK = [
   { type: 'placeholder', emoji: '🐱', name: 'Dino',          caption: 'Le chat officiel de Blair Waldorf' },
@@ -2026,8 +2048,8 @@ const GALLERY_FALLBACK = [
 ];
 
 let _galleryItems  = [];
-let _galleryIndex  = 0;
 let _galleryLoaded = false;
+let _lbIndex       = 0;
 
 async function initGallery() {
   if (!_galleryLoaded) {
@@ -2042,71 +2064,105 @@ async function initGallery() {
     }
     _galleryLoaded = true;
   }
-  _galleryIndex = 0;
-  _galleryRender();
-  _galleryInitSwipe();
+  _renderGalleryGrid();
 }
 
-function _galleryRender() {
-  const item  = _galleryItems[_galleryIndex];
-  const stage = document.getElementById('gallery-stage');
-  const total = _galleryItems.length;
-
-  // Build card HTML
-  let cardInner = '';
-  if (item.type === 'photo') {
-    cardInner = `
-      <img class="gallery-img" src="${item.url}" alt="${esc(item.name)}"/>
-      <div class="gallery-img-caption">
-        <div class="gallery-name">${esc(item.name)}</div>
+function _renderGalleryGrid() {
+  const grid = document.getElementById('gallery-grid');
+  if (!grid) return;
+  grid.innerHTML = _galleryItems.map((item, i) => {
+    if (item.type === 'photo') {
+      return `<div class="gallery-thumb" onclick="openLightbox(${i})">
+        <img src="${item.url}" alt="Dino" loading="lazy"/>
       </div>`;
-  } else {
-    cardInner = `
-      <div class="gallery-card-placeholder">
-        <div class="gallery-emoji">${item.emoji}</div>
-        <div class="gallery-name">${esc(item.name)}</div>
-        <div class="gallery-caption">${esc(item.caption)}</div>
+    } else {
+      return `<div class="gallery-thumb" onclick="openLightbox(${i})">
+        <div class="gallery-thumb-placeholder">
+          <div style="font-size:2.2rem">${item.emoji}</div>
+          <div style="font-size:9px;color:var(--stone);text-align:center;padding:0 6px;line-height:1.3">${esc(item.caption)}</div>
+        </div>
       </div>`;
-  }
-
-  // Fade out → swap → fade in
-  const existing = stage.querySelector('.gallery-card');
-  if (existing) {
-    existing.classList.add('fading');
-    setTimeout(() => {
-      stage.innerHTML = `<div class="gallery-card">${cardInner}</div>`;
-    }, 200);
-  } else {
-    stage.innerHTML = `<div class="gallery-card">${cardInner}</div>`;
-  }
-
-  // Dots
-  const dots = document.getElementById('gallery-dots');
-  dots.innerHTML = _galleryItems.map((_, i) =>
-    `<div class="gallery-dot ${i === _galleryIndex ? 'active' : ''}"></div>`
-  ).join('');
-
-  // Prev / next buttons
-  document.getElementById('gallery-prev').disabled = _galleryIndex === 0;
-  document.getElementById('gallery-next').disabled = _galleryIndex === total - 1;
+    }
+  }).join('');
 }
 
-function galleryStep(dir) {
-  const next = _galleryIndex + dir;
+function openLightbox(index) {
+  _lbIndex = index;
+  _lbRender(false);
+  document.getElementById('gallery-lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('gallery-lightbox').classList.remove('open');
+}
+
+function lbStep(dir) {
+  const next = _lbIndex + dir;
   if (next < 0 || next >= _galleryItems.length) return;
-  _galleryIndex = next;
-  _galleryRender();
+  _lbIndex = next;
+  _lbRender(true);
 }
 
-function _galleryInitSwipe() {
-  const stage = document.getElementById('gallery-stage');
-  let startX = 0;
-  stage.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-  stage.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) > 48) galleryStep(dx < 0 ? 1 : -1);
-  }, { passive: true });
+function _lbRender(animate) {
+  const item  = _galleryItems[_lbIndex];
+  const total = _galleryItems.length;
+  const img   = document.getElementById('lb-img');
+
+  const doRender = () => {
+    // clear any placeholder
+    document.querySelectorAll('.lb-placeholder').forEach(el => el.remove());
+
+    if (item.type === 'photo') {
+      img.src = item.url;
+      img.style.display = 'block';
+    } else {
+      img.style.display = 'none';
+      const ph = document.createElement('div');
+      ph.className = 'lb-placeholder';
+      ph.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;';
+      ph.innerHTML = `
+        <div style="font-size:5rem;animation:catPulse 3s ease-in-out infinite">${item.emoji}</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--gold)">${esc(item.name)}</div>
+        <div style="font-size:.85rem;color:var(--stone);font-style:italic;max-width:240px;line-height:1.5">${esc(item.caption)}</div>
+      `;
+      document.getElementById('lb-stage').appendChild(ph);
+    }
+    if (animate) img.classList.remove('fading');
+  };
+
+  if (animate) {
+    img.classList.add('fading');
+    setTimeout(doRender, 150);
+  } else {
+    doRender();
+  }
+
+  // counter + dots
+  document.getElementById('lb-counter').textContent = `${_lbIndex + 1} / ${total}`;
+  const dots = document.getElementById('lb-dots');
+  if (dots) {
+    // show dots only if ≤ 12 items (avoid overflow)
+    dots.innerHTML = total <= 12 ? _galleryItems.map((_, i) =>
+      `<div class="gallery-dot ${i === _lbIndex ? 'active' : ''}"></div>`
+    ).join('') : '';
+  }
+  document.getElementById('lb-prev').disabled = _lbIndex === 0;
+  document.getElementById('lb-next').disabled = _lbIndex === total - 1;
 }
+
+// Swipe support in lightbox
+(function() {
+  let _startX = 0;
+  document.addEventListener('DOMContentLoaded', () => {
+    const stage = document.getElementById('lb-stage');
+    if (!stage) return;
+    stage.addEventListener('touchstart', e => { _startX = e.touches[0].clientX; }, { passive: true });
+    stage.addEventListener('touchend',   e => {
+      const dx = e.changedTouches[0].clientX - _startX;
+      if (Math.abs(dx) > 48) lbStep(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  });
+})();
 
 /* ═══════════════════════════════════════
    VIP SOUNDBOARD
