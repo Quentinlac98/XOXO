@@ -9,7 +9,7 @@ import random
 import sqlite3
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import event
+from sqlalchemy import event, Index, text
 from sqlalchemy.engine import Engine
 
 db = SQLAlchemy()
@@ -39,6 +39,14 @@ VALID_STATES = (STATE_LOBBY, STATE_QUIZ, STATE_QUIZ_PAUSED, STATE_LIBRE)
 # ============================================================
 class Player(db.Model):
     __tablename__ = "players"
+
+    # Un seul joueur connecté par personnage : index unique PARTIEL (ne s'applique
+    # qu'aux lignes is_connected=1). Une déconnexion libère le slot ; deux claims
+    # concurrents sur le même personnage → IntegrityError sur le second (verrou atomique).
+    __table_args__ = (
+        Index("uq_personnage_connected", "personnage", unique=True,
+              sqlite_where=text("is_connected = 1")),
+    )
 
     id           = db.Column(db.Integer, primary_key=True)
     session_id   = db.Column(db.String(128), unique=True, nullable=True)
@@ -284,6 +292,40 @@ def get_or_create_game_session():
     return game
 
 
+# ============================================================
+#  PERSONNAGES (roster centralisé — characters.json)
+# ============================================================
+
+_characters_cache = None
+
+def load_characters(path):
+    """Charge le roster depuis characters.json (cache). Ajoute full_name = 'Prénom Famille'."""
+    global _characters_cache
+    if _characters_cache is not None:
+        return _characters_cache
+    chars = []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for c in data.get("characters", []):
+            c = dict(c)
+            c["full_name"] = f"{c['name']} {c['family']}"
+            chars.append(c)
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    _characters_cache = chars
+    return chars
+
+
+def get_taken_characters():
+    """Personnages actuellement occupés (joueurs connectés, hors admin/God Mode)."""
+    rows = (Player.query
+            .filter(Player.is_connected == True, Player.is_admin == False)
+            .with_entities(Player.personnage)
+            .all())
+    return sorted({r[0] for r in rows if r[0]})
+
+
 _LETTERS = ("A", "B", "C", "D")
 
 def _normalize_question(q: dict) -> dict:
@@ -459,9 +501,25 @@ def reset_game_session():
     log_activity("reset", "system", "Session reinitialisee -> LOBBY")
 
 
+def _ensure_personnage_index():
+    """Crée l'index unique partiel sur players.personnage pour les DB déjà existantes
+    (create_all ne touche pas une table déjà créée). Idempotent."""
+    try:
+        db.session.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_personnage_connected "
+            "ON players (personnage) WHERE is_connected = 1"
+        ))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        log_activity("index_warning", "system",
+                     f"Index personnage non créé (doublons connectés existants ?) : {e}")
+
+
 def init_db(app):
     with app.app_context():
         db.create_all()
+        _ensure_personnage_index()
         blair_slot = ReservedSlot.query.filter_by(personnage="Blair Waldorf").first()
         if not blair_slot:
             db.session.add(ReservedSlot(personnage="Blair Waldorf", is_locked=True))

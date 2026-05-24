@@ -4,379 +4,1052 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chuck Mode — Gossip Girl Party</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500;1,700&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --gold:#C9A84C;--gold-light:#E2C97E;--gold-dim:rgba(201,168,76,.15);
-      --black:#050505;--dark:#0A0A0A;--dark2:#111111;--dark3:#161616;
-      --cream:#F5F0E8;--stone:#7A7060;--stone2:#504840;
-      --red:#C0504D;--red-dim:rgba(192,80,77,.12);
-      --green:#22c55e;--green-dim:rgba(34,197,94,.12);
-      --blue:#60a5fa;--blue-dim:rgba(96,165,250,.1);
-    }
-    html{scroll-behavior:smooth}
-    body{font-family:'Montserrat',sans-serif;background:var(--black);color:var(--cream);min-height:100vh;overflow-x:hidden}
-    a{color:inherit;text-decoration:none}
-    select option{background:var(--dark2);color:var(--cream)}
+/* ══════════════════════════════════════════════════
+   CHUCK MODE · Admin Panel v2.0
+   Visual DNA: Playfair Display + Montserrat
+   Gossip Girl / Chuck Bass — Dark Luxury
+   ══════════════════════════════════════════════════ */
 
-    /* ════════════════════ LAYOUT ════════════════════ */
-    .layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500;1,700&family=Montserrat:wght@200;300;400;500;600&display=swap');
 
-    /* ════════════════════ SIDEBAR ════════════════════ */
-    .sidebar{
-      background:var(--dark);
-      border-right:1px solid rgba(201,168,76,.07);
-      padding:0;
-      position:sticky;top:0;height:100vh;
-      overflow-y:auto;overflow-x:hidden;
-      display:flex;flex-direction:column;
-      scrollbar-width:thin;scrollbar-color:var(--stone2) transparent;
-    }
-    .sidebar::-webkit-scrollbar{width:3px}
-    .sidebar::-webkit-scrollbar-thumb{background:var(--stone2);border-radius:2px}
+/* ── Variables — preserved from original ───────── */
+:root {
+  --gold:       #C9A84C;
+  --gold-light: #E2C97E;
+  --gold-dim:   rgba(201,168,76,.15);
+  --gold-glow:  rgba(201,168,76,.06);
+  --black:      #050505;
+  --dark:       #0A0A0A;
+  --dark2:      #111111;
+  --dark3:      #161616;
+  --cream:      #F5F0E8;
+  --stone:      #7A7060;
+  --stone2:     #504840;
+  --red:        #C0504D;
+  --red-dim:    rgba(192,80,77,.12);
+  --green:      #22c55e;
+  --green-dim:  rgba(34,197,94,.12);
+  --blue:       #60a5fa;
+  --blue-dim:   rgba(96,165,250,.1);
+  --panel-border: rgba(201,168,76,.09);
+  --cmd-h:      54px;
+  --sb-w:       230px;
+}
 
-    .sidebar-header{
-      padding:24px 20px 20px;
-      border-bottom:1px solid rgba(201,168,76,.07);
-      text-align:center;
-    }
-    .sidebar-logo-title{
-      font-family:'Playfair Display',serif;
-      font-size:20px;color:var(--gold);
-      letter-spacing:.03em;
-    }
-    .sidebar-logo-sub{
-      font-size:8px;letter-spacing:.45em;text-transform:uppercase;
-      color:var(--stone);margin-top:5px;
-      display:flex;align-items:center;justify-content:center;gap:6px;
-    }
-    .live-dot{
-      width:7px;height:7px;border-radius:50%;background:var(--green);
-      display:inline-block;flex-shrink:0;
-      animation:livePulse 2.2s ease-in-out infinite;
-    }
-    .live-dot.offline{background:var(--red);animation:none}
-    @keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{opacity:.6;box-shadow:0 0 0 4px rgba(34,197,94,0)}}
+/* ── Reset ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: var(--black);
+  color: var(--cream);
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+a { color: inherit; text-decoration: none; }
+select option { background: var(--dark2); color: var(--cream); }
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--stone2); border-radius: 2px; }
 
-    .sidebar-nav{flex:1;padding:12px 12px 0}
-    .sidebar-section{
-      font-size:7.5px;letter-spacing:.45em;text-transform:uppercase;
-      color:var(--stone2);margin:18px 0 6px 8px;
-    }
-    .sidebar-item{
-      display:flex;align-items:center;gap:10px;
-      padding:9px 12px;border-radius:10px;
-      cursor:pointer;transition:all .18s;
-      color:var(--stone);font-size:11.5px;letter-spacing:.02em;
-      border:none;background:none;width:100%;text-align:left;
-      text-decoration:none;position:relative;
-    }
-    .sidebar-item:hover{background:rgba(201,168,76,.06);color:var(--cream)}
-    .sidebar-item.active{background:rgba(201,168,76,.1);color:var(--gold)}
-    .sidebar-item.active::before{
-      content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
-      width:3px;height:18px;background:var(--gold);border-radius:0 2px 2px 0;
-    }
-    .sidebar-item.danger{color:var(--red)}
-    .sidebar-item.danger:hover{background:var(--red-dim)}
-    .sidebar-item .icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
-    .sidebar-badge{
-      margin-left:auto;font-size:9px;font-weight:600;
-      background:var(--red);color:white;
-      padding:1px 6px;border-radius:20px;
-      display:none;
-    }
-    .sidebar-badge.show{display:block}
+/* ══════════════════════════════════════════════════
+   LAYOUT SHELL
+   ══════════════════════════════════════════════════ */
+#app-layout {
+  display: grid;
+  grid-template-columns: var(--sb-w) 1fr;
+  height: calc(100vh - var(--cmd-h));
+  margin-top: var(--cmd-h);
+}
 
-    .sidebar-footer{
-      padding:12px;
-      border-top:1px solid rgba(201,168,76,.06);
-      margin-top:12px;
-    }
+/* ── Mobile nav drawer ──────────────────────────── */
+#nav-toggle {
+  display: none;
+  height: 32px; width: 36px;
+  align-items: center; justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.04);
+  color: var(--gold);
+  font-size: 16px; line-height: 1;
+  cursor: pointer; flex-shrink: 0;
+}
+#nav-toggle:hover { background: rgba(255,255,255,.08); }
+#nav-backdrop {
+  display: none;
+  position: fixed; inset: var(--cmd-h) 0 0 0;
+  background: rgba(0,0,0,.6);
+  z-index: 90;
+}
+@media (max-width: 768px) {
+  #app-layout { grid-template-columns: 1fr; }
+  #nav-toggle { display: inline-flex; }
+  #sidebar {
+    position: fixed;
+    top: var(--cmd-h); bottom: 0; left: 0;
+    width: var(--sb-w); max-width: 82vw;
+    z-index: 95;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    box-shadow: 4px 0 24px rgba(0,0,0,.5);
+  }
+  #sidebar.open { transform: translateX(0); }
+  #nav-backdrop.show { display: block; }
+}
 
-    /* ════════════════════ CONTENT ════════════════════ */
-    .content{padding:28px 32px;overflow-y:auto;min-height:100vh}
-    .page-title{
-      font-family:'Playfair Display',serif;
-      font-size:34px;color:white;margin-bottom:4px;
-    }
-    .page-sub{font-size:10.5px;color:var(--stone);letter-spacing:.08em;margin-bottom:24px}
-    .section{display:none}
-    .section.active{display:block;animation:fadeIn .25s ease}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* ══════════════════════════════════════════════════
+   COMMAND BAR
+   ══════════════════════════════════════════════════ */
+#cmd-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--cmd-h);
+  z-index: 100;
+  background: var(--dark);
+  border-bottom: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+}
 
-    /* ════════════════════ STATUS GRID ════════════════════ */
-    .status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-    .status-card{
-      background:rgba(255,255,255,.025);
-      border:1px solid rgba(201,168,76,.09);
-      border-radius:14px;padding:18px 20px;
-      transition:border-color .2s;
-    }
-    .status-card:hover{border-color:rgba(201,168,76,.2)}
-    .status-val{
-      font-family:'Playfair Display',serif;
-      font-size:30px;color:var(--gold);
-      font-weight:700;line-height:1.1;
-    }
-    .status-val.sm{font-size:17px;padding-top:7px}
-    .status-label{font-size:8.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--stone);margin-top:5px}
+.cmd-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 19px;
+  font-style: italic;
+  color: var(--gold);
+  letter-spacing: .03em;
+  padding-right: 16px;
+  border-right: 1px solid var(--panel-border);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 
-    /* ════════════════════ PANELS ════════════════════ */
-    .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
-    .panel-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
-    .panel{
-      background:rgba(255,255,255,.022);
-      border:1px solid rgba(201,168,76,.09);
-      border-radius:16px;padding:20px 22px;
-    }
-    .panel-full{margin-bottom:16px}
-    .panel-title{
-      font-family:'Playfair Display',serif;
-      font-size:17px;color:white;margin-bottom:3px;
-    }
-    .panel-sub{
-      font-size:8px;letter-spacing:.28em;text-transform:uppercase;
-      color:var(--stone);margin-bottom:16px;
-    }
-    .btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#phase-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,.025);
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--stone);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#phase-pill .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--stone2);
+  flex-shrink: 0;
+}
+#phase-pill.phase-quiz  { color: var(--gold);  border-color: rgba(201,168,76,.3);  background: var(--gold-dim); }
+#phase-pill.phase-quiz  .dot { background: var(--gold); animation: livePulse 2.2s ease-in-out infinite; }
+#phase-pill.phase-pause { color: #E2906A; border-color: rgba(226,144,106,.25); background: rgba(226,144,106,.06); }
+#phase-pill.phase-pause .dot { background: #E2906A; }
+#phase-pill.phase-libre { color: var(--green); border-color: rgba(34,197,94,.22); background: var(--green-dim); }
+#phase-pill.phase-libre .dot { background: var(--green); animation: livePulse 2.2s ease-in-out infinite; }
+#phase-pill.phase-lobby .dot { background: var(--stone2); }
 
-/* ════════════════════ BUTTONS ════════════════════ */
-    .btn{
-      padding:9px 16px;border-radius:10px;
-      font-family:'Montserrat',sans-serif;
-      font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
-      cursor:pointer;transition:all .18s;border:none;
-      white-space:nowrap;
-    }
-    .btn:active{transform:scale(.97)}
-    
-    /* Vrai bouton doré principal (Ombré et opaque) */
-    .btn-gold{background:var(--gold);color:var(--black);box-shadow:0 4px 14px rgba(201,168,76,.2)}
-    .btn-gold:hover{background:var(--gold-light);box-shadow:0 4px 20px rgba(201,168,76,.35)}
-    
-    .btn-outline{background:transparent;border:1px solid rgba(201,168,76,.25);color:var(--gold)}
-    .btn-outline:hover{background:var(--gold-dim)}
-    
-    .btn-ghost{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:var(--cream)}
-    .btn-ghost:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12)}
-    
-    .btn-danger{background:transparent;border:1px solid rgba(192,80,77,.3);color:var(--red)}
-    .btn-danger:hover{background:var(--red-dim)}
-    
-    /* Version alternative atténuée (Renommée pour éviter le conflit de cascade) */
-    .btn-gold-dimmed{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:var(--gold)}
-    .btn-gold-dimmed:hover{background:rgba(201,168,76,.22);border-color:rgba(201,168,76,.6)}
+@keyframes livePulse {
+  0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(201,168,76,.4); }
+  50%      { opacity:.6; box-shadow:0 0 0 4px rgba(201,168,76,0); }
+}
 
+.cmd-sep { width: 1px; height: 22px; background: var(--panel-border); flex-shrink: 0; }
+.cmd-phase-group { display: flex; gap: 5px; flex-shrink: 0; }
+.cmd-spacer { flex: 1; min-width: 0; }
+.cmd-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-    /* ── Barre de progression des sons ── */
-    .sound-btn-wrap { display:flex; flex-direction:column; gap:4px; }
-    .sound-trigger-btn { width:100%; text-align:left; }
-    .sound-progress-bar {
-      height: 3px;
-      background: rgba(255,255,255,.07);
-      border-radius: 2px;
-      overflow: hidden;
-      display: none; /* cachée au repos */
-    }
-    .sound-progress-bar.active { display: block; }
-    .sound-progress-fill {
-      height: 100%;
-      width: 0%;
-      background: var(--gold);
-      border-radius: 2px;
-      transition: width linear; /* durée injectée dynamiquement via JS */
-    }
-    /* Bouton actif : léger highlight doré */
-    .sound-trigger-btn.playing {
-      border-color: rgba(201,168,76,.5) !important;
-      color: var(--gold) !important;
-    }
-    .btn-green{background:transparent;border:1px solid rgba(34,197,94,.3);color:var(--green)}
-    .btn-green:hover{background:var(--green-dim)}
-    .btn-sm{padding:5px 10px;font-size:8px;letter-spacing:.12em}
-    .btn-xs{padding:3px 8px;font-size:7.5px;letter-spacing:.1em}
+.cmd-btn {
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.04);
+  color: var(--stone);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.cmd-btn:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.12); color: var(--cream); }
+.cmd-btn.gold  { border-color: rgba(201,168,76,.3); color: var(--gold); background: transparent; }
+.cmd-btn.gold:hover { background: var(--gold-dim); border-color: rgba(201,168,76,.5); }
 
-    /* ════════════════════ INPUTS ════════════════════ */
-    .input-field{
-      width:100%;
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(201,168,76,.18);
-      border-radius:10px;padding:10px 14px;
-      color:white;font-family:'Montserrat',sans-serif;font-size:13px;
-      outline:none;transition:border-color .25s;margin-bottom:10px;
-    }
-    .input-field:focus{border-color:rgba(201,168,76,.45)}
-    .input-field::placeholder{color:var(--stone)}
-    textarea.input-field{resize:vertical;min-height:70px}
-    select.input-field{cursor:pointer}
+#cmd-player-count {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--stone);
+  padding: 5px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  background: rgba(255,255,255,.025);
+  white-space: nowrap;
+}
 
-    /* ════════════════════ TABLE ════════════════════ */
-    .table-wrap{overflow-x:auto;border-radius:10px}
-    table{width:100%;border-collapse:collapse}
-    th{
-      font-size:7.5px;letter-spacing:.32em;text-transform:uppercase;
-      color:var(--stone);text-align:left;padding:9px 14px;
-      border-bottom:1px solid rgba(201,168,76,.07);
-    }
-    td{
-      padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.03);
-      font-size:12.5px;color:var(--cream);
-    }
-    tr:last-child td{border-bottom:none}
-    tr:hover td{background:rgba(255,255,255,.018)}
-    .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
-    .dot-on{background:var(--green)}
-    .dot-off{background:var(--stone2)}
-    .gg-badge{
-      font-size:8px;letter-spacing:.15em;text-transform:uppercase;
-      color:var(--gold);background:rgba(201,168,76,.1);
-      border:1px solid rgba(201,168,76,.22);
-      padding:2px 8px;border-radius:20px;
-    }
+/* ══════════════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════════════ */
+#sidebar {
+  background: var(--dark);
+  border-right: 1px solid var(--panel-border);
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: var(--stone2) transparent;
+}
 
-    /* ════════════════════ SCOOP ITEMS ════════════════════ */
-    .scoop-row{
-      background:rgba(255,255,255,.018);
-      border:1px solid rgba(255,255,255,.05);
-      border-radius:12px;padding:12px 16px;
-      margin-bottom:8px;
-      display:flex;gap:12px;align-items:flex-start;
-      transition:border-color .2s;
-    }
-    .scoop-row:hover{border-color:rgba(255,255,255,.1)}
-    .scoop-row.official{border-color:rgba(201,168,76,.22);background:rgba(201,168,76,.03)}
-    .scoop-info{flex:1;min-width:0}
-    .scoop-author-label{
-      font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;
-      color:var(--stone);margin-bottom:4px;
-    }
-    .scoop-author-label.gg{color:var(--gold)}
-    .scoop-time{font-size:9px;color:var(--stone2);margin-left:8px}
-    .scoop-text{font-size:13px;color:var(--cream);line-height:1.55;white-space:pre-wrap;word-break:break-word}
-    .scoop-img{max-width:120px;max-height:80px;border-radius:8px;object-fit:cover;flex-shrink:0}
-    .scoop-actions{display:flex;gap:6px;margin-top:8px}
+.sidebar-header {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid rgba(201,168,76,.07);
+  text-align: center;
+}
+.sidebar-logo-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: var(--gold);
+  letter-spacing: .03em;
+}
+.sidebar-logo-sub {
+  font-size: 8px;
+  letter-spacing: .45em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+  flex-shrink: 0;
+  animation: livePulseGreen 2.2s ease-in-out infinite;
+}
+.live-dot.offline { background: var(--red); animation: none; }
+@keyframes livePulseGreen {
+  0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(34,197,94,.4); }
+  50%      { opacity:.6; box-shadow:0 0 0 4px rgba(34,197,94,0); }
+}
 
-    /* ════════════════════ LOGS ════════════════════ */
-    .log-row{
-      display:flex;gap:14px;padding:9px 0;
-      border-bottom:1px solid rgba(255,255,255,.03);
-      font-size:11px;
-    }
-    .log-row:last-child{border-bottom:none}
-    .log-time{color:var(--stone);flex-shrink:0;width:52px;font-feature-settings:'tnum'}
-    .log-event{
-      flex-shrink:0;width:110px;
-      font-size:8px;letter-spacing:.12em;text-transform:uppercase;
-      padding:1px 7px;border-radius:20px;height:fit-content;margin-top:1px;
-      background:rgba(255,255,255,.05);color:var(--stone);
-    }
-    .log-event.ev-login{background:var(--green-dim);color:var(--green)}
-    .log-event.ev-quiz{background:var(--gold-dim);color:var(--gold)}
-    .log-event.ev-scoop{background:var(--blue-dim);color:var(--blue)}
-    .log-event.ev-admin{background:var(--red-dim);color:var(--red)}
-    .log-detail{color:var(--cream);flex:1}
+.sidebar-nav { flex: 1; padding: 12px 12px 0; }
 
-    /* ════════════════════ QUIZ LIVE ════════════════════ */
-    .question-card{
-      background:rgba(201,168,76,.04);
-      border:1px solid rgba(201,168,76,.18);
-      border-radius:14px;padding:20px 24px;
-      margin-bottom:16px;
-    }
-    .question-text{
-      font-family:'Playfair Display',serif;
-      font-size:20px;color:white;
-      margin-bottom:16px;line-height:1.4;
-    }
-    .choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-    .choice-item{
-      display:flex;align-items:center;gap:10px;
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:10px;padding:10px 14px;
-      font-size:12px;
-    }
-    .choice-item.correct{border-color:rgba(34,197,94,.3);background:var(--green-dim)}
-    .choice-key, .choice-letter {
-      font-family:'Playfair Display',serif;
-      font-size:16px;color:var(--gold);
-      flex-shrink:0;width:20px;
-    }    .answer-progress-bar{
-      height:6px;background:rgba(255,255,255,.06);
-      border-radius:3px;overflow:hidden;margin-top:12px;
-    }
-    .answer-progress-fill{
-      height:100%;background:var(--gold);
-      border-radius:3px;transition:width .4s ease;
-      width:0%;
-    }
-    .answer-list{margin-top:14px;display:flex;flex-direction:column;gap:4px}
-    .answer-item{
-      display:flex;align-items:center;gap:10px;
-      font-size:11px;padding:5px 10px;border-radius:8px;
-      background:rgba(255,255,255,.02);
-    }
-    .answer-item.correct{color:var(--green)}
-    .answer-item.wrong{color:var(--stone)}
+.sidebar-section {
+  font-size: 7.5px;
+  letter-spacing: .45em;
+  text-transform: uppercase;
+  color: var(--stone2);
+  margin: 18px 0 6px 8px;
+}
 
-    /* ════════════════════ TIMER ════════════════════ */
-    .timer-display{
-      font-family:'Playfair Display',serif;
-      font-size:48px;color:var(--gold);
-      text-align:center;padding:16px 0 8px;
-      letter-spacing:.05em;
-    }
-    .timer-display.urgent{color:var(--red);animation:timerUrgent .8s ease infinite}
-    @keyframes timerUrgent{0%,100%{opacity:1}50%{opacity:.5}}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .18s;
+  color: var(--stone);
+  font-size: 11.5px;
+  letter-spacing: .02em;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  position: relative;
+  font-family: 'Montserrat', sans-serif;
+}
+.sidebar-item:hover { background: rgba(201,168,76,.06); color: var(--cream); }
+.sidebar-item.active { background: rgba(201,168,76,.1); color: var(--gold); }
+.sidebar-item.active::before {
+  content: '';
+  position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 18px;
+  background: var(--gold);
+  border-radius: 0 2px 2px 0;
+}
+.sidebar-item .icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+.sidebar-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 600;
+  background: var(--red);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 20px;
+  display: none;
+}
+.sidebar-badge.show { display: block; }
 
-    /* ════════════════════ TOAST ════════════════════ */
-    #toast{
-      position:fixed;bottom:24px;right:24px;
-      background:rgba(14,14,14,.97);
-      border:1px solid rgba(201,168,76,.3);
-      border-radius:12px;padding:12px 18px;
-      font-size:12px;color:var(--cream);
-      z-index:9999;opacity:0;transition:opacity .28s,transform .28s;
-      pointer-events:none;transform:translateY(8px);
-      max-width:280px;
-    }
-    #toast.show{opacity:1;transform:translateY(0)}
-    #toast.success{border-color:rgba(34,197,94,.4)}
-    #toast.error{border-color:rgba(192,80,77,.4)}
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid rgba(201,168,76,.06);
+  margin-top: 12px;
+}
 
-    /* ════════════════════ CONN STATUS ════════════════════ */
-    #conn-status{
-      font-size:9px;letter-spacing:.15em;text-transform:uppercase;
-      color:var(--stone);padding:8px 12px;margin:8px 12px;
-      background:rgba(255,255,255,.02);border-radius:8px;
-      display:flex;align-items:center;gap:6px;
-    }
+.sidebar-danger-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .18s;
+  color: rgba(192,80,77,.7);
+  font-size: 11.5px;
+  letter-spacing: .02em;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: 'Montserrat', sans-serif;
+}
+.sidebar-danger-btn:hover { background: var(--red-dim); color: var(--red); }
+.sidebar-danger-btn .icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
 
-    /* ════════════════════ SEPARATORS ════════════════════ */
-    .divider{
-      height:1px;background:rgba(201,168,76,.07);
-      margin:20px 0;
-    }
+#conn-status {
+  font-size: 9px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--stone);
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: rgba(255,255,255,.02);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
-    /* ════════════════════ RESPONSIVE ════════════════════ */
-    @media(max-width:900px){
-      .layout{grid-template-columns:1fr}
-      .sidebar{display:none}
-      .status-grid{grid-template-columns:1fr 1fr}
-      .panel-grid,.panel-grid-3{grid-template-columns:1fr}
-      .choices-grid{grid-template-columns:1fr}
-    }
+/* ══════════════════════════════════════════════════
+   MAIN CONTENT
+   ══════════════════════════════════════════════════ */
+#content {
+  padding: 28px 32px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+/* Section animation */
+.section { display: none; }
+.section.active { display: block; animation: fadeIn .25s ease; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px;
+  color: white;
+  margin-bottom: 4px;
+}
+.page-sub {
+  font-size: 10.5px;
+  color: var(--stone);
+  letter-spacing: .08em;
+  margin-bottom: 24px;
+}
+
+/* ── Status grid ────────────────────────────────── */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.status-card {
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: border-color .2s;
+}
+.status-card:hover { border-color: rgba(201,168,76,.2); }
+.status-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px;
+  color: var(--gold);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.status-val.sm { font-size: 17px; padding-top: 7px; }
+.status-label {
+  font-size: 8.5px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-top: 5px;
+}
+
+/* ── Panels ─────────────────────────────────────── */
+.panel-grid   { display: grid; grid-template-columns: 1fr 1fr;     gap: 14px; margin-bottom: 16px; }
+.panel-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.panel-wide   { display: grid; grid-template-columns: 2fr 1fr;     gap: 14px; margin-bottom: 16px; }
+.panel {
+  background: rgba(255,255,255,.022);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 20px 22px;
+}
+.panel-full { margin-bottom: 16px; }
+.panel-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  color: white;
+  margin-bottom: 3px;
+}
+.panel-sub {
+  font-size: 8px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-bottom: 14px;
+}
+.panel-sub.tight { margin-bottom: 0; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn-col { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── Buttons ────────────────────────────────────── */
+.btn {
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .18s;
+  border: none;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn:active { transform: scale(.97); }
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--black);
+  box-shadow: 0 4px 14px rgba(201,168,76,.2);
+}
+.btn-gold:hover { background: var(--gold-light); box-shadow: 0 4px 20px rgba(201,168,76,.35); }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(201,168,76,.25);
+  color: var(--gold);
+}
+.btn-outline:hover { background: var(--gold-dim); }
+
+.btn-ghost {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  color: var(--cream);
+}
+.btn-ghost:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.12); }
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid rgba(192,80,77,.3);
+  color: var(--red);
+}
+.btn-danger:hover { background: var(--red-dim); border-color: rgba(192,80,77,.5); }
+
+.btn-green {
+  background: transparent;
+  border: 1px solid rgba(34,197,94,.3);
+  color: var(--green);
+}
+.btn-green:hover { background: var(--green-dim); }
+
+.btn-sm  { padding: 5px 10px; font-size: 8px; letter-spacing: .12em; }
+.btn-xs  { padding: 3px 8px;  font-size: 7.5px; letter-spacing: .1em; }
+.btn-xl  { padding: 14px 28px; font-size: 10px; letter-spacing: .2em; width: 100%; justify-content: center; }
+.btn-full { width: 100%; justify-content: center; }
+.btn.is-on { border-color: rgba(201,168,76,.5); color: var(--gold); background: var(--gold-dim); }
+
+/* ── Hold-to-confirm (Stop + Rollback) ─────────── */
+#btn-stop-quiz {
+  --hp: 0;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+#btn-stop-quiz::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 3px;
+  width: calc(var(--hp) * 100%);
+  background: rgba(255,160,160,.8);
+  border-radius: 0 0 10px 10px;
+  transition: none;
+}
+#btn-stop-quiz .hold-hint {
+  font-size: 7.5px;
+  opacity: .5;
+  margin-left: 4px;
+}
+
+/* ── Phase-aware visibility ─────────────────────── */
+.quiz-only { opacity: .18; pointer-events: none; transition: opacity .22s; }
+.quiz-only.on { opacity: 1; pointer-events: auto; }
+.no-quiz { transition: opacity .22s; }
+.no-quiz.off { opacity: .18; pointer-events: none; }
+
+#quiz-inactive-overlay {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(5,5,5,.72);
+  backdrop-filter: blur(2px);
+  border-radius: 16px;
+  transition: opacity .22s;
+}
+#quiz-inactive-overlay.hidden { opacity: 0; pointer-events: none; }
+.inactive-label {
+  font-size: 8.5px;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+
+/* ── Forms ──────────────────────────────────────── */
+.input-field {
+  width: 100%;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(201,168,76,.18);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .25s;
+  margin-bottom: 10px;
+}
+.input-field:focus { border-color: rgba(201,168,76,.45); }
+.input-field::placeholder { color: var(--stone); }
+textarea.input-field { resize: vertical; min-height: 70px; }
+select.input-field { cursor: pointer; }
+.form-label {
+  display: block;
+  font-size: 8.5px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-bottom: 7px;
+}
+
+/* ── Tables ─────────────────────────────────────── */
+.table-wrap { overflow-x: auto; border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  font-size: 7.5px;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--stone);
+  text-align: left;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(201,168,76,.07);
+}
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  font-size: 12.5px;
+  color: var(--cream);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,.018); }
+.dot-on  { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green);  margin-right: 6px; vertical-align: middle; }
+.dot-off { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--stone2); margin-right: 6px; vertical-align: middle; }
+.gg-badge {
+  font-size: 8px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(201,168,76,.1);
+  border: 1px solid rgba(201,168,76,.22);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* Score inline edit */
+.score-edit-cell {
+  color: var(--gold);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background .15s;
+}
+.score-edit-cell:hover { background: var(--gold-dim); }
+
+/* ── Sub-tabs (Debug) ───────────────────────────── */
+.sub-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--panel-border);
+  margin-bottom: 18px;
+  gap: 0;
+}
+.sub-tab {
+  padding: 9px 20px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--stone);
+  cursor: pointer;
+  transition: all .18s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.sub-tab:hover { color: var(--cream); }
+.sub-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.sub-panel { display: none; }
+.sub-panel.active { display: block; animation: fadeIn .2s ease; }
+
+/* ── Scoop items ────────────────────────────────── */
+.scoop-row {
+  background: rgba(255,255,255,.018);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: border-color .2s;
+}
+.scoop-row:hover { border-color: rgba(255,255,255,.1); }
+.scoop-row.official { border-color: rgba(201,168,76,.22); background: rgba(201,168,76,.03); }
+.scoop-info { flex: 1; min-width: 0; }
+.scoop-author-label {
+  font-size: 8.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-bottom: 4px;
+}
+.scoop-author-label.gg { color: var(--gold); }
+.scoop-text {
+  font-size: 13px;
+  color: var(--cream);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.scoop-time { font-size: 9px; color: var(--stone2); margin-left: 8px; }
+.scoop-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+/* ── Log rows ───────────────────────────────────── */
+.log-row {
+  display: flex;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  font-size: 11px;
+}
+.log-row:last-child { border-bottom: none; }
+.log-time { color: var(--stone); flex-shrink: 0; width: 52px; }
+.log-event {
+  flex-shrink: 0; width: 110px;
+  font-size: 8px; letter-spacing: .12em; text-transform: uppercase;
+  padding: 1px 7px; border-radius: 20px;
+  height: fit-content; margin-top: 1px;
+  background: rgba(255,255,255,.05); color: var(--stone);
+}
+.log-event.ev-login  { background: var(--green-dim); color: var(--green); }
+.log-event.ev-quiz   { background: var(--gold-dim);  color: var(--gold);  }
+.log-event.ev-scoop  { background: var(--blue-dim);  color: var(--blue);  }
+.log-event.ev-admin  { background: var(--red-dim);   color: var(--red);   }
+.log-detail { color: var(--cream); flex: 1; }
+
+/* ── Bot log stream ─────────────────────────────── */
+.bot-logs-container {
+  background: rgba(0,0,0,.35);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 12px;
+  height: 280px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--stone);
+}
+
+/* ── Timer ──────────────────────────────────────── */
+.timer-display {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  color: var(--gold);
+  text-align: center;
+  padding: 12px 0 6px;
+  letter-spacing: .05em;
+}
+.timer-display.urgent { color: var(--red); animation: timerUrgent .8s ease infinite; }
+@keyframes timerUrgent { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+
+/* ── Blair status ───────────────────────────────── */
+.blair-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 13px;
+  margin-bottom: 14px;
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+}
+.blair-link {
+  font-size: 10.5px;
+  color: var(--stone);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.status-chip .sdot { width: 6px; height: 6px; border-radius: 50%; }
+.status-chip.occupied { color: var(--gold); border: 1px solid rgba(201,168,76,.25); background: var(--gold-dim); }
+.status-chip.occupied .sdot { background: var(--gold); }
+.status-chip.free { color: var(--stone); border: 1px solid var(--panel-border); background: rgba(255,255,255,.02); }
+.status-chip.free .sdot { background: var(--stone2); }
+
+/* ── Roster / Disponibilités ────────────────────── */
+.roster-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.roster-kpi { display: flex; gap: 8px; flex-wrap: wrap; }
+.roster-kpi .kpi { display: inline-flex; align-items: baseline; gap: 5px; padding: 5px 12px; border-radius: 20px; font-size: 9px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--panel-border); color: var(--stone); }
+.roster-kpi .kpi b { font-size: 13px; letter-spacing: 0; }
+.roster-kpi .kpi.k-free  { color: var(--green); border-color: var(--green-dim); background: var(--green-dim); }
+.roster-kpi .kpi.k-taken { color: var(--gold);  border-color: rgba(201,168,76,.25); background: var(--gold-dim); }
+.roster-search { flex: 1; min-width: 160px; max-width: 280px; margin: 0; }
+.roster-filter { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--stone); cursor: pointer; user-select: none; white-space: nowrap; }
+.roster-filter input { accent-color: var(--gold); cursor: pointer; }
+.roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; max-height: 440px; overflow-y: auto; padding-right: 4px; }
+.roster-tile { border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px 12px; background: rgba(255,255,255,.02); transition: border-color .15s, background .15s; }
+.roster-tile .rt-name { font-size: 12.5px; font-weight: 600; color: var(--cream); line-height: 1.25; }
+.roster-tile .rt-family { font-size: 10px; color: var(--stone); }
+.roster-tile .rt-state { margin-top: 7px; font-size: 8.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+.roster-tile .rt-state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.roster-tile.available { border-color: rgba(34,197,94,.22); }
+.roster-tile.available .rt-state { color: var(--green); }
+.roster-tile.taken { background: var(--gold-dim); border-color: rgba(201,168,76,.3); }
+.roster-tile.taken .rt-state { color: var(--gold); }
+.roster-tile.taken .rt-who { color: var(--cream); text-transform: none; letter-spacing: 0; font-weight: 600; }
+.roster-tile.reserved { opacity: .65; border-style: dashed; }
+.roster-tile.reserved .rt-state { color: var(--stone); }
+.roster-empty { grid-column: 1 / -1; text-align: center; color: var(--stone); padding: 24px; font-size: 12px; }
+
+/* ── Dedicaces future ───────────────────────────── */
+.dedicace-future {
+  padding: 28px 16px;
+  text-align: center;
+  border: 1px dashed rgba(201,168,76,.12);
+  border-radius: 12px;
+  font-size: 9px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--stone2);
+}
+
+/* ── Misc ───────────────────────────────────────── */
+.divider { height: 1px; background: var(--panel-border); margin: 18px 0; }
+.ml-auto { margin-left: auto; }
+#btn-turbo.turbo-on {
+  border-color: rgba(201,168,76,.5) !important;
+  color: var(--gold) !important;
+  background: var(--gold-dim) !important;
+}
+
+/* ── Sound progress bars ────────────────────────── */
+.sound-btn-wrap { display: flex; flex-direction: column; gap: 4px; }
+.sound-trigger-btn { width: 100%; text-align: left; }
+.sound-progress-bar {
+  height: 3px;
+  background: rgba(255,255,255,.07);
+  border-radius: 2px;
+  overflow: hidden;
+  display: none;
+}
+.sound-progress-bar.active { display: block; }
+.sound-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--gold);
+  border-radius: 2px;
+  transition: width linear;
+}
+.sound-trigger-btn.playing {
+  border-color: rgba(201,168,76,.5) !important;
+  color: var(--gold) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   FLOATING SOUND BOARD
+   ══════════════════════════════════════════════════ */
+#sound-board {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  z-index: 200;
+  width: 224px;
+  background: var(--dark2);
+  border: 1px solid rgba(201,168,76,.15);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.7), 0 0 0 1px rgba(201,168,76,.04);
+  overflow: hidden;
+}
+.sbd-hdr {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(201,168,76,.06);
+  border-bottom: 1px solid rgba(201,168,76,.1);
+  cursor: pointer;
+  user-select: none;
+}
+.sbd-title {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--gold);
+  flex: 1;
+}
+#sbd-chevron {
+  font-size: 9px;
+  color: var(--stone);
+  transition: transform .18s;
+}
+#sound-board.collapsed #sbd-chevron { transform: scaleY(-1); }
+#sbd-body { padding: 10px; }
+#sound-board.collapsed #sbd-body { display: none; }
+
+.snd-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  background: rgba(255,255,255,.025);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .18s;
+  color: var(--cream);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.snd-btn:hover { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+.snd-btn.main { border-color: rgba(201,168,76,.25); color: var(--gold); background: rgba(201,168,76,.06); }
+.snd-btn.main:hover { background: var(--gold-dim); }
+.snd-btn.playing { border-color: rgba(201,168,76,.5) !important; color: var(--gold) !important; background: var(--gold-dim) !important; }
+.snd-dur { margin-left: auto; font-size: 8px; color: var(--stone); }
+.snd-stop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  margin-top: 6px;
+  background: transparent;
+  border: 1px solid rgba(192,80,77,.3);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .18s;
+  color: var(--red);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.snd-stop:hover { background: var(--red-dim); border-color: rgba(192,80,77,.5); }
+
+/* ══════════════════════════════════════════════════
+   DANGER ZONE MODAL
+   ══════════════════════════════════════════════════ */
+#danger-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,.85);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#danger-overlay.open { display: flex; }
+
+#danger-modal {
+  width: 440px;
+  max-width: 92vw;
+  background: var(--dark2);
+  border: 1px solid rgba(192,80,77,.25);
+  border-radius: 18px;
+  box-shadow: 0 28px 72px rgba(0,0,0,.9);
+  overflow: hidden;
+}
+.danger-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 24px;
+  background: rgba(192,80,77,.08);
+  border-bottom: 1px solid rgba(192,80,77,.15);
+}
+.danger-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--red);
+  flex: 1;
+  letter-spacing: .02em;
+}
+.danger-close {
+  font-size: 18px;
+  color: var(--stone);
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color .15s;
+  background: none;
+  border: none;
+}
+.danger-close:hover { color: var(--cream); }
+.danger-body { padding: 22px 24px; }
+.danger-warn {
+  padding: 9px 14px;
+  margin-bottom: 18px;
+  background: rgba(192,80,77,.08);
+  border: 1px solid rgba(192,80,77,.15);
+  border-radius: 10px;
+  font-size: 8px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(192,80,77,.7);
+}
+.danger-action {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(192,80,77,.08);
+}
+.danger-action:last-child { border-bottom: none; padding-bottom: 0; }
+.danger-action-label {
+  font-size: 8px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(192,80,77,.6);
+  margin-bottom: 9px;
+}
+.danger-row { display: flex; gap: 8px; }
+
+/* ══════════════════════════════════════════════════
+   TOAST
+   ══════════════════════════════════════════════════ */
+#toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: rgba(14,14,14,.97);
+  border: 1px solid rgba(201,168,76,.3);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 12px;
+  color: var(--cream);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity .28s, transform .28s;
+  pointer-events: none;
+  transform: translateY(8px);
+  max-width: 280px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#toast.success { border-color: rgba(34,197,94,.4); }
+#toast.error   { border-color: rgba(192,80,77,.4); }
+#toast.info    { border-color: rgba(96,165,250,.3); }
   </style>
 </head>
 <body>
-<div class="layout">
 
-  <!-- ═══════════════════════════════════════
-       SIDEBAR
-  ═══════════════════════════════════════ -->
-  <aside class="sidebar">
+<!-- ══════════════════════════════════════════════
+     COMMAND BAR — sticky, always visible
+     ══════════════════════════════════════════════ -->
+<header id="cmd-bar">
+
+  <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+  <span class="cmd-brand">Chuck Mode</span>
+
+  <div id="phase-pill" class="phase-lobby">
+    <span class="dot"></span>Lobby
+  </div>
+
+  <div class="cmd-sep"></div>
+
+  <div class="cmd-phase-group">
+    <button class="cmd-btn" onclick="setPhase('LOBBY')">🏠 Lobby</button>
+    <button class="cmd-btn" onclick="setPhase('LIBRE')">🕊 Libre</button>
+    <button class="cmd-btn" onclick="setPhase('PAUSE')">⏸ Pause</button>
+  </div>
+
+  <div class="cmd-spacer"></div>
+
+  <div class="cmd-right">
+    <span id="cmd-player-count">👥 0 invités</span>
+    <div class="cmd-sep"></div>
+    <button class="cmd-btn" id="cmd-sound-btn" onclick="toggleProjectorSound()">🔇 Son OFF</button>
+    <button class="cmd-btn" onclick="adminAction('/api/admin/refresh-clients')">↻ Mobiles</button>
+    <button class="cmd-btn" onclick="adminAction('/api/admin/projector-refresh')">↻ Projecteur</button>
+    <button class="cmd-btn gold" onclick="window.open('/projector','_blank')">↗ Ouvrir Projecteur</button>
+  </div>
+
+</header>
+
+<div id="nav-backdrop" onclick="closeNav()"></div>
+
+<!-- ══════════════════════════════════════════════
+     APP LAYOUT
+     ══════════════════════════════════════════════ -->
+<div id="app-layout">
+
+  <!-- ── SIDEBAR ───────────────────────────────── -->
+  <aside id="sidebar">
+
     <div class="sidebar-header">
       <div class="sidebar-logo-title">Chuck Mode</div>
       <div class="sidebar-logo-sub">
@@ -386,50 +1059,37 @@
     </div>
 
     <nav class="sidebar-nav">
+
       <div class="sidebar-section">Contrôle</div>
-      <button class="sidebar-item active" onclick="showSection('dashboard',this)">
-        <span class="icon">🎮</span> Dashboard
+      <button class="sidebar-item active" data-sec="live" onclick="showSection('live',this)">
+        <span class="icon">●</span> Live
       </button>
-      <button class="sidebar-item" onclick="showSection('quiz',this)">
-        <span class="icon">⚡</span> Quiz Live
-      </button>
-      <button class="sidebar-item" onclick="showSection('players',this)">
+      <button class="sidebar-item" data-sec="players" onclick="showSection('players',this)">
         <span class="icon">👥</span> Joueurs
         <span class="sidebar-badge" id="badge-players">0</span>
       </button>
-
-      <div class="sidebar-section">Contenu</div>
-      <button class="sidebar-item" onclick="showSection('scoops',this)">
+      <button class="sidebar-item" data-sec="scoops" onclick="showSection('scoops',this)">
         <span class="icon">📸</span> Scoops
         <span class="sidebar-badge" id="badge-scoops">!</span>
       </button>
-      <button class="sidebar-item" onclick="showSection('scores',this)">
+
+      <div class="sidebar-section">Contenu</div>
+      <button class="sidebar-item" data-sec="studio" onclick="showSection('studio',this)">
+        <span class="icon">🎬</span> Studio
+      </button>
+      <button class="sidebar-item" data-sec="scores" onclick="showSection('scores',this)">
         <span class="icon">📊</span> Scores
       </button>
-      <button class="sidebar-item" onclick="showSection('logs',this)">
-        <span class="icon">📋</span> Logs
+      <button class="sidebar-item" data-sec="dedicaces" onclick="showSection('dedicaces',this)">
+        <span class="icon">🌹</span> VIP
       </button>
 
-      <div class="sidebar-section">Debug</div>
-      <button class="sidebar-item" onclick="showSection('bots',this)">
-        <span class="icon">🤖</span> Bot Control
+      <div class="sidebar-section">Système</div>
+      <button class="sidebar-item" data-sec="debug" onclick="showSection('debug',this)">
+        <span class="icon">⚙</span> Debug
         <span class="sidebar-badge" id="badge-bots">0</span>
       </button>
 
-      <div class="sidebar-section">Projecteur</div>
-      <button class="sidebar-item" onclick="showSection('projector',this)">
-        <span class="icon">📺</span> Contrôles
-      </button>
-      <button class="sidebar-item" onclick="window.open('/projector','_blank')">
-        <span class="icon">↗</span> Ouvrir Projecteur
-      </button>
-      <button class="sidebar-item" id="btn-sound-toggle" onclick="toggleProjectorSound()" title="Son projecteur — cliquer pour activer/couper">
-        <span class="icon" id="sound-toggle-icon">🔇</span>
-        <span id="sound-toggle-label" style="color:var(--red);">Son OFF</span>
-      </button>
-      <button class="sidebar-item" onclick="window.open('/qr','_blank')">
-        <span class="icon">📱</span> QR Code
-      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -437,40 +1097,35 @@
         <span class="live-dot" id="conn-dot"></span>
         <span id="conn-label">Connecté</span>
       </div>
-      <!-- F7 — Reset pool de questions (Chantier A) -->
-      <button class="sidebar-item danger" onclick="confirmResetQuestions()" title="Remet à zéro le pool de questions déjà posées">
-        <span class="icon">🃏</span> Reset Questions
-      </button>
-      <button class="sidebar-item danger" onclick="confirmResetScores()" title="Remet les scores à zéro — joueurs conservés">
-        <span class="icon">📊</span> Reset Scores
-      </button>
-      <button class="sidebar-item danger" onclick="confirmReset()" title="Efface tout : joueurs, scores et scoops">
-        <span class="icon">🔄</span> Reset Complet
+      <button class="sidebar-danger-btn" onclick="openDangerZone()">
+        <span class="icon">⚠</span> Zone Danger
       </button>
       <a class="sidebar-item" href="/xoxo-admin/logout">
         <span class="icon">🚪</span> Déconnexion
       </a>
     </div>
+
   </aside>
 
-  <!-- ═══════════════════════════════════════
-       CONTENT
-  ═══════════════════════════════════════ -->
-  <main class="content">
+  <!-- ── MAIN CONTENT ──────────────────────────── -->
+  <main id="content">
 
-    <!-- ══════════════ DASHBOARD ══════════════ -->
-    <div id="section-dashboard" class="section active">
-      <div class="page-title">Dashboard</div>
-      <div class="page-sub" id="dash-sub">Soirée du 5 juillet 2026 · Phase : En attente</div>
+    <!-- ╔══════════════════════════════╗
+         ║  LIVE                       ║
+         ╚══════════════════════════════╝ -->
+    <div id="section-live" class="section active" data-screen-label="01 Live">
 
-      <!-- Stats -->
+      <div class="page-title">Live</div>
+      <div class="page-sub" id="dash-sub">Contrôle de session · Phase : <span id="stat-phase">En attente</span></div>
+
+      <!-- Status row -->
       <div class="status-grid">
         <div class="status-card">
           <div class="status-val" id="stat-players">0</div>
           <div class="status-label">Invités connectés</div>
         </div>
         <div class="status-card">
-          <div class="status-val sm" id="stat-phase">En attente</div>
+          <div class="status-val sm" id="stat-phase-card">En attente</div>
           <div class="status-label">Phase actuelle</div>
         </div>
         <div class="status-card">
@@ -483,134 +1138,120 @@
         </div>
       </div>
 
-      <!-- Controls row 1 -->
       <div class="panel-grid">
-        <div class="panel">
-          <div class="panel-title">Contrôle des Phases</div>
-          <div class="panel-sub">Bascule instantanée · God Mode</div>
-          <div class="btn-row">
-            <button class="btn btn-gold no-quiz-btn" onclick="launchQuiz()">⚡ Lancer Quiz</button>
-            <button class="btn btn-outline" onclick="adminAction('/api/admin/phase',{phase:'LIBRE'})">🕊 Mode Libre</button>
-            <button class="btn btn-ghost" onclick="adminAction('/api/admin/phase',{phase:'LOBBY'})">🏠 Retour Lobby</button>
-            <button class="btn btn-ghost" onclick="adminAction('/api/admin/phase',{phase:'PAUSE'})">⏸ Pause</button>
+
+        <!-- Launch + Free mode timer -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+
+          <div class="panel">
+            <div class="panel-title">Lancement</div>
+            <div class="panel-sub">Démarrage du Flash Quiz</div>
+            <button id="btn-launch-quiz" class="btn btn-gold btn-xl no-quiz"
+                    onclick="launchQuiz()">⚡ Lancer le Quiz</button>
           </div>
+
+          <div class="panel">
+            <div class="panel-title">Timer · Mode Libre</div>
+            <div class="panel-sub">Temps restant</div>
+            <div class="timer-display" id="dash-timer">--:--</div>
+            <div class="btn-row" style="margin-top:10px;">
+              <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="adjustTimer(-300)">− 5 min</button>
+              <button class="btn btn-ghost btn-sm" onclick="adjustTimer(300)">+ 5 min</button>
+              <button class="btn btn-ghost btn-sm" onclick="adjustTimer(600)">+ 10 min</button>
+              <button class="btn btn-ghost btn-sm" onclick="resetTimer()">↺ Reset 15 min</button>
+            </div>
+          </div>
+
         </div>
 
-        <div class="panel">
-          <div class="panel-title">Quiz en cours</div>
+        <!-- Quiz en direct (phase-aware) -->
+        <div class="panel" style="position:relative;min-height:280px;">
+
+          <div id="quiz-inactive-overlay">
+            <span class="inactive-label">Aucun quiz actif</span>
+          </div>
+
+          <div class="panel-title">Quiz en direct</div>
           <div class="panel-sub" id="quiz-live-sub">Aucun quiz actif</div>
-          <div class="btn-row" id="quiz-controls-row-1">
-            <button class="btn btn-outline quiz-only-btn" id="btn-reload-question"
-              onclick="adminAction('/api/admin/reload-question')">🔄 Relancer Q</button>
-            <button class="btn btn-ghost quiz-only-btn" id="btn-add-time"
-              onclick="adminAction('/api/admin/adjust-timer',{delta:10})">+10s</button>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <span style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);">Question</span>
+            <span id="quiz-q-num" style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);">—</span>
           </div>
-          <div class="btn-row" style="margin-top:8px;">
-            <button id="btn-pause-quiz" class="btn btn-ghost quiz-only-btn" onclick="pauseQuiz()">⏸ Pause Quiz</button>
-            <button id="btn-stop-quiz" class="btn btn-danger quiz-only-btn" onclick="stopQuizConfirm()">✕ Arrêter + Rollback</button>
+
+          <div id="quiz-live-card" style="margin-bottom:14px;padding:13px 14px;border:1px solid rgba(201,168,76,.12);border-radius:8px;background:var(--gold-glow);">
+            <div id="quiz-q-text" style="font-family:'Playfair Display',serif;font-size:15px;line-height:1.4;color:var(--cream);margin-bottom:11px;">En attente de la question…</div>
+            <div id="quiz-q-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;"></div>
+            <div id="quiz-q-status" style="margin-top:11px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--stone);">—</div>
           </div>
+
+          <div class="btn-col" style="margin-bottom:12px;">
+            <button class="btn btn-outline quiz-only"
+                    onclick="adminAction('/api/admin/reload-question')">🔄 Relancer la question</button>
+            <button class="btn btn-ghost quiz-only"
+                    onclick="adjustTimer(10)">+ 10 secondes</button>
+            <button id="btn-pause-quiz" class="btn btn-ghost quiz-only"
+                    onclick="pauseQuiz()">⏸ Pause Quiz</button>
+          </div>
+
+          <div style="padding-top:12px;border-top:1px solid rgba(201,168,76,.07);">
+            <button id="btn-stop-quiz" class="btn btn-danger quiz-only"
+                    title="Maintenir appuyé pour confirmer l'arrêt">
+              ✕ Arrêter + Rollback
+              <span class="hold-hint">— maintenir</span>
+            </button>
+          </div>
+
         </div>
       </div>
 
-      <!-- Controls row 2 -->
-      <div class="panel-grid">
-        <div class="panel">
-          <div class="panel-title">Timer Mode Libre</div>
-          <div class="panel-sub">Temps restant en Mode Libre</div>
-          <div class="timer-display" id="dash-timer">--:--</div>
-          <div class="btn-row" style="margin-top:12px;">
-            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="adminAction('/api/admin/adjust-timer',{delta:-300})">-5 min</button>
-            <button class="btn btn-ghost btn-sm" onclick="adminAction('/api/admin/adjust-timer',{delta:300})">+5 min</button>
-            <button class="btn btn-ghost btn-sm" onclick="adminAction('/api/admin/adjust-timer',{delta:600})">+10 min</button>
-            <button class="btn btn-ghost btn-sm" onclick="adminAction('/api/admin/reset-timer')">↺ Reset 15 min</button>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">Blair Waldorf · Slot VIP</div>
-          <div class="panel-sub" id="blair-status">Vérification…</div>
-          <div class="btn-row">
-            <button class="btn btn-danger" onclick="adminAction('/api/admin/free-blair').then(()=>checkBlair())">🔓 Libérer le slot</button>
-            <button class="btn btn-ghost" onclick="copyBlair()">📋 Copier lien VIP</button>
-            <button class="btn btn-gold" onclick="openBlairLogin()">🌹 Ouvrir login Blair</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick actions -->
+      <!-- Mini leaderboard -->
       <div class="panel panel-full">
-        <div class="panel-title">Actions rapides</div>
-        <div class="panel-sub">Raccourcis · Projecteur & Session</div>
-        <div class="btn-row">
-          <button class="btn btn-ghost" onclick="triggerSound('xoxo')">🔊 Son XOXO</button>
-          <button class="btn btn-ghost" onclick="triggerSound('quiz_start')">⚡ Son Quiz</button>
-          <button class="btn btn-ghost" onclick="triggerSound('new_gg')">👑 Son New GG</button>
-          <button class="btn btn-danger btn-sm" id="btn-stop-sound-quick" onclick="stopSound()" style="opacity:0.4;pointer-events:none;">■ Stop son</button>
-          <button class="btn btn-ghost" onclick="showSection('projector',null);document.getElementById('custom-msg-input').focus()">💬 Message custom</button>
-          <button class="btn btn-ghost" onclick="toggleProjectorQR()">📱 QR Projecteur</button>
-          <button class="btn btn-ghost" onclick="toggleProjectorScores()">📊 Scores grand</button>
-          <button class="btn btn-ghost" onclick="adminAction('/api/admin/projector-refresh')">↻ Refresh projecteur</button>
-          <button class="btn btn-ghost" onclick="adminAction('/api/admin/refresh-clients').then(()=>showToast('Clients rechargés','info',2500))">↻ Refresh mobiles</button>
-          <button class="btn btn-outline" onclick="window.open('/projector','_blank')">↗ Ouvrir Projecteur</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <div class="panel-title">Classement · En direct</div>
+            <div class="panel-sub tight">Top 5 mis à jour en temps réel</div>
+          </div>
+          <button class="btn btn-ghost btn-sm"
+                  onclick="fetch('/api/admin/leaderboard').then(r=>r.json()).then(d=>renderMiniLeaderboard(d.leaderboard||[]))">↻</button>
+        </div>
+        <div id="quiz-mini-lb" style="color:var(--stone);font-size:12px;padding:8px 0;">
+          En attente des scores…
         </div>
       </div>
+
     </div>
 
-    <!-- ══════════════ QUIZ LIVE ══════════════ -->
-    <div id="section-quiz" class="section">
-      <div class="page-title">Quiz Live</div>
-      <div class="page-sub">Contrôle des questions en temps réel</div>
+    <!-- ╔══════════════════════════════╗
+         ║  JOUEURS                    ║
+         ╚══════════════════════════════╝ -->
+    <div id="section-players" class="section" data-screen-label="02 Joueurs">
 
-      <!-- Question display -->
-      <div class="question-card">
-        <div class="panel-sub" id="quiz-q-sub">Aucune question en cours</div>
-        <div class="question-text" id="quiz-q-text">En attente du Gossip Girl…</div>
-
-        <div class="choices-grid" id="quiz-choices">
-          <div class="choice-item" style="color:var(--stone);grid-column:1/-1;">Les choix apparaîtront ici dès le lancement du quiz.</div>
-        </div>
-
-        <!-- Barre de progression réponses -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);">Réponses reçues</span>
-          <span style="font-size:12px;color:var(--gold);" id="quiz-answered-count">0 / 0</span>
-        </div>
-        <div class="answer-progress-bar">
-          <div class="answer-progress-fill" id="quiz-progress-fill"></div>
-        </div>
-
-        <!-- Liste des répondants -->
-        <div class="answer-list" id="quiz-answer-list"></div>
-      </div>
-
-      <!-- Controls -->
-      <div class="panel panel-full">
-        <div class="panel-title">Contrôles Quiz</div>
-        <div class="panel-sub">Actions sur la question en cours</div>
-        <div class="btn-row">
-          <button class="btn btn-gold no-quiz-btn" onclick="adminAction('/api/admin/phase',{phase:'QUIZ'})">⚡ Lancer Quiz</button>
-          <button class="btn btn-outline quiz-only-btn" onclick="adminAction('/api/admin/reload-question')">🔄 Relancer question</button>
-          <button class="btn btn-ghost quiz-only-btn" onclick="adminAction('/api/admin/adjust-timer',{delta:10})">+10 secondes</button>
-          <button id="btn-pause-quiz-ql" class="btn btn-ghost quiz-only-btn" onclick="pauseQuiz()">⏸ Pause Quiz</button>
-          <button class="btn btn-ghost" onclick="toggleProjectorScores()">📊 Scores projecteur</button>
-          <button class="btn btn-danger quiz-only-btn" onclick="stopQuizConfirm()">✕ Arrêter + Rollback</button>
-        </div>
-      </div>
-
-      <!-- Leaderboard mini -->
-      <div class="panel panel-full">
-        <div class="panel-title">Classement rapide</div>
-        <div class="panel-sub">Top 5 pendant le quiz</div>
-        <div id="quiz-mini-lb" style="color:var(--stone);font-size:12px;padding:8px 0;">En attente des scores…</div>
-      </div>
-    </div>
-
-    <!-- ══════════════ PLAYERS ══════════════ -->
-    <div id="section-players" class="section">
       <div class="page-title">Joueurs</div>
       <div class="page-sub">Gestion des invités · <span id="players-count-label">0 connectés</span></div>
 
-      <!-- Transfer GG -->
+      <div class="panel panel-full" style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div>
+            <div class="panel-title">Roster · Disponibilités</div>
+            <div class="panel-sub tight">Tous les personnages · qui a choisi quoi · ce qui reste libre</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadRoster()">↻ Rafraîchir</button>
+        </div>
+        <div class="roster-toolbar">
+          <div class="roster-kpi" id="roster-kpi"></div>
+          <input class="input-field roster-search" id="roster-search"
+                 placeholder="Rechercher un personnage…" oninput="rosterSetQuery(this.value)">
+          <label class="roster-filter">
+            <input type="checkbox" id="roster-avail-only" onchange="rosterSetAvailOnly(this.checked)">
+            Disponibles uniquement
+          </label>
+        </div>
+        <div class="roster-grid" id="roster-grid">
+          <div class="roster-empty">Chargement du roster…</div>
+        </div>
+      </div>
+
       <div class="panel panel-full" style="margin-bottom:16px;">
         <div class="panel-title">Transfert Gossip Girl</div>
         <div class="panel-sub">Désigner manuellement le prochain GG</div>
@@ -619,6 +1260,7 @@
             <option value="">— Choisir un joueur —</option>
           </select>
           <button class="btn btn-outline" onclick="transferGG()">👑 Transférer GG</button>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="loadPlayers()">↻ Rafraîchir</button>
         </div>
       </div>
 
@@ -641,49 +1283,111 @@
           </table>
         </div>
       </div>
+
     </div>
 
-    <!-- ══════════════ SCOOPS ══════════════ -->
-    <div id="section-scoops" class="section">
+    <!-- ╔══════════════════════════════╗
+         ║  SCOOPS                     ║
+         ╚══════════════════════════════╝ -->
+    <div id="section-scoops" class="section" data-screen-label="03 Scoops">
+
       <div class="page-title">Scoops</div>
       <div class="page-sub">Modération du feed en temps réel</div>
 
-      <!-- Post as GG -->
-      <div class="panel panel-full" style="margin-bottom:16px;">
-        <div class="panel-title">Poster en tant que Gossip Girl</div>
-        <div class="panel-sub">Message officiel · Visible par tous instantanément</div>
-        <textarea class="input-field" id="gg-message-input" placeholder="Your message, darling… XOXO" rows="3"></textarea>
-        <button class="btn btn-gold" onclick="postAsGG()">✦ Publier en tant que GG</button>
-      </div>
+      <div class="panel-grid">
 
-      <!-- Feed -->
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div>
-            <div class="panel-title">Feed Modération</div>
-            <div class="panel-sub" style="margin-bottom:0;">Plus récents en premier</div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-title">Poster en tant que GG</div>
+            <div class="panel-sub">Message officiel · Visible de tous instantanément</div>
+            <textarea class="input-field" id="gg-message-input"
+                      placeholder="Your message, darling… XOXO&#10;(Ctrl+↵ pour envoyer)" rows="4"></textarea>
+            <button class="btn btn-gold" onclick="postAsGG()">✦ Publier en tant que GG</button>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="loadScoops()">↻ Rafraîchir</button>
         </div>
-        <div id="scoops-list">
-          <div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l'instant.</div>
+
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div>
+              <div class="panel-title">Feed · Modération</div>
+              <div class="panel-sub tight">Plus récents en premier</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="loadScoops()">↻ Rafraîchir</button>
+          </div>
+          <div id="scoops-list">
+            <div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l'instant.</div>
+          </div>
         </div>
+
       </div>
     </div>
 
-    <!-- ══════════════ SCORES ══════════════ -->
-    <div id="section-scores" class="section">
+    <!-- ╔══════════════════════════════╗
+         ║  STUDIO                     ║
+         ╚══════════════════════════════╝ -->
+    <div id="section-studio" class="section" data-screen-label="04 Studio">
+
+      <div class="page-title">Studio</div>
+      <div class="page-sub">Projecteur &amp; affichage grand écran</div>
+
+      <div class="panel-grid">
+
+        <div class="panel">
+          <div class="panel-title">Message Custom</div>
+          <div class="panel-sub">S'affiche 8s en grand sur le projecteur</div>
+          <input class="input-field" id="custom-msg-input" type="text"
+                 placeholder="Ton message sur le grand écran…"/>
+          <button class="btn btn-gold" onclick="sendCustomMessage()">📺 Afficher sur projecteur</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Affichage Projecteur</div>
+          <div class="panel-sub">Vues rapides sur le grand écran</div>
+          <div class="btn-col">
+            <button class="btn btn-ghost" id="btn-scores-proj" onclick="toggleProjectorScores()">
+              📊 Scores en grand
+            </button>
+            <button class="btn btn-ghost" id="btn-qr-proj" onclick="toggleProjectorQR()">
+              📱 Afficher QR Code
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Contrôles Projecteur</div>
+          <div class="panel-sub">Gestion à distance du grand écran</div>
+          <div class="btn-col">
+            <button class="btn btn-outline" onclick="window.open('/projector','_blank')">↗ Ouvrir le projecteur</button>
+            <button class="btn btn-ghost"   onclick="adminAction('/api/admin/projector-refresh')">↻ Refresh projecteur</button>
+            <button class="btn btn-ghost"   onclick="window.open('/qr','_blank')">↗ Page QR Code</button>
+            <button class="btn btn-ghost"   onclick="window.open('/mobile','_blank')">📱 Vue mobile</button>
+          </div>
+          <div style="margin-top:12px;font-size:11px;color:var(--stone);">
+            URL : <span style="color:var(--gold);" id="app-url">—</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ╔══════════════════════════════╗
+         ║  SCORES                     ║
+         ╚══════════════════════════════╝ -->
+    <div id="section-scores" class="section" data-screen-label="05 Scores">
+
       <div class="page-title">Scores</div>
       <div class="page-sub">Classement complet · Mis à jour en temps réel</div>
 
-      <!-- Elite Circle — scores totaux + édition manuelle -->
       <div class="panel panel-full">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <div>
             <div class="panel-title">Elite Circle</div>
-            <div class="panel-sub" style="margin-bottom:0;">Score total cumulé · Cliquer sur un score pour l'éditer</div>
+            <div class="panel-sub tight">Score total cumulé · Cliquer sur un score pour l'éditer</div>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="loadScores()">↻ Rafraîchir</button>
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" onclick="loadScoresHistory()">Historique</button>
+            <button class="btn btn-ghost btn-sm" onclick="loadScores()">↻ Rafraîchir</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
@@ -704,893 +1408,910 @@
         </div>
       </div>
 
-      <!-- Historique par Flash Quiz -->
       <div id="scores-history-wrap"></div>
+
     </div>
 
-    <!-- ══════════════ LOGS ══════════════ -->
-    <div id="section-logs" class="section">
-      <div class="page-title">Logs d'activité</div>
-      <div class="page-sub">Historique complet de la session</div>
+    <!-- ╔══════════════════════════════╗
+         ║  DÉDICACES                  ║
+         ╚══════════════════════════════╝ -->
+    <div id="section-dedicaces" class="section" data-screen-label="06 VIP">
 
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-          <div>
-            <div class="panel-title">Journal</div>
-            <div class="panel-sub" style="margin-bottom:0;">Les 100 derniers événements</div>
+      <div class="page-title">Dédicaces</div>
+      <div class="page-sub">Slot VIP Blair Waldorf · Fonctionnalités à venir</div>
+
+      <div class="panel-grid">
+
+        <div class="panel">
+          <div class="panel-title">Blair Waldorf · Slot VIP</div>
+          <div class="panel-sub" id="blair-status">Vérification…</div>
+
+          <div class="blair-status-row">
+            <span id="blair-status-chip" class="status-chip free">
+              <span class="sdot"></span>Slot libre
+            </span>
+            <span id="blair-link" class="blair-link">—</span>
           </div>
+
           <div class="btn-row">
-            <select class="input-field" id="log-filter" style="margin:0;width:160px;padding:7px 12px;font-size:11px;" onchange="filterLogs()">
-              <option value="">Tous les événements</option>
-              <option value="login">Connexions</option>
-              <option value="quiz">Quiz</option>
-              <option value="scoop">Scoops</option>
-              <option value="admin">Admin</option>
-            </select>
-            <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻ Rafraîchir</button>
+            <button class="btn btn-danger"  onclick="freeBlairSlot()">🔓 Libérer le slot</button>
+            <button class="btn btn-ghost"   onclick="copyBlair()">📋 Copier lien VIP</button>
+            <button class="btn btn-gold"    onclick="openBlairLogin()">🌹 Ouvrir login Blair</button>
           </div>
         </div>
-        <div id="logs-list">
-          <div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun événement.</div>
+
+        <div class="panel">
+          <div class="panel-title">À venir</div>
+          <div class="panel-sub">Fonctionnalités planifiées</div>
+          <div class="dedicace-future">
+            Dédicaces · Messages VIP · Interactions spéciales
+          </div>
         </div>
+
       </div>
     </div>
 
-    <!-- ══════════════ BOT CONTROL ROOM ══════════════ -->
-    <div id="section-bots" class="section">
-      <div class="page-title">🤖 Bot Control Room</div>
-      <div class="page-sub">Déploie des joueurs simulés pour tester timers, phases et quiz</div>
+    <!-- ╔══════════════════════════════╗
+         ║  DEBUG                      ║
+         ╚══════════════════════════════╝ -->
+    <div id="section-debug" class="section" data-screen-label="07 Debug">
 
-      <!-- Panneau déploiement -->
-      <div class="panel-grid">
-        <div class="panel">
-          <div class="panel-title">Déployer un Bot</div>
-          <div class="panel-sub">Choisir un profil de comportement</div>
+      <div class="page-title">Debug</div>
+      <div class="page-sub">Bots · Logs · Maintenance système</div>
 
-          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-            <label style="font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.05em;">Profil</label>
-            <select class="input-field" id="bot-profile-select">
-              <option value="random">🎲 Random — répond aléatoirement (2-8s)</option>
-              <option value="slow">🐢 Slow — répond en dernière seconde</option>
-              <option value="silent">🔇 Silent — ne répond jamais</option>
-              <option value="crasher">💥 Crasher — se déconnecte brutalement</option>
-            </select>
-          </div>
+      <div class="sub-tabs">
+        <div class="sub-tab active" data-tab="bots" onclick="showSubTab('bots')">🤖 Bot Control</div>
+        <div class="sub-tab"        data-tab="logs" onclick="showSubTab('logs')">📋 Logs</div>
+      </div>
 
-          <button class="btn btn-gold" onclick="deployBot()" id="btn-deploy-bot">
-            + Déployer un Bot
-          </button>
+      <!-- ── Bots ── -->
+      <div id="subtab-bots" class="sub-panel active">
+        <div class="panel-grid">
 
-          <div style="margin-top:12px;font-size:11px;color:var(--stone);">
-            Bots actifs : <span id="bots-count" style="color:var(--gold);font-weight:700;">0</span> / 10
-          </div>
-        </div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
 
-        <!-- Actions globales -->
-        <div class="panel">
-          <div class="panel-title">Actions Globales</div>
-          <div class="panel-sub">Gestion de tous les bots</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <button class="btn btn-outline" onclick="refreshBotList()">↻ Rafraîchir la liste</button>
-            <button class="btn btn-danger" onclick="removeAllBots()">✕ Supprimer tous les bots</button>
-            <button class="btn btn-ghost" onclick="clearBotLogs()">🗑 Vider l'affichage logs</button>
-
-            <!-- ⚡ Turbo Mode toggle -->
-            <div style="margin-top:4px;border-top:1px solid rgba(201,168,76,.12);padding-top:12px;">
-              <button id="btn-turbo" class="btn btn-outline" onclick="toggleTurboMode()"
-                style="width:100%;border-color:rgba(201,168,76,.35);color:var(--stone);transition:all .25s;">
-                ⚡ Turbo Mode — OFF
+            <div class="panel">
+              <div class="panel-title">Déployer un Bot</div>
+              <div class="panel-sub">Choisir un profil de comportement</div>
+              <label class="form-label">Profil</label>
+              <select class="input-field" id="bot-profile-select">
+                <option value="random">🎲 Random — répond aléatoirement (2-8s)</option>
+                <option value="slow">🐢 Slow — répond en dernière seconde</option>
+                <option value="silent">🔇 Silent — ne répond jamais</option>
+                <option value="crasher">💥 Crasher — se déconnecte brutalement</option>
+              </select>
+              <button class="btn btn-gold" onclick="deployBot()" id="btn-deploy-bot">
+                + Déployer un Bot
               </button>
-              <div style="margin-top:6px;font-size:10.5px;color:var(--stone);opacity:.7;line-height:1.5;text-align:center;">
-                Accélère tous les timers pour les tests bots
+              <div style="margin-top:10px;font-size:11px;color:var(--stone);">
+                Bots actifs : <span id="bots-count" style="color:var(--gold);font-weight:700;">0</span> / <span id="bots-max">50</span>
               </div>
             </div>
+
+            <div class="panel">
+              <div class="panel-title">Actions Globales</div>
+              <div class="panel-sub">Gestion de tous les bots</div>
+              <div class="btn-col">
+                <button id="btn-turbo" class="btn btn-outline btn-full" onclick="toggleTurboMode()">
+                  ⚡ Turbo Mode — OFF
+                </button>
+                <button class="btn btn-ghost btn-full" onclick="refreshBotList()">↻ Rafraîchir la liste</button>
+                <button class="btn btn-danger btn-full" onclick="removeAllBots()">✕ Supprimer tous les bots</button>
+                <button class="btn btn-ghost btn-full" onclick="clearBotLogs()">🗑 Vider l'affichage logs</button>
+              </div>
+            </div>
+
           </div>
-          <div style="margin-top:16px;font-size:11px;color:var(--stone);line-height:1.6;">
-            Les logs complets sont sauvegardés dans<br>
-            <span style="color:var(--gold);font-family:monospace;">bot_logs.txt</span> à la racine du projet.
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+
+            <div class="panel">
+              <div class="panel-title">Bots Actifs</div>
+              <div class="panel-sub tight">Statut en temps réel</div>
+              <div class="table-wrap" style="margin-top:12px;">
+                <table>
+                  <thead>
+                    <tr><th>Pseudo</th><th>Profil</th><th>Phase</th><th>Rép.</th><th>Statut</th><th></th></tr>
+                  </thead>
+                  <tbody id="bots-table-body">
+                    <tr><td colspan="6" style="text-align:center;color:var(--stone);padding:20px;">Aucun bot actif.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div>
+                  <div class="panel-title">Logs Temps Réel</div>
+                  <div class="panel-sub tight">Flux live · <span id="bot-log-count">0</span> entrées</div>
+                </div>
+                <div class="btn-row">
+                  <button class="btn btn-ghost btn-sm" onclick="loadBotLogsFromServer()">↓ Historique</button>
+                  <button class="btn btn-ghost btn-sm" onclick="clearBotLogs()">✕ Vider</button>
+                </div>
+              </div>
+              <div id="bot-logs-container" class="bot-logs-container">
+                <div style="color:var(--stone);opacity:.5;text-align:center;margin-top:120px;">En attente de logs…</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Logs ── -->
+      <div id="subtab-logs" class="sub-panel">
+        <div class="panel panel-full">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <div class="panel-title">Journal d'activité</div>
+              <div class="panel-sub tight">Les 100 derniers événements</div>
+            </div>
+            <div class="btn-row">
+              <select class="input-field" id="log-filter"
+                      style="margin:0;width:170px;padding:7px 12px;font-size:11px;"
+                      onchange="filterLogs()">
+                <option value="">Tous les événements</option>
+                <option value="login">Connexions</option>
+                <option value="quiz">Quiz</option>
+                <option value="scoop">Scoops</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻ Rafraîchir</button>
+            </div>
+          </div>
+          <div id="logs-list">
+            <div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun événement.</div>
           </div>
         </div>
       </div>
 
-      <!-- Liste des bots actifs -->
-      <div class="panel panel-full" style="margin-top:0;">
-        <div class="panel-title">Bots Actifs</div>
-        <div class="panel-sub">Statut en temps réel de chaque bot déployé</div>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Pseudo</th>
-                <th>Profil</th>
-                <th>Phase</th>
-                <th>Réponses</th>
-                <th>Statut</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="bots-table-body">
-              <tr><td colspan="6" style="text-align:center;color:var(--stone);padding:24px;">Aucun bot actif.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Logs temps réel -->
-      <div class="panel panel-full" style="margin-top:0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div>
-            <div class="panel-title" style="margin-bottom:2px;">Logs Temps Réel</div>
-            <div class="panel-sub">Flux live des événements bots · <span id="bot-log-count">0</span> entrées</div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="loadBotLogsFromServer()">↓ Charger historique</button>
-            <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="clearBotLogs()">✕ Vider</button>
-          </div>
-        </div>
-        <div id="bot-logs-container" style="
-          background:rgba(0,0,0,.35);
-          border:1px solid var(--panel-border);
-          border-radius:6px;
-          padding:12px;
-          height:320px;
-          overflow-y:auto;
-          font-family:monospace;
-          font-size:11px;
-          line-height:1.7;
-          color:var(--stone);
-        ">
-          <div style="color:var(--stone);opacity:.5;text-align:center;margin-top:120px;">
-            En attente de logs…
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════ PROJECTEUR ══════════════ -->
-    <div id="section-projector" class="section">
-      <div class="page-title">Contrôle Projecteur</div>
-      <div class="page-sub">Sons, effets et messages sur le grand écran</div>
-
-      <div class="panel-grid">
-
-        <!-- Sons -->
-        <div class="panel">
-          <div class="panel-title">Sons</div>
-          <div class="panel-sub">Déclenchés sur le projecteur uniquement</div>
-
-          <!-- Boutons sons avec barre de progression -->
-          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
-
-            <div class="sound-btn-wrap" data-sound="xoxo"         data-duration="5.41">
-              <button class="btn btn-gold  sound-trigger-btn" onclick="triggerSound('xoxo')">🔊 XOXO</button>
-              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
-            </div>
-
-            <div class="sound-btn-wrap" data-sound="quiz_start"   data-duration="22.15">
-              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('quiz_start')">⚡ Quiz Start</button>
-              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
-            </div>
-
-            <div class="sound-btn-wrap" data-sound="correct"      data-duration="2.72">
-              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('correct')">✓ Correct</button>
-              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
-            </div>
-
-            <div class="sound-btn-wrap" data-sound="new_gg"       data-duration="6.06">
-              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('new_gg')">👑 New GG</button>
-              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
-            </div>
-
-            <div class="sound-btn-wrap" data-sound="phase2_start" data-duration="14.87">
-              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('phase2_start')">🖤 Mode Libre</button>
-              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
-            </div>
-
-            <div class="sound-btn-wrap" data-sound="countdown"    data-duration="2.30">
-              <button class="btn btn-ghost sound-trigger-btn" onclick="triggerSound('countdown')">⏱ Countdown</button>
-              <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
-            </div>
-
-          </div>
-
-          <!-- Bouton Stop global -->
-          <button class="btn btn-danger" id="btn-stop-sound" onclick="stopSound()" style="width:100%; opacity:0.4; pointer-events:none;">
-            ■ Stop
-          </button>
-        </div>
-
-        <!-- Message custom -->
-        <div class="panel">
-          <div class="panel-title">Message Custom</div>
-          <div class="panel-sub">S'affiche 8s en grand sur le projecteur</div>
-          <input class="input-field" id="custom-msg-input" type="text"
-            placeholder="Ton message sur le grand écran…"
-            onkeydown="if(event.key==='Enter')sendCustomMessage()"/>
-          <button class="btn btn-gold" onclick="sendCustomMessage()">📺 Afficher sur projecteur</button>
-        </div>
-
-        <!-- Transfert GG (projecteur section) -->
-        <div class="panel">
-          <div class="panel-title">Transférer Gossip Girl</div>
-          <div class="panel-sub">Désigner le prochain GG manuellement</div>
-          <select class="input-field" id="transfer-gg-select-2">
-            <option value="">— Choisir un joueur —</option>
-          </select>
-          <button class="btn btn-outline" onclick="transferGGById('transfer-gg-select-2')">👑 Transférer</button>
-        </div>
-
-        <!-- QR Code -->
-        <div class="panel">
-          <div class="panel-title">QR Code</div>
-          <div class="panel-sub">Afficher / masquer sur le projecteur</div>
-          <div class="btn-row">
-            <button class="btn btn-gold" id="btn-qr-proj" onclick="toggleProjectorQR()">📱 Afficher QR sur projecteur</button>
-            <button class="btn btn-ghost" onclick="window.open('/qr','_blank')">↗ Ouvrir page QR</button>
-          </div>
-          <div style="margin-top:12px;font-size:11px;color:var(--stone);">
-            URL de connexion : <span style="color:var(--gold);" id="app-url">—</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Preview zone -->
-      <div class="panel panel-full" style="margin-top:0;">
-        <div class="panel-title">Aperçu Projecteur</div>
-        <div class="panel-sub">Contrôle à distance du grand écran</div>
-        <div class="btn-row">
-          <button class="btn btn-outline" onclick="window.open('/projector','_blank')">↗ Ouvrir le projecteur</button>
-          <button class="btn btn-ghost" onclick="adminAction('/api/admin/projector-refresh')">↻ Refresh projecteur</button>
-          <button class="btn btn-ghost" id="btn-scores-proj" onclick="toggleProjectorScores()">📊 Scores en grand</button>
-          <button class="btn btn-ghost" onclick="window.open('/mobile','_blank')">📱 Vue mobile (test)</button>
-        </div>
-      </div>
     </div>
 
   </main>
 </div>
 
-<!-- TOAST -->
+<!-- ══════════════════════════════════════════════
+     FLOATING SOUND BOARD
+     ══════════════════════════════════════════════ -->
+<div id="sound-board">
+  <div class="sbd-hdr">
+    <span class="sbd-title">🎵 Sons · Projecteur</span>
+    <span id="sbd-chevron">▲</span>
+  </div>
+  <div id="sbd-body">
+
+    <div class="sound-btn-wrap" data-sound="xoxo" data-duration="5.41">
+      <button class="snd-btn main sound-trigger-btn" onclick="triggerSound('xoxo')">
+        🔊 XOXO <span class="snd-dur">5.4s</span>
+      </button>
+      <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+    </div>
+
+    <div class="sound-btn-wrap" data-sound="quiz_start" data-duration="22.15">
+      <button class="snd-btn sound-trigger-btn" onclick="triggerSound('quiz_start')">
+        ⚡ Quiz Start <span class="snd-dur">22s</span>
+      </button>
+      <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+    </div>
+
+    <div class="sound-btn-wrap" data-sound="correct" data-duration="2.72">
+      <button class="snd-btn sound-trigger-btn" onclick="triggerSound('correct')">
+        ✓ Correct <span class="snd-dur">2.7s</span>
+      </button>
+      <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+    </div>
+
+    <div class="sound-btn-wrap" data-sound="new_gg" data-duration="6.06">
+      <button class="snd-btn sound-trigger-btn" onclick="triggerSound('new_gg')">
+        👑 New GG <span class="snd-dur">6.1s</span>
+      </button>
+      <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+    </div>
+
+    <div class="sound-btn-wrap" data-sound="phase2_start" data-duration="14.87">
+      <button class="snd-btn sound-trigger-btn" onclick="triggerSound('phase2_start')">
+        🖤 Mode Libre <span class="snd-dur">14.9s</span>
+      </button>
+      <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+    </div>
+
+    <div class="sound-btn-wrap" data-sound="countdown" data-duration="2.30">
+      <button class="snd-btn sound-trigger-btn" onclick="triggerSound('countdown')">
+        ⏱ Countdown <span class="snd-dur">2.3s</span>
+      </button>
+      <div class="sound-progress-bar"><div class="sound-progress-fill"></div></div>
+    </div>
+
+    <button class="snd-stop" id="btn-stop-sound-float" onclick="stopSound()"
+            style="opacity:0.4;pointer-events:none;">■ Stop Son</button>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DANGER ZONE MODAL
+     ══════════════════════════════════════════════ -->
+<div id="danger-overlay">
+  <div id="danger-modal">
+
+    <div class="danger-hdr">
+      <span class="danger-title">Zone de Danger</span>
+      <button class="danger-close" onclick="closeDangerZone()">✕</button>
+    </div>
+
+    <div class="danger-body">
+      <div class="danger-warn">
+        ⚠ Ces actions sont irréversibles — procéder avec la plus grande précaution
+      </div>
+
+      <div class="danger-action">
+        <div class="danger-action-label">🃏 Reset Questions — remet à zéro le pool</div>
+        <div class="danger-row">
+          <input type="text" id="danger-input-q" class="input-field danger-input"
+                 style="margin:0;flex:1;" placeholder='Tapez "RESET"'>
+          <button class="btn btn-danger" onclick="confirmResetQuestions()">Confirmer</button>
+        </div>
+      </div>
+
+      <div class="danger-action">
+        <div class="danger-action-label">📊 Reset Scores — joueurs conservés</div>
+        <div class="danger-row">
+          <input type="text" id="danger-input-s" class="input-field danger-input"
+                 style="margin:0;flex:1;" placeholder='Tapez "RESET"'>
+          <button class="btn btn-danger" onclick="confirmResetScores()">Confirmer</button>
+        </div>
+      </div>
+
+      <div class="danger-action">
+        <div class="danger-action-label">🔄 Reset Complet — efface tout</div>
+        <div class="danger-row">
+          <input type="text" id="danger-input-all" class="input-field danger-input"
+                 style="margin:0;flex:1;" placeholder='Tapez "RESET COMPLET"'>
+          <button class="btn btn-danger" onclick="confirmReset()">Confirmer</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ─────────────────────────────────────── -->
 <div id="toast"></div>
 
-<!-- ═══════════════════════════════════════
-     SCRIPTS
-═══════════════════════════════════════ -->
+<!-- ── Scripts ───────────────────────────────────── -->
+<script>
+  // Suppress benign ResizeObserver iframe artifact (browser-level, not our code)
+  const __origError = window.onerror;
+  window.onerror = function(msg) {
+    if (typeof msg === 'string' && msg.includes('ResizeObserver')) return true;
+    return __origError ? __origError.apply(this, arguments) : false;
+  };
+  window.addEventListener('error', function(e) {
+    if (e && e.message && e.message.includes('ResizeObserver')) {
+      e.stopImmediatePropagation(); e.preventDefault(); return true;
+    }
+  }, true);
+  window.__BLAIR_TOKEN__ = "{{ blair_token }}";
+</script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-window.__BLAIR_TOKEN__ = "{{ blair_token }}";
+  // Socket.io stub — remplacer par la vraie lib en production
+  window.io = window.io || function() {
+    const noop = function() { return this; };
+    return { on: noop, emit: noop, off: noop, connect: noop };
+  };
+</script>
+<script>
+/* ══════════════════════════════════════════════════
+   CHUCK MODE · Admin Logic v2.0
+   API endpoints, socket handlers & UI logic.
+   Adapted to match original function signatures.
+   ══════════════════════════════════════════════════ */
+'use strict';
 
-/* ─────────────────────────────────────────
-   SOCKET
-───────────────────────────────────────── */
-const socket = io({
-  reconnection: true,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  reconnectionAttempts: Infinity,
-});
+/* ── State ──────────────────────────────────────── */
+const S = {
+  phase: 'LOBBY',
+  liveAnswer: '',
+  playerCount: 0,
+  soundOn: false,
+  playingSound: null,
+  turbo: false,
+  qrBig: false,
+  scoresBig: false,
+  blairData: null,
+  _timerEndsAt: null,
+  _timerInterval: null,
+  _toastTimer: null,
+  _botLogCount: 0,
+};
 
-socket.on('connect', () => {
-  setConnStatus(true);
-  loadDashboardData();
-  socket.emit('admin_identify', {}); // permet au serveur de cibler cet admin pour les logs bots
-});
-socket.on('disconnect', () => setConnStatus(false));
-
-function setConnStatus(online) {
-  const dot  = document.getElementById('socket-dot');
-  const lbl  = document.getElementById('socket-label');
-  const dot2 = document.getElementById('conn-dot');
-  const lbl2 = document.getElementById('conn-label');
-  if (online) {
-    dot.classList.remove('offline');  dot2.classList.remove('offline');
-    lbl.textContent  = 'God Mode Actif';
-    lbl2.textContent = 'Connecté';
-  } else {
-    dot.classList.add('offline');  dot2.classList.add('offline');
-    lbl.textContent  = 'Reconnexion…';
-    lbl2.textContent = 'Hors ligne';
-  }
-}
-
-/* ─────────────────────────────────────────
-   TOAST
-───────────────────────────────────────── */
-let _toastTimer = null;
-function showToast(msg, type='', duration=2800) {
+/* ── Toast (matches original signature) ─────────── */
+function showToast(msg, type = '', duration = 2800) {
   const t = document.getElementById('toast');
+  if (!t) return;
   t.textContent = msg;
   t.className = 'show ' + type;
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => t.className = '', duration);
+  clearTimeout(S._toastTimer);
+  S._toastTimer = setTimeout(() => { t.className = ''; }, duration);
 }
 
-/* ─────────────────────────────────────────
-   ESCAPE HTML — sécurité XSS (était absent du fichier tronqué)
-───────────────────────────────────────── */
+/* ── Escape HTML ────────────────────────────────── */
 function escHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
 
-/* ─────────────────────────────────────────
-   NAVIGATION
-───────────────────────────────────────── */
-function showSection(name, btn) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('section-' + name).classList.add('active');
-  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  // Charger les données selon la section
-  const loaders = {players: loadPlayers, scoops: loadScoops, scores: loadScores, logs: loadLogs};
-  if (loaders[name]) loaders[name]();
-  // Masquer badge scoops si on ouvre scoops
-  if (name === 'scoops') document.getElementById('badge-scoops').classList.remove('show');
-  // Mettre à jour URL app dans section projecteur
-  if (name === 'projector') document.getElementById('app-url').textContent = window.location.origin;
-}
-
-/* ─────────────────────────────────────────
-   API CALLS
-───────────────────────────────────────── */
-async function adminAction(endpoint, body = {}) {
+/* ── Core API helper ────────────────────────────── */
+async function adminAction(endpoint, body = {}, method = 'POST') {
   try {
-    const r = await fetch(endpoint, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(body),
-    });
-    const d = await r.json();
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (method !== 'GET' && method !== 'DELETE') opts.body = JSON.stringify(body);
+    const r = await fetch(endpoint, opts);
+    const d = await r.json().catch(() => ({}));
     if (d.ok !== false) showToast('✓ ' + (d.message || 'Action effectuée'), 'success');
     else showToast('✗ ' + (d.error || 'Erreur inconnue'), 'error');
     return d;
   } catch(e) {
+    console.warn(`[adminAction] ${endpoint}`, e.message);
     showToast('✗ Erreur réseau.', 'error');
     return null;
   }
 }
 
-/* ─────────────────────────────────────────
-   DASHBOARD — Chargement initial
-───────────────────────────────────────── */
-async function loadDashboardData() {
-  // stat-players alimenté par leaderboard (comme v4.4) — loadPlayers() reste indépendant
-  const r = await fetch('/api/admin/leaderboard').catch(() => null);
-  if (r && r.ok) {
-    let d;
-    try { d = await r.json(); } catch(e) { d = null; }
-    if (d) {
-      const connected = (d.leaderboard || []).filter(p => p.is_connected).length;
-      document.getElementById('stat-players').textContent = connected;
-      const badge = document.getElementById('badge-players');
-      badge.textContent = connected;
-      badge.classList.toggle('show', connected > 0);
-    }
+/* ══════════════════════════════════════════════════
+   NAVIGATION
+   ══════════════════════════════════════════════════ */
+function toggleNav(force) {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('nav-backdrop');
+  const open = (force === undefined) ? !sb.classList.contains('open') : !!force;
+  sb.classList.toggle('open', open);
+  if (bd) bd.classList.toggle('show', open);
+}
+function closeNav() { toggleNav(false); }
+
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  const sec = document.getElementById('section-' + name);
+  if (sec) sec.classList.add('active');
+  if (btn) btn.classList.add('active');
+  else {
+    const match = document.querySelector(`.sidebar-item[data-sec="${name}"]`);
+    if (match) match.classList.add('active');
   }
+  const loaders = {
+    players: () => { loadPlayers(); loadRoster(); },
+    scoops:  loadScoops,
+    scores:  loadScores,
+    debug:   () => { refreshBotList(); loadLogs(); }
+  };
+  if (loaders[name]) loaders[name]();
+  if (name === 'scoops') {
+    const b = document.getElementById('badge-scoops');
+    if (b) b.classList.remove('show');
+  }
+  if (name === 'studio') {
+    const urlEl = document.getElementById('app-url');
+    if (urlEl) urlEl.textContent = window.location.origin;
+  }
+  closeNav();   // ferme le drawer mobile après sélection (no-op sur desktop)
+}
+
+/* ══════════════════════════════════════════════════
+   PHASE MANAGEMENT
+   ══════════════════════════════════════════════════ */
+function updatePhaseUI(phase) {
+  if (phase === 'QUIZ_PAUSED') phase = 'PAUSE';   // alias serveur → token interne
+  S.phase = phase;
+  const pill       = document.getElementById('phase-pill');
+  const statEl     = document.getElementById('stat-phase');
+  const statCardEl = document.getElementById('stat-phase-card');
+  const subEl      = document.getElementById('quiz-live-sub');
+
+  const map = {
+    LOBBY:     { label: 'Lobby',       cls: 'phase-lobby', stat: 'Lobby' },
+    QUIZ:      { label: 'Quiz · Live', cls: 'phase-quiz',  stat: 'Quiz Live' },
+    PAUSE:     { label: 'En Pause',    cls: 'phase-pause', stat: 'Pause' },
+    LIBRE:     { label: 'Mode Libre',  cls: 'phase-libre', stat: 'Mode Libre' },
+    STOP_QUIZ: { label: 'Arrêté',      cls: 'phase-lobby', stat: 'Arrêté' },
+  };
+  const { label, cls, stat } = map[phase] || { label: phase, cls: '', stat: phase };
+
+  if (pill) { pill.className = cls; pill.innerHTML = `<span class="dot"></span>${label}`; }
+  if (statEl) { statEl.textContent = stat; statEl.className = 'status-val sm'; }
+  if (statCardEl) { statCardEl.textContent = stat; }
+  if (subEl) subEl.textContent = (phase === 'QUIZ' || phase === 'PAUSE')
+    ? 'Quiz en cours · Actions actives'
+    : 'Aucun quiz actif';
+
+  const live = phase === 'QUIZ' || phase === 'PAUSE';
+  document.querySelectorAll('.quiz-only').forEach(el => el.classList.toggle('on', live));
+  document.querySelectorAll('.no-quiz').forEach(el => el.classList.toggle('off', live));
+
+  const ov = document.getElementById('quiz-inactive-overlay');
+  if (ov) ov.classList.toggle('hidden', live);
+
+  const launchBtn = document.getElementById('btn-launch-quiz');
+  if (launchBtn) {
+    launchBtn.style.opacity      = live ? '.3' : '1';
+    launchBtn.style.pointerEvents = live ? 'none' : 'auto';
+  }
+  updatePauseBtn(phase);
+}
+
+function updatePauseBtn(phase) {
+  const btn = document.getElementById('btn-pause-quiz');
+  if (!btn) return;
+  if (phase === 'PAUSE') {
+    btn.textContent = '▶ Reprendre';
+    btn.onclick = () => adminAction('/api/admin/phase', { phase: 'RESUME_QUIZ' }).then(r => r && updatePhaseUI('QUIZ'));
+  } else {
+    btn.textContent = '⏸ Pause Quiz';
+    btn.onclick = () => adminAction('/api/admin/phase', { phase: 'PAUSE_QUIZ'  }).then(r => r && updatePhaseUI('PAUSE'));
+  }
+}
+
+function setPhase(phase) {
+  adminAction('/api/admin/phase', { phase }).then(r => r && updatePhaseUI(phase));
+}
+
+/* ══════════════════════════════════════════════════
+   QUIZ
+   ══════════════════════════════════════════════════ */
+function launchQuiz() {
+  adminAction('/api/admin/phase', { phase: 'QUIZ' }).then(r => r && updatePhaseUI('QUIZ'));
+}
+
+/* Single pauseQuiz — fixes original double-definition bug */
+function pauseQuiz() {
+  const target = S.phase === 'PAUSE' ? 'RESUME_QUIZ' : 'PAUSE_QUIZ';
+  const next   = S.phase === 'PAUSE' ? 'QUIZ' : 'PAUSE';
+  adminAction('/api/admin/phase', { phase: target }).then(r => r && updatePhaseUI(next));
+}
+
+function stopQuizConfirm() {
+  adminAction('/api/admin/phase', { phase: 'STOP_QUIZ' }).then(r => r && updatePhaseUI('LOBBY'));
+}
+
+/* Hold-to-confirm */
+function initHoldConfirm() {
+  const btn = document.getElementById('btn-stop-quiz');
+  if (!btn) return;
+  let raf = null, start = 0;
+  const HOLD = 1500;
+
+  function begin(e) {
+    e.preventDefault();
+    start = performance.now();
+    btn.classList.add('holding');
+    function tick() {
+      const p = Math.min((performance.now() - start) / HOLD, 1);
+      btn.style.setProperty('--hp', p);
+      if (p < 1) { raf = requestAnimationFrame(tick); }
+      else { cancel(); stopQuizConfirm(); }
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  function cancel() {
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    btn.style.setProperty('--hp', 0);
+    btn.classList.remove('holding');
+  }
+  btn.addEventListener('mousedown',   begin);
+  btn.addEventListener('touchstart',  begin, { passive: false });
+  btn.addEventListener('mouseup',     cancel);
+  btn.addEventListener('mouseleave',  cancel);
+  btn.addEventListener('touchend',    cancel);
+  btn.addEventListener('touchcancel', cancel);
+}
+
+/* Timer */
+function adjustTimer(delta) { adminAction('/api/admin/adjust-timer', { delta }); }
+function resetTimer()       { adminAction('/api/admin/reset-timer'); }
+
+/* Timer display (Mode Libre) */
+function startTimer(endsAtISO) {
+  S._timerEndsAt = endsAtISO ? new Date(endsAtISO) : null;
+  clearInterval(S._timerInterval);
+  if (!S._timerEndsAt) { _updateTimerDisplay(); return; }
+  S._timerInterval = setInterval(_updateTimerDisplay, 1000);
+  _updateTimerDisplay();
+}
+function _updateTimerDisplay() {
+  const el = document.getElementById('dash-timer');
+  if (!el) return;
+  if (!S._timerEndsAt) { el.textContent = '--:--'; el.classList.remove('urgent'); return; }
+  const diff = Math.max(0, Math.round((S._timerEndsAt - Date.now()) / 1000));
+  el.textContent = String(Math.floor(diff / 60)).padStart(2,'0') + ':' + String(diff % 60).padStart(2,'0');
+  el.classList.toggle('urgent', diff <= 60);
+  if (diff === 0) clearInterval(S._timerInterval);
+}
+
+/* ══════════════════════════════════════════════════
+   SOUND
+   ══════════════════════════════════════════════════ */
+const SOUND_DUR = { xoxo: 5410, quiz_start: 22150, correct: 2720, new_gg: 6060, phase2_start: 14870, countdown: 2300 };
+
+function triggerSound(name) {
+  adminAction('/api/admin/play-sound', { sound: name }).then(() => {
+    S.playingSound = name;
+    _startSoundProgress(name);
+  });
+}
+
+function stopSound() {
+  adminAction('/api/admin/stop-sound').then(() => {
+    S.playingSound = null;
+    _stopAllSoundProgress();
+    enableStopSound(false);
+  });
+}
+
+function _startSoundProgress(name) {
+  _stopAllSoundProgress();
+  const dur = SOUND_DUR[name] || 5000;
+  const wrap = document.querySelector(`[data-sound="${name}"]`);
+  if (wrap) {
+    const bar  = wrap.querySelector('.sound-progress-bar');
+    const fill = wrap.querySelector('.sound-progress-fill');
+    const btn  = wrap.querySelector('.snd-btn, .sound-trigger-btn');
+    if (bar && fill) {
+      bar.classList.add('active');
+      fill.style.transition = `width ${dur}ms linear`;
+      void fill.offsetWidth;
+      fill.style.width = '100%';
+    }
+    if (btn) btn.classList.add('playing');
+  }
+  // Also update floating board
+  document.querySelectorAll(`.snd-btn[data-sound="${name}"]`).forEach(b => b.classList.add('playing'));
+  enableStopSound(true);
+  clearTimeout(S._soundTimer);
+  S._soundTimer = setTimeout(() => {
+    S.playingSound = null;
+    _stopAllSoundProgress();
+    enableStopSound(false);
+  }, dur);
+}
+
+function _stopAllSoundProgress() {
+  document.querySelectorAll('.sound-progress-bar').forEach(b => {
+    b.classList.remove('active');
+    const fill = b.querySelector('.sound-progress-fill');
+    if (fill) { fill.style.transition = 'none'; fill.style.width = '0%'; }
+  });
+  document.querySelectorAll('.sound-trigger-btn, .snd-btn').forEach(b => b.classList.remove('playing'));
+}
+
+function enableStopSound(on) {
+  const btns = document.querySelectorAll('#btn-stop-sound, .snd-stop');
+  btns.forEach(b => {
+    b.style.opacity        = on ? '1'    : '0.4';
+    b.style.pointerEvents  = on ? 'auto' : 'none';
+  });
+}
+
+function toggleProjectorSound() {
+  S.soundOn = !S.soundOn;
+  adminAction('/api/admin/projector-sound', { enabled: S.soundOn });
+  const btn = document.getElementById('cmd-sound-btn');
+  if (btn) btn.textContent = S.soundOn ? '🔊 Son ON' : '🔇 Son OFF';
+}
+
+function toggleSoundBoard() {
+  document.getElementById('sound-board')?.classList.toggle('collapsed');
+}
+
+/* ══════════════════════════════════════════════════
+   PROJECTOR / STUDIO
+   ══════════════════════════════════════════════════ */
+function toggleProjectorQR() {
+  const next = !S.qrBig;
+  adminAction('/api/admin/projector-qr', { visible: next }).then(r => {
+    if (!r || r.ok === false) return;   // échec → conserve l'état précédent
+    S.qrBig = next;
+    const btn = document.getElementById('btn-qr-proj');
+    if (btn) {
+      btn.classList.toggle('is-on', S.qrBig);
+      btn.textContent = S.qrBig ? '📱 Masquer le QR Code' : '📱 Afficher QR Code';
+    }
+  });
+}
+function toggleProjectorScores() {
+  const next = !S.scoresBig;
+  adminAction('/api/admin/projector-scores', { visible: next }).then(r => {
+    if (!r || r.ok === false) return;
+    S.scoresBig = next;
+    const btn = document.getElementById('btn-scores-proj');
+    if (btn) {
+      btn.classList.toggle('is-on', S.scoresBig);
+      btn.textContent = S.scoresBig ? '📊 Masquer les scores' : '📊 Scores en grand';
+    }
+  });
+}
+
+function sendCustomMessage() {
+  const inp = document.getElementById('custom-msg-input');
+  if (!inp?.value.trim()) return;
+  adminAction('/api/admin/custom-message', { message: inp.value.trim() }).then(r => {
+    if (r) inp.value = '';
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   DASHBOARD DATA
+   ══════════════════════════════════════════════════ */
+async function loadDashboardData() {
+  const r = await fetch('/api/admin/leaderboard').catch(() => null);
+  if (!r || !r.ok) return;
+  let d; try { d = await r.json(); } catch(e) { return; }
+  if (!d) return;
+  const lb = d.leaderboard || [];
+  const connected = lb.filter(p => p.is_connected).length;
+  _updatePlayerCount(connected);
+  renderMiniLeaderboard(lb);
   checkBlair();
 }
 
-/* ─────────────────────────────────────────
-   BLAIR VIP
-───────────────────────────────────────── */
-async function checkBlair() {
-  const r = await fetch('/api/admin/players').catch(() => null);
-  if (!r || !r.ok) return;
-  let d;
-  try { d = await r.json(); } catch(e) { return; }
-  const blair = (d.players || []).find(p => p.personnage && p.personnage.includes('Blair'));
-  const el = document.getElementById('blair-status');
-  if (blair) {
-    el.textContent = `Réservé par ${blair.prenom} · ${blair.is_connected ? 'Connectée' : 'Hors ligne'}`;
-  } else {
-    el.textContent = 'Slot libre · En attente de Blair';
-  }
+function _updatePlayerCount(n) {
+  const stat  = document.getElementById('stat-players');
+  const cmd   = document.getElementById('cmd-player-count');
+  const badge = document.getElementById('badge-players');
+  if (stat)  stat.textContent  = n;
+  if (cmd)   cmd.textContent   = `👥 ${n} invités`;
+  if (badge) { badge.textContent = n; badge.classList.toggle('show', n > 0); }
 }
 
-function copyBlair() {
-  const url = window.location.origin + '/blair-vip?token=' + (window.__BLAIR_TOKEN__ || 'blair-waldorf-queen-b-vip-token-dino');
-  navigator.clipboard.writeText(url).then(() => showToast('✓ Lien VIP copié', 'success'));
-}
-
-function openBlairLogin() {
-  // Ouvre le login Blair VIP dans un nouvel onglet avec le token correct
-  const url = window.location.origin + '/blair-vip?token=' + (window.__BLAIR_TOKEN__ || 'blair-waldorf-queen-b-vip-token-dino');
-  window.open(url, '_blank');
-}
-
-/* ─────────────────────────────────────────
-   TIMER PHASE 2
-───────────────────────────────────────── */
-let _timerEndsAt = null;
-let _timerInterval = null;
-
-function startTimer(endsAtISO) {
-  _timerEndsAt = endsAtISO ? new Date(endsAtISO) : null;
-  clearInterval(_timerInterval);
-  if (!_timerEndsAt) { updateTimerDisplay(null); return; }
-  _timerInterval = setInterval(updateTimerDisplay, 1000);
-  updateTimerDisplay();
-}
-
-function updateTimerDisplay() {
-  const el = document.getElementById('dash-timer');
-  if (!_timerEndsAt) { el.textContent = '--:--'; el.classList.remove('urgent'); return; }
-  const diff = Math.max(0, Math.round((_timerEndsAt - Date.now()) / 1000));
-  const m = String(Math.floor(diff / 60)).padStart(2, '0');
-  const s = String(diff % 60).padStart(2, '0');
-  el.textContent = m + ':' + s;
-  el.classList.toggle('urgent', diff <= 60);
-  if (diff === 0) { clearInterval(_timerInterval); }
-}
-
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════════════
    PLAYERS
-───────────────────────────────────────── */
+   ══════════════════════════════════════════════════ */
 async function loadPlayers() {
   const r = await fetch('/api/admin/players').catch(() => null);
   if (!r || !r.ok) return;
-  let d;
-  try { d = await r.json(); } catch(e) { return; }
+  let d; try { d = await r.json(); } catch(e) { return; }
   const players = d.players || [];
   const connected = players.filter(p => p.is_connected).length;
+  _updatePlayerCount(connected);
 
-  document.getElementById('stat-players').textContent = connected;
-  document.getElementById('players-count-label').textContent = connected + ' connecté' + (connected > 1 ? 's' : '');
-  document.getElementById('badge-players').textContent = connected;
-  if (connected > 0) document.getElementById('badge-players').classList.add('show');
+  const lbl = document.getElementById('players-count-label');
+  if (lbl) lbl.textContent = `${connected} connecté${connected > 1 ? 's' : ''}`;
+
+  // Populate GG select
+  const sel = document.getElementById('transfer-gg-select');
+  if (sel) sel.innerHTML = `<option value="">— Choisir un joueur —</option>` +
+    players.map(p => `<option value="${p.id}">${escHtml(p.prenom)}</option>`).join('');
 
   const tbody = document.getElementById('players-table-body');
+  if (!tbody) return;
   if (!players.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--stone);padding:28px;">Aucun joueur connecté.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--stone);padding:28px;">Aucun joueur connecté.</td></tr>`;
     return;
   }
   tbody.innerHTML = players.map(p => `
     <tr>
-      <td><span class="dot ${p.is_connected ? 'dot-on' : 'dot-off'}"></span>${p.is_connected ? 'En ligne' : 'Hors ligne'}</td>
-      <td style="font-weight:500;">${escHtml(p.prenom)}</td>
-      <td style="font-family:'Playfair Display',serif;">${escHtml(p.personnage)}</td>
-      <td style="color:var(--gold);font-weight:600;">${p.score_total} pts</td>
-      <td>${p.is_gg ? '<span class="gg-badge">👑 GG</span>' : p.is_admin ? '<span class="gg-badge" style="color:var(--red);border-color:rgba(192,80,77,.3);">Admin</span>' : ''}</td>
+      <td><span class="${p.is_connected ? 'dot-on' : 'dot-off'}"></span>${p.is_connected ? 'En ligne' : 'Hors ligne'}</td>
+      <td style="font-weight:600;">${escHtml(p.prenom)}</td>
+      <td style="color:var(--stone)">${escHtml(p.personnage || '—')}</td>
+      <td style="color:var(--gold);font-weight:600;">${p.score_total ?? 0}</td>
+      <td>${p.is_gg ? `<span class="gg-badge">👑 GG</span>` : ''}</td>
       <td>
-        <div class="btn-row">
-          <button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}})">👑 GG</button>
-          <button class="btn btn-ghost btn-xs" onclick="refreshPlayer(${p.id})" title="Reload ciblé">↻</button>
-          <button class="btn btn-danger btn-xs" onclick="kickPlayer(${p.id},'${escHtml(p.prenom)}')">Expulser</button>
-          <button class="btn btn-xs" style="background:rgba(120,0,0,.7);color:#fff;border:1px solid rgba(192,80,77,.5);" onclick="deletePlayer(${p.id},'${escHtml(p.prenom)}')">🗑 Suppr.</button>
+        <div style="display:flex;gap:5px;">
+          <button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}}).then(loadPlayers)" title="Transférer GG">👑</button>
+          <button class="btn btn-ghost btn-xs" onclick="refreshPlayer(${p.id})" title="Refresh">↻</button>
+          <button class="btn btn-ghost btn-xs" onclick="kickPlayer(${p.id},'${escHtml(p.prenom)}')">Kick</button>
+          <button class="btn btn-danger btn-xs" onclick="deletePlayer(${p.id},'${escHtml(p.prenom)}')">🗑</button>
         </div>
       </td>
-    </tr>
-  `).join('');
-
-  // Remplir les selects de transfert GG
-  const opts = '<option value="">— Choisir un joueur —</option>' +
-    players.map(p => `<option value="${p.id}">${escHtml(p.prenom)} (${escHtml(p.personnage.split(' ')[0])})</option>`).join('');
-  document.getElementById('transfer-gg-select').innerHTML = opts;
-  document.getElementById('transfer-gg-select-2').innerHTML = opts;
+    </tr>`).join('');
 }
 
-function kickPlayer(id, prenom) {
-  if (!confirm(`Expulser ${prenom} de la soirée ?`)) return;
-  adminAction('/api/admin/kick-player', {player_id: id}).then(() => loadPlayers());
+function kickPlayer(id, name) {
+  if (!confirm(`Expulser ${name} ?`)) return;
+  adminAction('/api/admin/kick-player', { player_id: id }).then(r => r && loadPlayers());
+}
+function deletePlayer(id, name) {
+  if (!confirm(`Supprimer définitivement ${name} ?`)) return;
+  adminAction('/api/admin/delete-player', { player_id: id }).then(r => r && loadPlayers());
+}
+function refreshPlayer(id) { adminAction('/api/admin/refresh-player', { player_id: id }); }
+function transferGG() {
+  const v = document.getElementById('transfer-gg-select')?.value;
+  if (!v) return;
+  adminAction('/api/admin/transfer-gg', { player_id: v }).then(r => r && loadPlayers());
 }
 
-function deletePlayer(id, prenom) {
-  if (!confirm(`Supprimer définitivement ${prenom} de la base de données ?\nCette action est irréversible.`)) return;
-  adminAction('/api/admin/delete-player', {player_id: id}).then(() => loadPlayers());
-}
+/* ── Roster / Disponibilités ─────────────────────── */
+let ROSTER_CHARS    = [];
+let ROSTER_TAKEN    = {};      // full_name -> prénom (joueur connecté, hors admin)
+let rosterQuery     = '';
+let rosterAvailOnly = false;
 
-// F8 — Refresh ciblé par joueur
-function refreshPlayer(id) {
-  adminAction('/api/admin/refresh-player', {player_id: id}).then(() => {
-    showToast('↻ Reload envoyé au joueur.', 'success', 2000);
+function _buildTakenMap(players) {
+  const map = {};
+  (players || []).forEach(p => {
+    if (p.is_connected && !p.is_admin && p.personnage) map[p.personnage] = p.prenom;
   });
+  return map;
 }
 
-/* ─────────────────────────────────────────
+async function loadRoster() {
+  const [charsRes, playersRes] = await Promise.all([
+    fetch('/api/characters').catch(() => null),
+    fetch('/api/admin/players').catch(() => null),
+  ]);
+  if (charsRes && charsRes.ok) {
+    try { ROSTER_CHARS = (await charsRes.json()).characters || []; } catch (e) {}
+  }
+  if (playersRes && playersRes.ok) {
+    try { ROSTER_TAKEN = _buildTakenMap((await playersRes.json()).players); } catch (e) {}
+  }
+  renderRoster();
+}
+
+// Rafraîchit seulement l'occupation (sur event temps réel roster_state),
+// sans recharger le roster complet. No-op tant que la grille n'a pas été ouverte.
+async function refreshRosterTaken() {
+  if (!ROSTER_CHARS.length) return;
+  const r = await fetch('/api/admin/players').catch(() => null);
+  if (!r || !r.ok) return;
+  try { ROSTER_TAKEN = _buildTakenMap((await r.json()).players); } catch (e) { return; }
+  renderRoster();
+}
+
+function rosterSetQuery(v)     { rosterQuery = (v || '').trim().toLowerCase(); renderRoster(); }
+function rosterSetAvailOnly(b) { rosterAvailOnly = !!b; renderRoster(); }
+
+function renderRoster() {
+  const grid = document.getElementById('roster-grid');
+  if (!grid) return;
+
+  let nFree = 0, nTaken = 0, nReserved = 0;
+  const tiles = [];
+  ROSTER_CHARS.forEach(c => {
+    const fullName = c.full_name || `${c.name} ${c.family}`;
+    const takenBy  = ROSTER_TAKEN[fullName];
+    let state;
+    if (takenBy)       { state = 'taken';    nTaken++; }
+    else if (c.locked) { state = 'reserved'; nReserved++; }
+    else               { state = 'available'; nFree++; }
+
+    if (rosterAvailOnly && state !== 'available') return;
+    if (rosterQuery && !fullName.toLowerCase().includes(rosterQuery)) return;
+
+    let stateLine;
+    if (state === 'taken')         stateLine = `<span>Pris · <b class="rt-who">${escHtml(takenBy)}</b></span>`;
+    else if (state === 'reserved') stateLine = `<span>${escHtml(c.badge || 'Réservé')}</span>`;
+    else                           stateLine = `<span>Disponible</span>`;
+
+    tiles.push(`
+      <div class="roster-tile ${state}">
+        <div class="rt-name">${escHtml(c.name)}</div>
+        <div class="rt-family">${escHtml(c.family)}</div>
+        <div class="rt-state">${stateLine}</div>
+      </div>`);
+  });
+
+  grid.innerHTML = tiles.length
+    ? tiles.join('')
+    : `<div class="roster-empty">Aucun personnage ne correspond.</div>`;
+
+  const kpi = document.getElementById('roster-kpi');
+  if (kpi) {
+    kpi.innerHTML =
+      `<span class="kpi k-free"><b>${nFree}</b> disponibles</span>` +
+      `<span class="kpi k-taken"><b>${nTaken}</b> pris</span>` +
+      (nReserved ? `<span class="kpi"><b>${nReserved}</b> réservés</span>` : '') +
+      `<span class="kpi"><b>${ROSTER_CHARS.length}</b> total</span>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════
    SCOOPS
-───────────────────────────────────────── */
+   ══════════════════════════════════════════════════ */
 async function loadScoops() {
   const r = await fetch('/api/admin/scoops').catch(() => null);
   if (!r || !r.ok) return;
-  let d;
-  try { d = await r.json(); } catch(e) { return; }
-  const list = document.getElementById('scoops-list');
+  let d; try { d = await r.json(); } catch(e) { return; }
   const scoops = d.scoops || [];
+  const badge = document.getElementById('badge-scoops');
+  if (badge) { badge.textContent = '!'; badge.classList.toggle('show', scoops.length > 0); }
+  const list = document.getElementById('scoops-list');
+  if (!list) return;
   if (!scoops.length) {
-    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l\'instant.</div>';
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l'instant.</div>`;
     return;
   }
   list.innerHTML = scoops.map(s => `
-    <div class="scoop-row ${s.is_official ? 'official' : ''}" id="scoop-row-${s.id}">
-      ${s.image_path ? `<img class="scoop-img" src="/static/uploads/${s.image_path}" alt="scoop">` : ''}
+    <div class="scoop-row ${s.is_gg ? 'official' : ''}">
       <div class="scoop-info">
-        <div class="scoop-author-label ${s.is_official ? 'gg' : ''}">
-          ${s.is_official ? '✦ Gossip Girl' : escHtml(s.author_name)}
-          <span class="scoop-time">${formatTime(s.created_at)}</span>
-        </div>
-        <div class="scoop-text">${escHtml(s.content || '[Image uniquement]')}</div>
+        <div class="scoop-author-label ${s.is_gg ? 'gg' : ''}">${escHtml(s.author || 'Anonyme')}<span class="scoop-time">${escHtml(s.time || '')}</span>${s.pinned ? ' · 📌' : ''}</div>
+        <div class="scoop-text">${escHtml(s.message || '')}</div>
         <div class="scoop-actions">
-          <button class="btn btn-danger btn-xs" onclick="deleteScoop(${s.id})">🗑 Supprimer</button>
           <button class="btn btn-ghost btn-xs" onclick="pinScoop(${s.id})">📌 Épingler</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteScoop(${s.id})">🗑 Supprimer</button>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function deleteScoop(id) {
-  if (!confirm('Supprimer ce scoop ?')) return;
-  // La route attend {scoop_id} dans le body JSON (pas dans l'URL)
-  adminAction('/api/admin/delete-scoop', {scoop_id: id}).then(() => {
-    const el = document.getElementById('scoop-row-' + id);
-    if (el) el.remove();
+function postAsGG() {
+  const inp = document.getElementById('gg-message-input');
+  if (!inp?.value.trim()) return;
+  adminAction('/api/admin/post-as-gg', { message: inp.value.trim() }).then(r => {
+    if (r) { inp.value = ''; loadScoops(); }
   });
 }
+function deleteScoop(id) { adminAction('/api/admin/delete-scoop', { scoop_id: id }).then(r => r && loadScoops()); }
+function pinScoop(id)    { adminAction('/api/admin/pin-scoop',    { scoop_id: id }).then(r => r && loadScoops()); }
 
-function pinScoop(id) {
-  // Idem : body JSON
-  adminAction('/api/admin/pin-scoop', {scoop_id: id});
-}
-
-async function postAsGG() {
-  const content = document.getElementById('gg-message-input').value.trim();
-  if (!content) { showToast('Message vide.', 'error'); return; }
-  await adminAction('/api/admin/post-as-gg', {content});
-  document.getElementById('gg-message-input').value = '';
-}
-
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════════════
    SCORES
-───────────────────────────────────────── */
+   ══════════════════════════════════════════════════ */
 async function loadScores() {
   const r = await fetch('/api/admin/leaderboard').catch(() => null);
   if (!r || !r.ok) return;
-  let d;
-  try { d = await r.json(); } catch(e) { return; }
+  let d; try { d = await r.json(); } catch(e) { return; }
   const lb = d.leaderboard || [];
+  renderMiniLeaderboard(lb);
   const tbody = document.getElementById('scores-table-body');
+  if (!tbody) return;
   if (!lb.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--stone);padding:28px;">Aucun score.</td></tr>';
-  } else {
-    tbody.innerHTML = lb.map((p, i) => `
-      <tr>
-        <td style="color:${i === 0 ? 'var(--gold)' : 'var(--stone)'};">${i === 0 ? '👑' : i + 1}</td>
-        <td style="font-weight:500;">${escHtml(p.prenom)}</td>
-        <td style="color:var(--gold);opacity:.9;font-size:13px;">${escHtml(p.personnage)}</td>
-        <td>
-          <span class="score-edit-cell" data-id="${p.id}" data-score="${p.score_total}"
-                style="color:var(--gold);font-weight:700;cursor:pointer;border-bottom:1px dashed rgba(201,168,76,.4);"
-                title="Cliquer pour éditer" onclick="editScore(this)">
-            ${p.score_total} pts
-          </span>
-        </td>
-        <td>${p.is_gg ? '<span class="gg-badge">👑 GG</span>' : ''}</td>
-        <td><button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}})">👑 Transférer GG</button></td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--stone);padding:28px;">Aucun score.</td></tr>`;
+    return;
   }
-
-  // Update mini-lb dans section quiz
-  document.getElementById('quiz-mini-lb').innerHTML = lb.slice(0, 5).map((p, i) =>
-    `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;">
-      <span style="color:${i===0?'var(--gold)':'var(--cream)'};">${i===0?'👑':i+1}. ${escHtml(p.prenom)}</span>
-      <span style="color:var(--gold);font-weight:600;">${p.score_total} pts</span>
-    </div>`
-  ).join('');
-
-  // Charger l'historique par quiz en parallèle
-  loadScoresHistory();
+  tbody.innerHTML = lb.map((p, i) => `
+    <tr>
+      <td style="color:var(--stone);">${i + 1}</td>
+      <td style="font-weight:600;">${escHtml(p.prenom)}</td>
+      <td style="color:var(--stone);">${escHtml(p.personnage || '—')}</td>
+      <td><span class="score-edit-cell" data-id="${p.id}" data-score="${p.score_total ?? 0}" onclick="editScore(this)">${p.score_total ?? 0}</span></td>
+      <td>${p.is_gg ? `<span class="gg-badge">👑 GG</span>` : ''}</td>
+      <td><button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}})">👑 Transférer</button></td>
+    </tr>`).join('');
 }
 
 function editScore(el) {
-  const id    = el.dataset.id;
-  const score = parseInt(el.dataset.score, 10);
-  const input = document.createElement('input');
-  input.type  = 'number';
-  input.value = score;
-  input.min   = 0;
-  input.style.cssText = 'width:80px;background:rgba(255,255,255,.07);border:1px solid rgba(201,168,76,.4);border-radius:6px;padding:3px 8px;color:var(--gold);font-weight:700;font-size:inherit;';
-  el.replaceWith(input);
-  input.focus();
-  input.select();
-
-  const commit = async () => {
-    const newScore = parseInt(input.value, 10);
-    if (!isNaN(newScore) && newScore !== score) {
-      await adminAction('/api/admin/adjust-score', {player_id: parseInt(id), score_total: newScore});
-      showToast('Score mis à jour. XOXO.', 'success', 2500);
-      loadScores();
-    } else {
-      loadScores();
-    }
-  };
-  input.addEventListener('blur',   commit);
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') loadScores(); });
-}
-
-async function loadScoresHistory() {
-  const wrap = document.getElementById('scores-history-wrap');
-  if (!wrap) return;
-  const r = await fetch('/api/admin/scores-history').catch(() => null);
-  if (!r || !r.ok) return;
-  let d;
-  try { d = await r.json(); } catch(e) { return; }
-  const history = d.history || [];
-  if (!history.length) { wrap.innerHTML = ''; return; }
-
-  wrap.innerHTML = history.map(quiz => `
-    <div class="panel panel-full" style="margin-top:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div>
-          <div class="panel-title">Flash Quiz #${quiz.quiz_number}</div>
-          <div class="panel-sub" style="margin-bottom:0;">Scores de cette partie uniquement</div>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Prénom</th><th>Personnage</th><th>Points cette partie</th></tr></thead>
-          <tbody>
-            ${quiz.scores.map((s, i) => `
-              <tr>
-                <td style="color:${i===0?'var(--gold)':'var(--stone)'};">${i===0?'🏆':i+1}</td>
-                <td style="font-weight:500;">${escHtml(s.prenom)}</td>
-                <td style="color:var(--gold);opacity:.9;font-size:13px;">${escHtml(s.personnage)}</td>
-                <td style="color:var(--gold);font-weight:600;">${s.points} pts</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `).join('');
-}
-
-/* ─────────────────────────────────────────
-   LOGS
-───────────────────────────────────────── */
-let _allLogs = [];
-
-async function loadLogs() {
-  const r = await fetch('/api/admin/logs').catch(() => null);
-  if (!r || !r.ok) return;
-  let d;
-  try { d = await r.json(); } catch(e) { return; }
-  _allLogs = d.logs || [];
-  filterLogs();
-}
-
-function filterLogs() {
-  const filter = document.getElementById('log-filter').value;
-  const logs = filter ? _allLogs.filter(l => l.event_type.includes(filter)) : _allLogs;
-  const list = document.getElementById('logs-list');
-  if (!logs.length) {
-    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun événement.</div>';
-    return;
-  }
-  list.innerHTML = logs.map(l => {
-    let evClass = '';
-    if (l.event_type.includes('login') || l.event_type.includes('join')) evClass = 'ev-login';
-    else if (l.event_type.includes('quiz') || l.event_type.includes('question') || l.event_type.includes('answer')) evClass = 'ev-quiz';
-    else if (l.event_type.includes('scoop')) evClass = 'ev-scoop';
-    else if (l.event_type.includes('admin') || l.event_type.includes('kick') || l.event_type.includes('reset')) evClass = 'ev-admin';
-    return `
-      <div class="log-row">
-        <div class="log-time">${formatTime(l.created_at)}</div>
-        <div class="log-event ${evClass}">${l.event_type}</div>
-        <div class="log-detail">${escHtml(l.actor || '')}${l.detail ? ' — ' + escHtml(l.detail) : ''}</div>
-      </div>
-    `;
-  }).join('');
-}
-
-/* ─────────────────────────────────────────
-   PROJECTEUR & SONS
-───────────────────────────────────────── */
-/* ── Référence à l'animation en cours côté admin ── */
-let _soundProgressTimer = null;
-let _activeSoundWrap    = null;
-
-function _resetSoundUI() {
-  // Remet tous les boutons et barres dans leur état initial
-  document.querySelectorAll('.sound-btn-wrap').forEach(wrap => {
-    const bar  = wrap.querySelector('.sound-progress-bar');
-    const fill = wrap.querySelector('.sound-progress-fill');
-    const btn  = wrap.querySelector('.sound-trigger-btn');
-    bar.classList.remove('active');
-    fill.style.transition = 'none';
-    fill.style.width      = '0%';
-    btn.classList.remove('playing');
-  });
-  // Désactiver le bouton Stop
-  const stopBtn = document.getElementById('btn-stop-sound');
-  if (stopBtn) { stopBtn.style.opacity = '0.4'; stopBtn.style.pointerEvents = 'none'; }
-  // Annuler le timer de reset automatique
-  if (_soundProgressTimer) { clearTimeout(_soundProgressTimer); _soundProgressTimer = null; }
-  _activeSoundWrap = null;
-}
-
-async function triggerSound(sound) {
-  // Envoie l'ordre au backend — la barre de progression sera déclenchée
-  // en retour via socket.on('sound_started') une fois que le projecteur
-  // confirme que le son joue réellement. Pas d'animation locale anticipée.
-  await adminAction('/api/admin/play-sound', {sound});
-  showToast(`🔊 "${sound}" envoyé au projecteur`, 'success', 1500);
-}
-
-async function stopSound() {
-  // Arrêt côté projecteur via socket
-  await adminAction('/api/admin/stop-sound', {});
-  // Réinitialiser l'UI immédiatement
-  _resetSoundUI();
-  showToast('■ Son arrêté', 'success', 1500);
-}
-
-// Arrêt d'urgence : tue tous les timers APScheduler + bascule en LIBRE
-async function stopQuizEmergency() {
-  if (!confirm('⚠️ Arrêter le quiz maintenant ? L\'état basculera en Mode Libre.')) return;
-  await adminAction('/api/admin/phase', {phase: 'LIBRE'});
-  showToast('✓ Quiz arrêté — Mode Libre activé', 'success');
-}
-
-// Arrêt + rollback complet : annule les scores du quiz en cours et repasse en LIBRE
-async function stopQuizConfirm() {
-  if (!confirm('⚠️ Arrêter le quiz et annuler tous les points de cette session ?\n\nCette action est irréversible.')) return;
-  await adminAction('/api/admin/phase', {phase: 'STOP_QUIZ'});
-  showToast('✓ Quiz arrêté — scores rollback effectué. XOXO.', 'success');
-}
-
-// Pause / Reprise du quiz (toggle selon la phase courante)
-function pauseQuiz() {
-  const targetPhase = (_currentPhase === 'QUIZ_PAUSED') ? 'RESUME_QUIZ' : 'PAUSE_QUIZ';
-  adminAction('/api/admin/phase', {phase: targetPhase})
-    .then(() => showToast(targetPhase === 'RESUME_QUIZ' ? '▶ Quiz relancé. XOXO.' : '⏸ Quiz en pause.', 'success'));
-}
-
-async function sendCustomMessage() {
-  const msg = document.getElementById('custom-msg-input').value.trim();
-  if (!msg) { showToast('Message vide.', 'error'); return; }
-  await adminAction('/api/admin/custom-message', {message: msg});
-  document.getElementById('custom-msg-input').value = '';
-}
-
-function transferGG() {
-  const sel = document.getElementById('transfer-gg-select');
-  const id = sel.value;
-  if (!id) { showToast('Choisis un joueur.', 'error'); return; }
-  adminAction('/api/admin/transfer-gg', {player_id: parseInt(id)});
-}
-
-function transferGGById(selectId) {
-  const sel = document.getElementById(selectId);
-  const id = sel.value;
-  if (!id) { showToast('Choisis un joueur.', 'error'); return; }
-  adminAction('/api/admin/transfer-gg', {player_id: parseInt(id)});
-}
-
-/* ─────────────────────────────────────────
-   RESET
-───────────────────────────────────────── */
-function launchQuiz() {
-  // Double garde : vérifie la phase courante côté client avant d'appeler l'API
-  if (_currentPhase === 'QUIZ' || _currentPhase === 'QUIZ_PAUSED') {
-    showToast('Un quiz est déjà en cours. Arrête-le avant d\'en lancer un nouveau.', 'error', 4000);
-    return;
-  }
-  adminAction('/api/admin/phase', {phase: 'QUIZ'});
-}
-
-// F7 — Reset pool de questions
-function confirmResetQuestions() {
-  if (!confirm('⚠️ Reset du pool de questions ?\n\nLes questions déjà posées redeviendront disponibles.\nScores et joueurs conservés.')) return;
-  adminAction('/api/admin/reset-questions').then(() => {
-    showToast('🃏 Pool de questions réinitialisé. XOXO.', 'success', 3500);
+  const nv = prompt('Nouveau score :', el.dataset.score);
+  if (nv === null || nv === el.dataset.score) return;
+  const delta = parseInt(nv) - parseInt(el.dataset.score);
+  adminAction('/api/admin/adjust-score', { player_id: el.dataset.id, delta }).then(r => {
+    if (r) { el.textContent = nv; el.dataset.score = nv; }
   });
 }
 
-// R4 — Lancer le quiz directement via socket (remplace force-gg-quiz qui causait des bugs)
-function adminStartQuiz() {
-  if (!confirm('Lancer le quiz maintenant ?\nCela démarre la séquence normale comme si le GG avait cliqué.')) return;
-  socket.emit('gg_start_quiz', {});
-  showToast('🎯 Quiz lancé !', 'success', 2500);
+function renderMiniLeaderboard(lb) {
+  const el = document.getElementById('quiz-mini-lb');
+  if (!el) return;
+  if (!lb || !lb.length) { el.innerHTML = `<div style="color:var(--stone);font-size:12px;padding:8px 0;">En attente des scores…</div>`; return; }
+  el.innerHTML = lb.slice(0, 5).map((p, i) => `
+    <div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(201,168,76,.06);">
+      <span style="font-size:11px;color:var(--stone);width:16px;">${i + 1}</span>
+      <span style="flex:1;font-size:12.5px;font-weight:600;">${escHtml(p.prenom)}</span>
+      <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);">${p.score_total ?? 0}</span>
+    </div>`).join('');
 }
 
-function confirmReset() {
-  if (!confirm('⚠️ Reset COMPLET de la session ?\n\nScores, joueurs ET scoops seront effacés de la base de données.\nCette action est irréversible.')) return;
-  adminAction('/api/admin/reset').then(() => {
-    loadDashboardData();
-    showToast('Session réinitialisée. XOXO.', 'success', 3500);
-  });
-}
+/* Affiche la question courante dans le panneau "Quiz en direct" (Chuck Mode).
+   choices peut être un objet {A,B,C,D} ou un array — on normalise.
+   answer = bonne lettre, visible uniquement côté admin. */
+function renderLiveQuestion(data) {
+  const qNum     = document.getElementById('quiz-q-num');
+  const qText    = document.getElementById('quiz-q-text');
+  const choicesEl = document.getElementById('quiz-q-choices');
+  const statusEl  = document.getElementById('quiz-q-status');
+  if (!qText || !choicesEl) return;
 
-function confirmResetScores() {
-  if (!confirm('⚠️ Reset SCORES uniquement ?\n\nLes joueurs et leurs profils sont conservés.\nScores et scoops seront remis à zéro.')) return;
-  adminAction('/api/admin/reset-scores').then(() => {
-    loadDashboardData();
-    showToast('Scores réinitialisés — les joueurs restent. XOXO.', 'success', 3500);
-  });
-}
+  if (qNum) qNum.textContent = `Q.${data.question_number ?? '—'} / ${data.total ?? '?'}`;
+  qText.textContent = data.question || '';
 
-/* ─────────────────────────────────────────
-   SOCKET LIVE EVENTS
-───────────────────────────────────────── */
-// phaseMap aligné sur les constantes V3 : LOBBY / QUIZ / QUIZ_PAUSED / LIBRE
-const PHASE_MAP = {
-  LOBBY:       '🏠 Lobby',
-  QUIZ:        '⚡ Quiz',
-  QUIZ_PAUSED: '⏸ Quiz (pause)',
-  LIBRE:       '🖤 Mode Libre',
-  PAUSE:       '⏸ Pause',
-  // rétro-compat anciennes valeurs (si jamais)
-  waiting: '🏠 Lobby',
-  quiz:    '⚡ Quiz',
-  free:    '🖤 Mode Libre',
-};
-
-socket.on('game_state', data => {
-  document.getElementById('stat-phase').textContent = PHASE_MAP[data.phase] || data.phase;
-  document.getElementById('dash-sub').textContent   = `Phase : ${PHASE_MAP[data.phase] || data.phase}`;
-  if (data.gg) document.getElementById('stat-gg').textContent = data.gg.prenom + ' (' + data.gg.personnage.split(' ')[0] + ')';
-  if (data.ends_at) startTimer(data.ends_at);
-  // Initialise l'état des boutons quiz-only dès le chargement
-  updateQuizOnlyButtons(data.phase || 'LOBBY');
-  updatePauseButton(data.phase || 'LOBBY');
-});
-
-socket.on('phase_changed', data => {
-  const label = PHASE_MAP[data.phase] || data.phase;
-  document.getElementById('stat-phase').textContent = label;
-  document.getElementById('dash-sub').textContent   = `Phase : ${label}`;
-
-  if (data.phase === 'LIBRE' && data.ends_at) startTimer(data.ends_at);
-  if (data.phase === 'QUIZ')        startTimer(null);
-  if (data.phase === 'QUIZ_PAUSED') startTimer(null);
-  if (data.phase === 'LOBBY')       startTimer(null);
-
-  if (data.gg) {
-    document.getElementById('stat-gg').textContent = data.gg.prenom + ' (' + data.gg.personnage.split(' ')[0] + ')';
-  }
-
-  // Mise à jour du sous-titre "Quiz en cours"
-  const quizActive  = data.phase === 'QUIZ';
-  const quizPaused  = data.phase === 'QUIZ_PAUSED';
-  const quizLiveSub = document.getElementById('quiz-live-sub');
-  if (quizActive)       quizLiveSub.textContent = data.quiz_number ? `Quiz #${data.quiz_number} en cours` : 'Quiz en cours';
-  else if (quizPaused)  quizLiveSub.textContent = `⏸ Quiz #${data.quiz_number || '?'} en pause`;
-  else                  quizLiveSub.textContent = 'Aucun quiz actif';
-
-  // Bouton pause + activation boutons quiz-only
-  updatePauseButton(data.phase);
-  updateQuizOnlyButtons(data.phase);
-
-  showToast(`Phase → ${label}`, 'success');
-});
-
-socket.on('player_joined', data => {
-  document.getElementById('stat-players').textContent = data.count;
-  document.getElementById('badge-players').textContent = data.count;
-  document.getElementById('badge-players').classList.add('show');
-  showToast(`👋 ${data.prenom} a rejoint la soirée !`, '', 3000);
-  loadPlayers();
-});
-
-socket.on('player_disconnected', () => loadPlayers());
-/* V4.5.1
-socket.on('new_question', data => {
-  const total = data.total || '?';
-  document.getElementById('quiz-live-sub').textContent = `Q${data.question_number}/${total} · ${data.duration}s`;
-  document.getElementById('quiz-q-sub').textContent = `Question ${data.question_number} / ${total} · ${data.duration} secondes`;
-  document.getElementById('quiz-q-text').textContent = data.question;
-  document.getElementById('quiz-answered-count').textContent = `0 / ?`;
-  document.getElementById('quiz-progress-fill').style.width = '0%';
-  document.getElementById('quiz-answer-list').innerHTML = '';
-
-  // ✅ FIX : normalise choices côté client (défense si cache serveur non rechargé)
-  // Ancien format : dict {"A":"…","B":"…"} | Nouveau format : array ["…","…"]
   let choices = data.choices;
   if (Array.isArray(choices)) {
     const letters = ['A','B','C','D'];
@@ -1599,508 +2320,357 @@ socket.on('new_question', data => {
     choices = obj;
   }
 
-  if (choices && typeof choices === 'object') {
-    document.getElementById('quiz-choices').innerHTML = Object.entries(choices).map(([k, v]) => `
-      <div class="choice-item ${data.answer === k ? 'correct' : ''}">
-        <span class="choice-key">${k}</span>
-        <span>${escHtml(v)}</span>
-      </div>
-    `).join('');
-  }
-});
-*/
+  S.liveAnswer = data.answer || '';
+  choicesEl.innerHTML = (choices && typeof choices === 'object')
+    ? Object.entries(choices).map(([k, v]) => `
+        <div class="quiz-choice" data-letter="${k}" style="display:flex;gap:7px;align-items:center;padding:7px 9px;border:1px solid rgba(201,168,76,.1);border-radius:6px;font-size:12px;transition:.15s;">
+          <span style="font-family:'Playfair Display',serif;color:var(--gold);">${k}</span>
+          <span style="color:var(--cream);">${escHtml(v)}</span>
+        </div>`).join('')
+    : '';
 
-// V4.5.2 — Amélioration de la robustesse et de la flexibilité du rendu des questions
-socket.on('new_question', data => {
-  // 1. Mise à jour de l'en-tête (Ex: Question 3 / 10 [Cinéma])
-  const qSub = document.getElementById('quiz-q-sub');
-  if (qSub) {
-    const categoryText = data.category ? ` [${data.category}]` : '';
-    qSub.textContent = `Question ${data.question_number} / ${data.total}${categoryText}`;
-  }
-  
-  // 2. Mise à jour du texte de la question
-  const qText = document.getElementById('quiz-q-text');
-  if (qText) {
-    qText.textContent = data.question;
-  }
+  highlightLiveAnswer(S.liveAnswer);
+  if (statusEl) statusEl.textContent = S.liveAnswer ? `Bonne réponse : ${S.liveAnswer}` : 'Question en cours';
+}
 
-  // 3. Reconstruction de la grille et coloration de la bonne réponse
-  const choicesGrid = document.getElementById('quiz-choices');
-  if (choicesGrid && data.choices) {
-    choicesGrid.innerHTML = Object.entries(data.choices).map(([k, v]) => {
-      // Sécurité absolue : .trim().toUpperCase() évite les bugs si la réponse est en minuscule ou contient un espace
-      const isCorrect = data.answer && (data.answer.trim().toUpperCase() === k.trim().toUpperCase());
-      const correctClass = isCorrect ? 'correct' : ''; 
-      
-      return `
-        <div class="choice-item ${correctClass}">
-          <span class="choice-letter" style="font-weight: bold; margin-right: 6px;">${k}.</span>
-          <span class="choice-val">${v}</span>
+/* Met en surbrillance la bonne réponse dans la grille de choix admin. */
+function highlightLiveAnswer(letter) {
+  document.querySelectorAll('#quiz-q-choices .quiz-choice').forEach(el => {
+    const ok = el.dataset.letter === letter;
+    el.style.borderColor = ok ? 'var(--green)' : 'rgba(201,168,76,.1)';
+    el.style.background  = ok ? 'var(--green-dim)' : 'transparent';
+  });
+}
+
+function loadScoresHistory() {
+  adminAction('/api/admin/scores-history', {}, 'GET').then(res => {
+    const el = document.getElementById('scores-history-wrap');
+    if (!el) return;
+    const h = res?.history || [];
+    if (!h.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <div class="panel panel-full">
+        <div class="panel-title">Historique par Flash Quiz</div>
+        <div class="panel-sub tight">Sessions précédentes</div>
+        <div style="margin-top:12px;">${h.map(e => `
+          <div class="log-row">
+            <span class="log-time">${escHtml(e.date || '')}</span>
+            <span class="log-detail">${escHtml(e.quiz_name || '')}</span>
+          </div>`).join('')}
         </div>
-      `;
-    }).join('');
-  }
-  
-  // 4. Réinitialisation sécurisée du compteur de réponses reçues (sans casser le total de joueurs)
-  const answeredCount = document.getElementById('quiz-answered-count');
-  if (answeredCount) {
-    const parts = answeredCount.textContent.split('/');
-    const currentTotal = parts[1] ? parts[1].trim() : '0';
-    answeredCount.textContent = `0 / ${currentTotal}`;
-  }
-  
-  // 5. Réinitialisation de la barre de progression et de la liste visuelle
-  const progressFill = document.getElementById('quiz-progress-fill');
-  if (progressFill) {
-    progressFill.style.width = '0%';
-  }
-  
-  const answerList = document.getElementById('quiz-answer-list');
-  if (answerList) {
-    answerList.innerHTML = '';
-  }
-});
-
-// Affiche un état d'attente dans Quiz Live pendant que GG choisit sa question
-socket.on('waiting_for_gg_pick', data => {
-  const total = data.total || app_config?.QUESTIONS_PER_SESSION || '?';
-  const qNum  = data.question_number ?? '?';
-  document.getElementById('quiz-live-sub').textContent = `Q${qNum}/${total} · En attente GG…`;
-  document.getElementById('quiz-q-sub').textContent    = `Question ${qNum} / ${total} · En attente du choix Gossip Girl…`;
-  document.getElementById('quiz-q-text').textContent   = '🎭 Gossip Girl sélectionne sa question…';
-  document.getElementById('quiz-choices').innerHTML    =
-    '<div class="choice-item" style="color:var(--stone);grid-column:1/-1;text-align:center;padding:20px;">⏳ Gossip Girl fait son choix…</div>';
-  document.getElementById('quiz-answered-count').textContent = `0 / ?`;
-  document.getElementById('quiz-progress-fill').style.width = '0%';
-  document.getElementById('quiz-answer-list').innerHTML = '';
-});
-
-socket.on('answer_progress', data => {
-  const total    = data.total_players || 1;
-  const answered = data.answered || 0;
-  document.getElementById('stat-answers').textContent = answered;
-  document.getElementById('quiz-answered-count').textContent = `${answered} / ${total}`;
-  document.getElementById('quiz-progress-fill').style.width = Math.round((answered / total) * 100) + '%';
-  if (data.latest_player) {
-    const list = document.getElementById('quiz-answer-list');
-    const item = document.createElement('div');
-    item.className = 'answer-item';
-    item.textContent = `${data.latest_player.prenom} · ${data.latest_player.personnage.split(' ')[0]}`;
-    list.prepend(item);
-  }
-});
-
-socket.on('question_answer', data => {
-  const answer = data.answer || '';
-  document.querySelectorAll('#quiz-choices .choice-item').forEach(el => {
-    const key = el.querySelector('.choice-letter, .choice-key');
-    if (key && key.textContent.trim() === answer) {
-      el.classList.add('correct');
-      key.textContent = '✓';
-    }
-  });
-  loadScores();
-});
-
-socket.on('admin_error', data => {
-  showToast(`⚠️ ${data.message || 'Erreur serveur.'}`, 'error', 4000);
-});
-
-socket.on('quiz_ended', data => {
-  document.getElementById('quiz-live-sub').textContent = '✓ Quiz terminé — Mode Libre';
-  updateQuizOnlyButtons('LIBRE');
-  updatePauseButton('LIBRE');
-  if (data.leaderboard) loadScores();
-});
-
-socket.on('quiz_stopped', data => {
-  showToast(`✕ ${data.message || 'Quiz arrêté — rollback scores effectué. XOXO.'}`, 'error', 5000);
-  updateQuizOnlyButtons('LIBRE');
-  updatePauseButton('LIBRE');
-});
-
-socket.on('leaderboard_update', data => {
-  if (!data.leaderboard) return;
-  const players   = data.leaderboard;
-  const connected = players.filter(p => p.is_connected).length;
-  const statPlayersEl = document.getElementById('stat-players');
-  if (statPlayersEl) statPlayersEl.textContent = connected;
-  const badge = document.getElementById('badge-players');
-  if (badge) { badge.textContent = connected; badge.classList.toggle('show', connected > 0); }
-  const countLabel = document.getElementById('players-count-label');
-  if (countLabel) countLabel.textContent = connected + ' connecté' + (connected > 1 ? 's' : '');
-  const miniLbEl = document.getElementById('quiz-mini-lb');
-  if (miniLbEl) {
-    miniLbEl.innerHTML = players.slice(0, 5).map((p, i) =>
-      `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;">
-        <span style="color:${i===0?'var(--gold)':'var(--cream)'};">${i===0?'👑':i+1}. ${escHtml(p.prenom)} <span style="color:var(--gold);opacity:.9;font-size:11px;font-style:italic;">${escHtml(p.personnage)}</span></span>
-        <span style="color:var(--gold);font-weight:600;">${p.score_total} pts</span>
-      </div>`
-    ).join('');
-  }
-  loadPlayers();
-});
-
-socket.on('new_gg', data => {
-  document.getElementById('stat-gg').textContent = `${data.prenom} (${data.personnage.split(' ')[0]})`;
-  showToast(`👑 Nouveau Gossip Girl : ${data.prenom} !`, 'success', 4000);
-  loadPlayers();
-});
-
-socket.on('gg_updated_silent', data => {
-  document.getElementById('stat-gg').textContent = `${data.prenom} (${data.personnage.split(' ')[0]})`;
-  loadPlayers();
-});
-
-socket.on('timer_update', data => {
-  if (data.ends_at) startTimer(data.ends_at);
-});
-
-socket.on('admin_new_scoop', data => {
-  document.getElementById('badge-scoops').classList.add('show');
-  showToast(`📸 Nouveau scoop de ${data.author_name} !`, '', 3500);
-});
-
-socket.on('session_reset', () => {
-  showToast('🔄 Session réinitialisée.', 'success');
-  loadDashboardData();
-});
-
-socket.on('sound_started', data => {
-  const { sound, duration } = data;
-  if (!sound) return;
-  const stopQuick = document.getElementById('btn-stop-sound-quick');
-  if (stopQuick) { stopQuick.style.opacity = '1'; stopQuick.style.pointerEvents = 'auto'; }
-  _resetSoundUI();
-  const wrap = document.querySelector(`.sound-btn-wrap[data-sound="${sound}"]`);
-  if (!wrap) return;
-  const durationMs = duration * 1000;
-  const bar  = wrap.querySelector('.sound-progress-bar');
-  const fill = wrap.querySelector('.sound-progress-fill');
-  const btn  = wrap.querySelector('.sound-trigger-btn');
-  _activeSoundWrap = wrap;
-  btn.classList.add('playing');
-  bar.classList.add('active');
-  fill.style.transition = 'none';
-  fill.style.width      = '0%';
-  fill.getBoundingClientRect();
-  fill.style.transition = `width ${durationMs}ms linear`;
-  fill.style.width      = '100%';
-  const stopBtn = document.getElementById('btn-stop-sound');
-  if (stopBtn) { stopBtn.style.opacity = '1'; stopBtn.style.pointerEvents = 'auto'; }
-  _soundProgressTimer = setTimeout(_resetSoundUI, durationMs + 500);
-});
-
-socket.on('sound_stopped', () => {
-  _resetSoundUI();
-  const stopQuick = document.getElementById('btn-stop-sound-quick');
-  if (stopQuick) { stopQuick.style.opacity = '0.4'; stopQuick.style.pointerEvents = 'none'; }
-});
-
-let _currentPhase = 'LOBBY';
-
-function updateQuizOnlyButtons(phase) {
-  _currentPhase = phase;
-  const isQuizActive = (phase === 'QUIZ' || phase === 'QUIZ_PAUSED');
-  document.querySelectorAll('.quiz-only-btn').forEach(btn => {
-    btn.disabled            = !isQuizActive;
-    btn.style.opacity       = isQuizActive ? '1' : '0.35';
-    btn.style.pointerEvents = isQuizActive ? 'auto' : 'none';
-    btn.title               = isQuizActive ? '' : 'Disponible uniquement pendant un quiz';
-  });
-  document.querySelectorAll('.no-quiz-btn').forEach(btn => {
-    btn.disabled            = isQuizActive;
-    btn.style.opacity       = isQuizActive ? '0.35' : '1';
-    btn.style.pointerEvents = isQuizActive ? 'none' : 'auto';
-    btn.title               = isQuizActive ? 'Un quiz est déjà en cours' : '';
+      </div>`;
   });
 }
 
-function updatePauseButton(phase) {
-  ['btn-pause-quiz', 'btn-pause-quiz-ql'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    if (phase === 'QUIZ_PAUSED') {
-      btn.textContent = '▶ Relancer Quiz';
-      btn.onclick = () => adminAction('/api/admin/phase', {phase: 'RESUME_QUIZ'})
-        .then(() => showToast('Quiz relancé. XOXO.', 'success'));
-    } else {
-      btn.textContent = '⏸ Pause Quiz';
-      btn.onclick = pauseQuiz;
-    }
+/* ══════════════════════════════════════════════════
+   LOGS
+   ══════════════════════════════════════════════════ */
+async function loadLogs() {
+  const r = await fetch('/api/admin/logs').catch(() => null);
+  if (!r || !r.ok) return;
+  let d; try { d = await r.json(); } catch(e) { return; }
+  const logs = d.logs || [];
+  const el = document.getElementById('logs-list');
+  if (!el) return;
+  if (!logs.length) {
+    el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun événement.</div>`;
+    return;
+  }
+  el.innerHTML = logs.map(l => `
+    <div class="log-row">
+      <span class="log-time">${escHtml(l.time || '')}</span>
+      <span class="log-event ${l.type ? 'ev-' + l.type : ''}">${escHtml(l.type || 'event')}</span>
+      <span class="log-detail">${escHtml(l.message || '')}</span>
+    </div>`).join('');
+}
+
+function filterLogs() {
+  const f = document.getElementById('log-filter')?.value;
+  document.querySelectorAll('#logs-list .log-row').forEach(row => {
+    const ev = row.querySelector('.log-event');
+    const type = ev ? ev.className.replace('log-event', '').trim().replace('ev-', '') : '';
+    row.style.display = (!f || row.querySelector(`.ev-${f}`)) ? '' : 'none';
   });
 }
 
-let _projSoundMuted = true;
-
-function toggleProjectorSound() {
-  _projSoundMuted = !_projSoundMuted;
-  adminAction('/api/admin/projector-sound', { muted: _projSoundMuted });
-  const icon  = document.getElementById('sound-toggle-icon');
-  const label = document.getElementById('sound-toggle-label');
-  if (icon)  icon.textContent  = _projSoundMuted ? '🔇' : '🔊';
-  if (label) { label.textContent = _projSoundMuted ? 'Son OFF' : 'Son ON'; label.style.color = _projSoundMuted ? 'var(--red)' : 'var(--gold)'; }
-}
-
-let _projScoresVisible = false;
-function toggleProjectorScores() {
-  _projScoresVisible = !_projScoresVisible;
-  adminAction('/api/admin/projector-scores', {visible: _projScoresVisible});
-  document.querySelectorAll('[onclick="toggleProjectorScores()"]').forEach(btn => {
-    btn.textContent = _projScoresVisible ? '✕ Masquer scores' : '📊 Scores en grand';
-  });
-  const btn2 = document.getElementById('btn-scores-proj');
-  if (btn2) btn2.textContent = _projScoresVisible ? '✕ Masquer scores' : '📊 Scores en grand';
-}
-
-let _projQRVisible = false;
-function toggleProjectorQR() {
-  _projQRVisible = !_projQRVisible;
-  adminAction('/api/admin/projector-qr', {visible: _projQRVisible});
-  document.querySelectorAll('[onclick="toggleProjectorQR()"]').forEach(btn => {
-    btn.textContent = _projQRVisible ? '✕ Masquer QR' : '📱 QR Projecteur';
-  });
-  const btn2 = document.getElementById('btn-qr-proj');
-  if (btn2) btn2.textContent = _projQRVisible ? '✕ Masquer QR' : '📱 Afficher QR sur projecteur';
-}
-
-function pauseQuiz() {
-  adminAction('/api/admin/phase', {phase:'PAUSE_QUIZ'})
-    .then(() => showToast('Quiz en pause.', 'info'));
-}
-
-// ============================================================
-//  BOT CONTROL ROOM — JS
-// ============================================================
-
-let _botLogCount = 0;
-
+/* ══════════════════════════════════════════════════
+   BOTS
+   ══════════════════════════════════════════════════ */
 async function deployBot() {
-  const profile = document.getElementById('bot-profile-select').value;
-  const btn     = document.getElementById('btn-deploy-bot');
-  btn.disabled  = true;
-  try {
-    const res  = await fetch('/admin/bots/deploy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile }),
-    });
-    const data = await res.json();
-    if (data.error) {
-      showToast(`🤖 ${data.error}`, 'error');
-    } else {
-      showToast(`🤖 Bot ${data.bot.prenom} déployé (${profile})`, 'success');
-      setTimeout(refreshBotList, 800);
-    }
-  } catch(e) {
-    showToast('Erreur réseau bots.', 'error');
-  } finally {
-    btn.disabled = false;
-  }
+  const profile = document.getElementById('bot-profile-select')?.value;
+  const res = await adminAction('/admin/bots/deploy', { profile });
+  if (res) refreshBotList();
 }
-
-async function removeBot(botId, pseudo) {
-  const res  = await fetch(`/admin/bots/${botId}`, { method: 'DELETE' });
-  const data = await res.json();
-  if (data.ok) {
-    showToast(`🤖 ${pseudo} supprimé.`, 'info');
-    refreshBotList();
-  } else {
-    showToast(data.error || 'Erreur suppression bot.', 'error');
-  }
-}
-
-async function removeAllBots() {
-  const res  = await fetch('/admin/bots/remove_all', { method: 'POST' });
-  const data = await res.json();
-  if (data.ok) {
-    showToast('🤖 Tous les bots supprimés.', 'info');
-    refreshBotList();
-  }
-}
-
-// ── Turbo Mode ─────────────────────────────────────────────
-let _turboActive = false;
-
-async function toggleTurboMode() {
-  _turboActive = !_turboActive;
-  try {
-    const res  = await fetch('/api/admin/turbo-mode', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ enabled: _turboActive }),
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error('server error');
-    _applyTurboUI(_turboActive);
-    showToast(_turboActive ? '⚡ Turbo Mode activé — timers accélérés !' : '🐢 Turbo Mode désactivé.', 'info');
-  } catch(e) {
-    _turboActive = !_turboActive;   // rollback
-    showToast('Erreur activation Turbo Mode.', 'error');
-  }
-}
-
-function _applyTurboUI(active) {
-  const btn = document.getElementById('btn-turbo');
-  if (!btn) return;
-  if (active) {
-    btn.textContent = '⚡ Turbo Mode — ON';
-    btn.style.borderColor  = 'var(--gold)';
-    btn.style.color        = 'var(--gold)';
-    btn.style.background   = 'rgba(201,168,76,.12)';
-    btn.style.fontWeight   = '700';
-  } else {
-    btn.textContent = '⚡ Turbo Mode — OFF';
-    btn.style.borderColor  = 'rgba(201,168,76,.35)';
-    btn.style.color        = 'var(--stone)';
-    btn.style.background   = '';
-    btn.style.fontWeight   = '';
-  }
-}
-
-// Sync si un autre admin toggle en parallèle
-socket.on('turbo_mode_changed', data => {
-  if (data && typeof data.enabled !== 'undefined') {
-    _turboActive = !!data.enabled;
-    _applyTurboUI(_turboActive);
-  }
-});
-
-// Réception de la liste mise à jour en temps réel via Sockets (Évite le spam HTTP)
-socket.on('bot_list_updated', data => {
-  if (data && Array.isArray(data.bots)) {
-    renderBotTable(data.bots);
-    const badge = document.getElementById('badge-bots');
-    if (badge) {
-      badge.textContent = data.count || data.bots.length;
-      badge.classList.toggle('show', (data.count || data.bots.length) > 0);
-    }
-    const countEl = document.getElementById('bots-count');
-    if (countEl) countEl.textContent = data.count || data.bots.length;
-  }
-});
 
 async function refreshBotList() {
-  try {
-    const res  = await fetch('/admin/bots');
-    if (!res.ok) return;
-    const data = await res.json();
-    renderBotTable(data.bots || []);
-    const badge = document.getElementById('badge-bots');
-    if (badge) {
-      badge.textContent = data.count || 0;
-      badge.classList.toggle('show', (data.count || 0) > 0);
-    }
-    const countEl = document.getElementById('bots-count');
-    if (countEl) countEl.textContent = data.count || 0;
-  } catch(e) {
-    console.warn('refreshBotList error', e);
-  }
-}
-
-async function loadBotLogsFromServer() {
-  try {
-    const res  = await fetch('/admin/bots/logs');
-    if (!res.ok) { showToast('Session expirée — recharge la page.', 'error'); return; }
-    const data = await res.json();
-    const container = document.getElementById('bot-logs-container');
-    if (container) {
-      container.innerHTML = '';
-      (data.logs || []).forEach(line => appendBotLog(line));
-    }
-    showToast(`📋 ${data.logs?.length || 0} lignes chargées.`, 'info');
-  } catch(e) {
-    showToast('Erreur chargement logs.', 'error');
-  }
-}
-
-function clearBotLogs() {
-  const container = document.getElementById('bot-logs-container');
-  if (container) {
-    container.innerHTML = '<div style="color:var(--stone);opacity:.5;text-align:center;margin-top:120px;">Logs vidés.</div>';
-  }
-  _botLogCount = 0;
-  const countEl = document.getElementById('bot-log-count');
-  if (countEl) countEl.textContent = '0';
-}
-
-function appendBotLog(line) {
-  const container = document.getElementById('bot-logs-container');
-  if (!container) return;
-  if (container.querySelector('div[style*="margin-top:120px"]')) {
-    container.innerHTML = '';
-  }
-  const div = document.createElement('div');
-  let color = 'var(--stone)';
-  if (line.includes('✅') || line.includes('Login OK'))  color = '#6fcf97';
-  if (line.includes('❌') || line.includes('Erreur'))    color = 'var(--red)';
-  if (line.includes('⚠️') || line.includes('TIMEOUT'))  color = '#f2c94c';
-  if (line.includes('💥') || line.includes('crasher'))  color = '#eb5757';
-  if (line.includes('🔇') || line.includes('silent'))   color = '#9b9b9b';
-  if (line.includes('📝') || line.includes('Réponse'))  color = 'var(--cream)';
-  if (line.includes('ORCHESTRATOR'))                     color = 'var(--gold)';
-  if (line.includes('SESSION'))                          color = 'var(--gold)';
-  div.style.color = color;
-  div.textContent = line;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-  _botLogCount++;
-  const countEl = document.getElementById('bot-log-count');
-  if (countEl) countEl.textContent = _botLogCount;
+  const r = await fetch('/admin/bots').catch(() => null);
+  if (!r || !r.ok) return;
+  let d; try { d = await r.json(); } catch(e) { return; }
+  const bots = d.bots || [];
+  const badge = document.getElementById('badge-bots');
+  if (badge) { badge.textContent = bots.length; badge.classList.toggle('show', bots.length > 0); }
+  const countEl = document.getElementById('bots-count');
+  if (countEl) countEl.textContent = bots.length;
+  const maxEl = document.getElementById('bots-max');
+  if (maxEl && d.max) maxEl.textContent = d.max;
+  renderBotTable(bots);
 }
 
 function renderBotTable(bots) {
   const tbody = document.getElementById('bots-table-body');
   if (!tbody) return;
-  if (!bots || !bots.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--stone);padding:24px;">Aucun bot actif.</td></tr>';
+  if (!bots?.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--stone);padding:24px;">Aucun bot actif.</td></tr>`;
     return;
   }
-  const profileIcons = { random: '🎲', slow: '🐢', silent: '🔇', crasher: '💥' };
-  const phaseColors  = { LOBBY: 'var(--stone)', QUIZ: 'var(--gold)', LIBRE: '#6fcf97' };
+  const icons  = { random:'🎲', slow:'🐢', silent:'🔇', crasher:'💥' };
+  const colors = { LOBBY:'var(--stone)', QUIZ:'var(--gold)', LIBRE:'var(--green)' };
   tbody.innerHTML = bots.map(b => `
     <tr>
       <td style="font-weight:600;">${escHtml(b.prenom)}</td>
-      <td>${profileIcons[b.profile] || '?'} ${escHtml(b.profile)}</td>
-      <td style="color:${phaseColors[b.phase] || 'var(--stone)'}; font-weight:500;">${escHtml(b.phase)}</td>
-      <td style="text-align:center;">${parseInt(b.answers_sent) || 0}</td>
-      <td>
-        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
-          background:${b.connected ? '#6fcf97' : 'var(--red)'};margin-right:6px;"></span>
-        ${b.connected ? 'Connecté' : 'Déconnecté'}
-      </td>
-      <td>
-        <button class="btn btn-danger" style="padding:3px 10px;font-size:11px;"
-          onclick="removeBot('${b.bot_id}', '${escHtml(b.prenom)}')">✕</button>
-      </td>
-    </tr>
-  `).join('');
+      <td>${icons[b.profile] || '?'} ${escHtml(b.profile)}</td>
+      <td style="color:${colors[b.phase]||'var(--stone)'};font-weight:500;">${escHtml(b.phase)}</td>
+      <td style="text-align:center;">${parseInt(b.answers_sent)||0}</td>
+      <td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${b.connected?'var(--green)':'var(--red)'};margin-right:6px;"></span>${b.connected?'Connecté':'Déco.'}</td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeBot('${b.bot_id}','${escHtml(b.prenom)}')">✕</button></td>
+    </tr>`).join('');
 }
 
-// Logs bots temps réel (uniquement pour l'admin)
-socket.on('bot_log', data => {
-  if (data && data.line) {
-    appendBotLog(data.line);
-  }
-});
+function removeBot(id, name) { adminAction(`/admin/bots/${id}`, {}, 'DELETE').then(r => r && refreshBotList()); }
+function removeAllBots() {
+  if (!confirm('Supprimer tous les bots ?')) return;
+  adminAction('/admin/bots/remove_all').then(r => r && refreshBotList());
+}
+function toggleTurboMode() {
+  S.turbo = !S.turbo;
+  adminAction('/api/admin/turbo-mode', { enabled: S.turbo });
+  const btn = document.getElementById('btn-turbo');
+  if (btn) { btn.classList.toggle('turbo-on', S.turbo); btn.textContent = `⚡ Turbo Mode — ${S.turbo ? 'ON' : 'OFF'}`; }
+}
+function clearBotLogs() {
+  const c = document.getElementById('bot-logs-container');
+  if (c) c.innerHTML = `<div style="color:var(--stone);opacity:.5;text-align:center;margin-top:120px;">Logs vidés.</div>`;
+  S._botLogCount = 0;
+  const n = document.getElementById('bot-log-count'); if (n) n.textContent = '0';
+}
+async function loadBotLogsFromServer() {
+  const r = await fetch('/admin/bots/logs').catch(() => null);
+  if (!r || !r.ok) { showToast('Session expirée — recharge la page.', 'error'); return; }
+  let d; try { d = await r.json(); } catch(e) { return; }
+  const c = document.getElementById('bot-logs-container'); if (!c) return;
+  c.innerHTML = '';
+  (d.logs || []).forEach(l => appendBotLog(l));
+  showToast(`📋 ${d.logs?.length || 0} lignes chargées.`, 'info');
+}
+function appendBotLog(line) {
+  const c = document.getElementById('bot-logs-container'); if (!c) return;
+  const ph = c.querySelector('[style*="margin-top:120px"]'); if (ph) c.innerHTML = '';
+  const div = document.createElement('div');
+  let color = 'var(--stone)';
+  if (line.includes('✅')||line.includes('Login OK'))  color = '#6fcf97';
+  if (line.includes('❌')||line.includes('Erreur'))    color = 'var(--red)';
+  if (line.includes('⚠️')||line.includes('TIMEOUT'))  color = '#f2c94c';
+  if (line.includes('💥')||line.includes('crasher'))  color = '#eb5757';
+  if (line.includes('🔇')||line.includes('silent'))   color = '#9b9b9b';
+  if (line.includes('📝')||line.includes('Réponse'))  color = 'var(--cream)';
+  if (line.includes('ORCHESTRATOR')||line.includes('SESSION')) color = 'var(--gold)';
+  div.style.color = color;
+  div.textContent = line;
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+  S._botLogCount++;
+  const n = document.getElementById('bot-log-count'); if (n) n.textContent = S._botLogCount;
+}
 
-// Auto-refresh de sécurité par intervalle si l'onglet Bots est actif
-setInterval(() => {
-  const section = document.getElementById('section-bots');
-  if (section && section.classList.contains('active')) {
+/* Sub-tabs */
+function showSubTab(name) {
+  document.querySelectorAll('.sub-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.sub-panel').forEach(p => p.classList.toggle('active', p.id === `subtab-${name}`));
+  if (name === 'bots') refreshBotList();
+  if (name === 'logs') loadLogs();
+}
+
+/* ══════════════════════════════════════════════════
+   BLAIR / DÉDICACES
+   ══════════════════════════════════════════════════ */
+async function checkBlair() {
+  const r = await fetch('/api/admin/players').catch(() => null);
+  if (!r || !r.ok) return;
+  let d; try { d = await r.json(); } catch(e) { return; }
+  const blair = (d.players || []).find(p => p.personnage && p.personnage.toLowerCase().includes('blair'));
+  const el    = document.getElementById('blair-status');
+  const chip  = document.getElementById('blair-status-chip');
+  const link  = document.getElementById('blair-link');
+  const token = window.__BLAIR_TOKEN__ || 'blair-waldorf-queen-b-vip-token-dino';
+  const url   = window.location.origin + '/blair-vip?token=' + token;
+  S.blairData = { link: url, token };
+  if (el) el.textContent = blair
+    ? `Réservé par ${blair.prenom} · ${blair.is_connected ? 'Connectée' : 'Hors ligne'}`
+    : 'Slot libre · En attente de Blair';
+  if (chip) {
+    chip.className = blair ? 'status-chip occupied' : 'status-chip free';
+    chip.innerHTML = `<span class="sdot"></span>${blair ? 'Slot occupé' : 'Slot libre'}`;
+  }
+  if (link) link.textContent = url;
+}
+
+function freeBlairSlot() {
+  adminAction('/api/admin/free-blair').then(r => r && checkBlair());
+}
+function copyBlair() {
+  const url = S.blairData?.link;
+  if (!url) { showToast('Lien non disponible', 'error'); return; }
+  navigator.clipboard.writeText(url).then(() => showToast('✓ Lien VIP copié', 'success'));
+}
+function openBlairLogin() {
+  const token = S.blairData?.token || window.__BLAIR_TOKEN__;
+  if (!token) { showToast('Token non disponible', 'error'); return; }
+  window.open(`/blair-vip?token=${token}`, '_blank');
+}
+
+/* ══════════════════════════════════════════════════
+   DANGER ZONE
+   ══════════════════════════════════════════════════ */
+function openDangerZone() {
+  document.getElementById('danger-overlay')?.classList.add('open');
+  document.querySelectorAll('.danger-input').forEach(i => { i.value = ''; });
+}
+function closeDangerZone() { document.getElementById('danger-overlay')?.classList.remove('open'); }
+
+function confirmResetQuestions() {
+  if (document.getElementById('danger-input-q')?.value !== 'RESET') { showToast('Tapez "RESET" pour confirmer', 'error'); return; }
+  adminAction('/api/admin/reset-questions').then(r => { if (r) { closeDangerZone(); } });
+}
+function confirmResetScores() {
+  if (document.getElementById('danger-input-s')?.value !== 'RESET') { showToast('Tapez "RESET" pour confirmer', 'error'); return; }
+  adminAction('/api/admin/reset-scores').then(r => { if (r) { closeDangerZone(); } });
+}
+function confirmReset() {
+  if (document.getElementById('danger-input-all')?.value !== 'RESET COMPLET') { showToast('Tapez "RESET COMPLET" pour confirmer', 'error'); return; }
+  adminAction('/api/admin/reset').then(r => { if (r) { closeDangerZone(); } });
+}
+
+/* ══════════════════════════════════════════════════
+   SOCKET.IO
+   ══════════════════════════════════════════════════ */
+function setConnStatus(online) {
+  ['socket-dot','conn-dot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('offline', !online);
+  });
+  const lbl  = document.getElementById('socket-label');
+  const lbl2 = document.getElementById('conn-label');
+  if (lbl)  lbl.textContent  = online ? 'God Mode Actif' : 'Reconnexion…';
+  if (lbl2) lbl2.textContent = online ? 'Connecté'        : 'Hors ligne';
+}
+
+function initSocket() {
+  if (typeof io === 'undefined') { console.warn('[Socket] socket.io non disponible'); return; }
+  const socket = io({
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: Infinity,
+  });
+
+  socket.on('connect', () => {
+    setConnStatus(true);
+    socket.emit('admin_identify', {});
+    socket.emit('get_game_state', {});   // resync phase + question si on charge en plein quiz
+    loadDashboardData();
     refreshBotList();
-  }
-}, 3000);
+    loadBotLogsFromServer();
+  });
+  socket.on('disconnect', () => setConnStatus(false));
 
-// Gestion de la reconnexion et de la synchronisation d'état initial instantanée (Anti-Race Condition)
-socket.on('connect', () => {
-  console.log('⚡ Connexion Socket établie — Identification de la session Admin');
-  socket.emit('admin_identify', {});
-  refreshBotList();
-  loadBotLogsFromServer();
+  socket.on('phase_changed', ({ phase }) => updatePhaseUI(phase));
+  socket.on('timer_update', ({ ends_at }) => startTimer(ends_at));
+
+  // État renvoyé par get_game_state (connect / reconnect) : resync phase + scores
+  socket.on('game_state', d => {
+    const phase = d.phase || d.state;
+    if (phase) updatePhaseUI(phase);
+    if (d.leaderboard) renderMiniLeaderboard(d.leaderboard);
+  });
+
+  socket.on('game_paused', ({ paused }) => {
+    if (paused) updatePhaseUI('PAUSE');
+    else updatePhaseUI('QUIZ');
+  });
+
+  socket.on('player_update', ({ count }) => _updatePlayerCount(count));
+
+  socket.on('leaderboard_update', () => {
+    if (document.getElementById('section-scores')?.classList.contains('active')) loadScores();
+    else fetch('/api/admin/leaderboard').then(r => r.json()).then(d => renderMiniLeaderboard(d.leaderboard || [])).catch(() => {});
+  });
+
+  // ── Quiz en direct : suit les mêmes events que le projecteur ──────────────
+  socket.on('new_question', data => {
+    if (S.phase !== 'PAUSE') updatePhaseUI('QUIZ');
+    renderLiveQuestion(data);
+  });
+
+  socket.on('waiting_for_gg_pick', data => {
+    if (S.phase !== 'PAUSE') updatePhaseUI('QUIZ');
+    S.liveAnswer = '';
+    const qNum     = document.getElementById('quiz-q-num');
+    const qText    = document.getElementById('quiz-q-text');
+    const choices  = document.getElementById('quiz-q-choices');
+    const statusEl = document.getElementById('quiz-q-status');
+    if (qNum)     qNum.textContent  = `Q.${data.question_number ?? '—'} / ${data.total ?? '?'}`;
+    if (qText)    qText.textContent = data.gg ? `${data.gg.prenom} choisit la question…` : 'Le Gossip Girl choisit la question…';
+    if (choices)  choices.innerHTML = '';
+    if (statusEl) statusEl.textContent = 'Sélection en cours';
+  });
+
+  socket.on('question_tick', ({ remaining }) => {
+    const statusEl = document.getElementById('quiz-q-status');
+    if (statusEl && remaining != null) {
+      statusEl.textContent = `Temps restant : ${remaining}s` + (S.liveAnswer ? ` · Réponse : ${S.liveAnswer}` : '');
+    }
+  });
+
+  socket.on('question_answer', data => {
+    highlightLiveAnswer(data.answer);
+    const statusEl = document.getElementById('quiz-q-status');
+    if (statusEl) statusEl.textContent = data.explanation || `Bonne réponse : ${data.answer}`;
+  });
+
+  socket.on('quiz_ended', () => {
+    if (document.getElementById('section-scores')?.classList.contains('active')) loadScores();
+    else fetch('/api/admin/leaderboard').then(r => r.json()).then(d => renderMiniLeaderboard(d.leaderboard || [])).catch(() => {});
+  });
+
+  socket.on('roster_state', () => refreshRosterTaken());
+
+  socket.on('bot_log', data => { if (data?.line) appendBotLog(data.line); });
+  socket.on('scoop_new', () => {
+    const b = document.getElementById('badge-scoops'); if (b) b.classList.add('show');
+    if (document.getElementById('section-scoops')?.classList.contains('active')) loadScoops();
+  });
+
+  setInterval(() => {
+    if (document.getElementById('section-debug')?.classList.contains('active')) refreshBotList();
+  }, 3000);
+}
+
+/* ══════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  showSection('live');
+  initHoldConfirm();
+  initSocket();
+  updatePhaseUI('LOBBY');
+  enableStopSound(false);
+
+  document.querySelector('.sbd-hdr')?.addEventListener('click', toggleSoundBoard);
+  document.getElementById('custom-msg-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') sendCustomMessage(); });
+  document.getElementById('gg-message-input')?.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) postAsGG(); });
+  document.getElementById('danger-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeDangerZone(); });
 });
-
 </script>
+
 </body>
 </html>

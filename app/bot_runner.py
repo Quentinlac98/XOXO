@@ -15,34 +15,42 @@
 # ============================================================
 
 import os
+import json
 import time
 import uuid
 import random
 import threading
+import urllib.request
 import socketio as sio_module
 from datetime import datetime
 
-# ── Pseudos disponibles (pool Gossip Girl étendu) ──────────
-BOT_PSEUDOS = [
-    ("Serena",   "Serena van der Woodsen"),
-    ("Blair",    "Blair Waldorf"),
-    ("Nate",     "Nate Archibald"),
-    ("Jenny",    "Jenny Humphrey"),
-    ("Eric",     "Eric van der Woodsen"),
-    ("Vanessa",  "Vanessa Abrams"),
-    ("Georgina", "Georgina Sparks"),
-    ("Penelope", "Penelope Shafai"),
-    ("Isabel",   "Isabel Coates"),
-    ("Hazel",    "Hazel Williams"),
-]
-
 PROFILES = ("random", "slow", "silent", "crasher")
 
-# ── Chemin du fichier de logs ───────────────────────────────
-BASE_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOG_FILE  = os.path.join(BASE_DIR, "bot_logs.txt")
+# ── Chemins ─────────────────────────────────────────────────
+BASE_DIR        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOG_FILE        = os.path.join(BASE_DIR, "bot_logs.txt")
+CHARACTERS_FILE = os.path.join(BASE_DIR, "characters.json")
 
-MAX_BOTS  = 10
+MAX_BOTS  = 50
+
+
+# ── Roster centralisé (characters.json) ─────────────────────
+def _load_roster():
+    """Liste des personnages depuis le roster centralisé (même source que les clients)."""
+    try:
+        with open(CHARACTERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f).get("characters", [])
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def _fetch_taken(server_url):
+    """Personnages déjà occupés côté serveur (humains + bots), en temps réel."""
+    try:
+        with urllib.request.urlopen(f"{server_url}/api/characters", timeout=2) as resp:
+            return set(json.loads(resp.read().decode()).get("taken", []))
+    except Exception:
+        return set()
 
 # ── Référence à socketio Flask (injectée par main.py) ──────
 flask_socketio = None
@@ -122,6 +130,7 @@ class BotPlayer:
         self._thread     = None
         self._sio        = None
         self._crash_timer = None      # threading.Timer pour crasher mode
+        self._join_attempts = 0       # tentatives de claim (retry si slot pris)
 
     # ── API publique ─────────────────────────────────────────
 
@@ -203,7 +212,24 @@ class BotPlayer:
             self.events_count += 1
             msg = data.get("message", "?")
             self._log(f"❌ Login refusé : {msg}")
-            # Arrêt propre si le slot est déjà pris
+            # Slot pris entre-temps (course perdue) → tente un autre personnage libre
+            # du pool centralisé plutôt que d'abandonner.
+            if self.alive and self._join_attempts < 3:
+                picked = orchestrator.pick_free_character(exclude_bot_id=self.bot_id)
+                if picked:
+                    prenom, personnage = picked
+                    self._join_attempts += 1
+                    self.prenom     = f"🤖{prenom}"
+                    self.personnage = personnage
+                    self._log(f"🔁 Nouveau personnage tenté : {personnage}")
+                    time.sleep(random.uniform(0.3, 0.8))
+                    sio.emit("join_player", {
+                        "prenom":     self.prenom,
+                        "personnage": self.personnage,
+                        "blair_code": "",
+                    })
+                    return
+            # Plus de slot libre ou trop de tentatives → arrêt propre
             self.alive = False
             sio.disconnect()
 
@@ -343,7 +369,6 @@ class BotOrchestrator:
 
     def __init__(self):
         self._bots = {}   # bot_id → BotPlayer
-        self._pseudo_index = 0
         self._session_start = None
         self._total_events  = 0
         self._server_url    = "http://127.0.0.1:5000"
@@ -365,19 +390,26 @@ class BotOrchestrator:
             if len(self._bots) >= MAX_BOTS:
                 return {"error": f"Limite atteinte ({MAX_BOTS} bots max)."}
 
-            # Récupère le prochain pseudo disponible
-            prenom, personnage = self._next_pseudo()
-            bot_id = str(uuid.uuid4())
+        # Le pick interroge le serveur (I/O réseau) → hors verrou pour ne pas bloquer.
+        picked = self.pick_free_character()
+        if not picked:
+            return {"error": "Aucun personnage disponible dans le roster."}
+        prenom, personnage = picked
+        bot_id = str(uuid.uuid4())
 
-            bot = BotPlayer(
-                bot_id=bot_id,
-                prenom=prenom,
-                personnage=personnage,
-                profile=profile,
-                server_url=self._server_url,
-            )
+        bot = BotPlayer(
+            bot_id=bot_id,
+            prenom=prenom,
+            personnage=personnage,
+            profile=profile,
+            server_url=self._server_url,
+        )
+
+        with _orch_lock:
+            # Re-vérifie la capacité après l'I/O (une autre requête a pu déployer)
+            if len(self._bots) >= MAX_BOTS:
+                return {"error": f"Limite atteinte ({MAX_BOTS} bots max)."}
             self._bots[bot_id] = bot
-
             # Démarre la session de log si première fois
             if not self._session_start:
                 self._session_start = time.time()
@@ -440,24 +472,32 @@ class BotOrchestrator:
         except FileNotFoundError:
             return []
 
-    # ── Pseudo generator ─────────────────────────────────────
+    # ── Sélection de personnage (pool centralisé) ────────────
 
-    def _next_pseudo(self) -> tuple:
+    def pick_free_character(self, exclude_bot_id: str = None):
         """
-        Retourne le prochain pseudo disponible dans le pool.
-        Tourne en boucle si tous les slots sont utilisés.
+        Retourne (prenom, full_name) d'un personnage LIBRE du roster centralisé,
+        ou None si tout est pris. Exclut :
+          - les personnages verrouillés (admin/vip — Chuck, Blair)
+          - le siège GG-original (Dan) : réservé à un humain, et un bot ne sait pas
+            piloter le pick de questions
+          - ceux déjà occupés côté serveur (humains + bots), en temps réel
+          - ceux déjà revendiqués par les autres bots locaux
         """
-        # Récupère les personnages déjà utilisés par les bots actifs
-        used = {b.personnage for b in self._bots.values()}
-        for i in range(len(BOT_PSEUDOS)):
-            idx = (self._pseudo_index + i) % len(BOT_PSEUDOS)
-            prenom, personnage = BOT_PSEUDOS[idx]
-            if personnage not in used:
-                self._pseudo_index = (idx + 1) % len(BOT_PSEUDOS)
-                return prenom, personnage
-        # Fallback : pseudo numéroté
-        n = len(self._bots) + 1
-        return f"Bot{n:02d}", f"Invité {n:02d}"
+        roster = _load_roster()
+        with _orch_lock:
+            used = {b.personnage for b in self._bots.values()
+                    if b.bot_id != exclude_bot_id}
+        taken = _fetch_taken(self._server_url) | used
+        for c in roster:
+            is_first_gg = (c.get("role") == "first_gg"
+                           or (c.get("name") == "Dan" and c.get("family") == "Humphrey"))
+            if c.get("locked") or is_first_gg:
+                continue
+            full = f"{c['name']} {c['family']}"
+            if full not in taken:
+                return c["name"], full
+        return None
 
 
 # ── Singleton global ────────────────────────────────────────

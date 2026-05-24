@@ -887,7 +887,8 @@ function renderLeaderboard(data) {
     c.innerHTML = '<div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">En attente des joueurs…</div>';
     return;
   }
-  c.innerHTML = data.map((p, i) => `
+  // Elite Circle : on n'affiche que le top 10 (data est déjà trié par score_total desc)
+  c.innerHTML = data.slice(0, 10).map((p, i) => `
     <div class="lb-row ${i === 0 ? 'rank-1' : ''} ${p.is_gg ? 'is-gg' : ''}" data-player-id="${p.id}">
       <div class="lb-rank ${i === 0 ? 'gold' : ''}">${i === 0 ? '👑' : i + 1}</div>
       <div class="lb-info">
