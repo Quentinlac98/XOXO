@@ -1695,8 +1695,10 @@ tr:hover td { background: rgba(255,255,255,.018); }
     }
   }, true);
   window.__BLAIR_TOKEN__ = "{{ blair_token }}";
+</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
   // Socket.io stub — remplacer par la vraie lib en production
-  // <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"><\/script>
   window.io = window.io || function() {
     const noop = function() { return this; };
     return { on: noop, emit: noop, off: noop, connect: noop };
@@ -2586,8 +2588,14 @@ function initSocket() {
 
   // État renvoyé par get_game_state (connect / reconnect) : resync phase + scores
   socket.on('game_state', d => {
-    if (d.phase) updatePhaseUI(d.phase);
+    const phase = d.phase || d.state;
+    if (phase) updatePhaseUI(phase);
     if (d.leaderboard) renderMiniLeaderboard(d.leaderboard);
+  });
+
+  socket.on('game_paused', ({ paused }) => {
+    if (paused) updatePhaseUI('PAUSE');
+    else updatePhaseUI('QUIZ');
   });
 
   socket.on('player_update', ({ count }) => _updatePlayerCount(count));
