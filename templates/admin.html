@@ -1179,6 +1179,12 @@ tr:hover td { background: rgba(255,255,255,.018); }
             <span id="quiz-q-num" style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);">—</span>
           </div>
 
+          <div id="quiz-live-card" style="margin-bottom:14px;padding:13px 14px;border:1px solid rgba(201,168,76,.12);border-radius:8px;background:var(--gold-glow);">
+            <div id="quiz-q-text" style="font-family:'Playfair Display',serif;font-size:15px;line-height:1.4;color:var(--cream);margin-bottom:11px;">En attente de la question…</div>
+            <div id="quiz-q-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;"></div>
+            <div id="quiz-q-status" style="margin-top:11px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--stone);">—</div>
+          </div>
+
           <div class="btn-col" style="margin-bottom:12px;">
             <button class="btn btn-outline quiz-only"
                     onclick="adminAction('/api/admin/reload-question')">🔄 Relancer la question</button>
@@ -1707,6 +1713,7 @@ tr:hover td { background: rgba(255,255,255,.018); }
 /* ── State ──────────────────────────────────────── */
 const S = {
   phase: 'LOBBY',
+  liveAnswer: '',
   playerCount: 0,
   soundOn: false,
   playingSound: null,
@@ -1800,10 +1807,12 @@ function showSection(name, btn) {
    PHASE MANAGEMENT
    ══════════════════════════════════════════════════ */
 function updatePhaseUI(phase) {
+  if (phase === 'QUIZ_PAUSED') phase = 'PAUSE';   // alias serveur → token interne
   S.phase = phase;
-  const pill = document.getElementById('phase-pill');
-  const statEl = document.getElementById('stat-phase');
-  const subEl  = document.getElementById('quiz-live-sub');
+  const pill       = document.getElementById('phase-pill');
+  const statEl     = document.getElementById('stat-phase');
+  const statCardEl = document.getElementById('stat-phase-card');
+  const subEl      = document.getElementById('quiz-live-sub');
 
   const map = {
     LOBBY:     { label: 'Lobby',       cls: 'phase-lobby', stat: 'Lobby' },
@@ -1816,6 +1825,7 @@ function updatePhaseUI(phase) {
 
   if (pill) { pill.className = cls; pill.innerHTML = `<span class="dot"></span>${label}`; }
   if (statEl) { statEl.textContent = stat; statEl.className = 'status-val sm'; }
+  if (statCardEl) { statCardEl.textContent = stat; }
   if (subEl) subEl.textContent = (phase === 'QUIZ' || phase === 'PAUSE')
     ? 'Quiz en cours · Actions actives'
     : 'Aucun quiz actif';
@@ -2088,7 +2098,7 @@ async function loadPlayers() {
       <td><span class="${p.is_connected ? 'dot-on' : 'dot-off'}"></span>${p.is_connected ? 'En ligne' : 'Hors ligne'}</td>
       <td style="font-weight:600;">${escHtml(p.prenom)}</td>
       <td style="color:var(--stone)">${escHtml(p.personnage || '—')}</td>
-      <td style="color:var(--gold);font-weight:600;">${p.score ?? 0}</td>
+      <td style="color:var(--gold);font-weight:600;">${p.score_total ?? 0}</td>
       <td>${p.is_gg ? `<span class="gg-badge">👑 GG</span>` : ''}</td>
       <td>
         <div style="display:flex;gap:5px;">
@@ -2260,7 +2270,7 @@ async function loadScores() {
       <td style="color:var(--stone);">${i + 1}</td>
       <td style="font-weight:600;">${escHtml(p.prenom)}</td>
       <td style="color:var(--stone);">${escHtml(p.personnage || '—')}</td>
-      <td><span class="score-edit-cell" data-id="${p.id}" data-score="${p.score ?? 0}" onclick="editScore(this)">${p.score ?? 0}</span></td>
+      <td><span class="score-edit-cell" data-id="${p.id}" data-score="${p.score_total ?? 0}" onclick="editScore(this)">${p.score_total ?? 0}</span></td>
       <td>${p.is_gg ? `<span class="gg-badge">👑 GG</span>` : ''}</td>
       <td><button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}})">👑 Transférer</button></td>
     </tr>`).join('');
@@ -2283,8 +2293,51 @@ function renderMiniLeaderboard(lb) {
     <div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(201,168,76,.06);">
       <span style="font-size:11px;color:var(--stone);width:16px;">${i + 1}</span>
       <span style="flex:1;font-size:12.5px;font-weight:600;">${escHtml(p.prenom)}</span>
-      <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);">${p.score ?? 0}</span>
+      <span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);">${p.score_total ?? 0}</span>
     </div>`).join('');
+}
+
+/* Affiche la question courante dans le panneau "Quiz en direct" (Chuck Mode).
+   choices peut être un objet {A,B,C,D} ou un array — on normalise.
+   answer = bonne lettre, visible uniquement côté admin. */
+function renderLiveQuestion(data) {
+  const qNum     = document.getElementById('quiz-q-num');
+  const qText    = document.getElementById('quiz-q-text');
+  const choicesEl = document.getElementById('quiz-q-choices');
+  const statusEl  = document.getElementById('quiz-q-status');
+  if (!qText || !choicesEl) return;
+
+  if (qNum) qNum.textContent = `Q.${data.question_number ?? '—'} / ${data.total ?? '?'}`;
+  qText.textContent = data.question || '';
+
+  let choices = data.choices;
+  if (Array.isArray(choices)) {
+    const letters = ['A','B','C','D'];
+    const obj = {};
+    choices.forEach((v, i) => { if (i < 4) obj[letters[i]] = v; });
+    choices = obj;
+  }
+
+  S.liveAnswer = data.answer || '';
+  choicesEl.innerHTML = (choices && typeof choices === 'object')
+    ? Object.entries(choices).map(([k, v]) => `
+        <div class="quiz-choice" data-letter="${k}" style="display:flex;gap:7px;align-items:center;padding:7px 9px;border:1px solid rgba(201,168,76,.1);border-radius:6px;font-size:12px;transition:.15s;">
+          <span style="font-family:'Playfair Display',serif;color:var(--gold);">${k}</span>
+          <span style="color:var(--cream);">${escHtml(v)}</span>
+        </div>`).join('')
+    : '';
+
+  highlightLiveAnswer(S.liveAnswer);
+  if (statusEl) statusEl.textContent = S.liveAnswer ? `Bonne réponse : ${S.liveAnswer}` : 'Question en cours';
+}
+
+/* Met en surbrillance la bonne réponse dans la grille de choix admin. */
+function highlightLiveAnswer(letter) {
+  document.querySelectorAll('#quiz-q-choices .quiz-choice').forEach(el => {
+    const ok = el.dataset.letter === letter;
+    el.style.borderColor = ok ? 'var(--green)' : 'rgba(201,168,76,.1)';
+    el.style.background  = ok ? 'var(--green-dim)' : 'transparent';
+  });
 }
 
 function loadScoresHistory() {
@@ -2521,14 +2574,21 @@ function initSocket() {
   socket.on('connect', () => {
     setConnStatus(true);
     socket.emit('admin_identify', {});
+    socket.emit('get_game_state', {});   // resync phase + question si on charge en plein quiz
     loadDashboardData();
     refreshBotList();
     loadBotLogsFromServer();
   });
   socket.on('disconnect', () => setConnStatus(false));
 
-  socket.on('phase_change', ({ phase }) => updatePhaseUI(phase));
+  socket.on('phase_changed', ({ phase }) => updatePhaseUI(phase));
   socket.on('timer_update', ({ ends_at }) => startTimer(ends_at));
+
+  // État renvoyé par get_game_state (connect / reconnect) : resync phase + scores
+  socket.on('game_state', d => {
+    if (d.phase) updatePhaseUI(d.phase);
+    if (d.leaderboard) renderMiniLeaderboard(d.leaderboard);
+  });
 
   socket.on('player_update', ({ count }) => _updatePlayerCount(count));
 
@@ -2537,13 +2597,41 @@ function initSocket() {
     else fetch('/api/admin/leaderboard').then(r => r.json()).then(d => renderMiniLeaderboard(d.leaderboard || [])).catch(() => {});
   });
 
-  socket.on('question_update', ({ index, total, text }) => {
-    const qSub  = document.getElementById('quiz-q-sub');
-    const qText = document.getElementById('quiz-q-text');
-    const qNum  = document.getElementById('quiz-q-num');
-    if (qSub)  qSub.textContent  = `Question ${index + 1} / ${total}`;
-    if (qText) qText.textContent = text || '';
-    if (qNum)  qNum.textContent  = `Q.${index + 1} / ${total}`;
+  // ── Quiz en direct : suit les mêmes events que le projecteur ──────────────
+  socket.on('new_question', data => {
+    if (S.phase !== 'PAUSE') updatePhaseUI('QUIZ');
+    renderLiveQuestion(data);
+  });
+
+  socket.on('waiting_for_gg_pick', data => {
+    if (S.phase !== 'PAUSE') updatePhaseUI('QUIZ');
+    S.liveAnswer = '';
+    const qNum     = document.getElementById('quiz-q-num');
+    const qText    = document.getElementById('quiz-q-text');
+    const choices  = document.getElementById('quiz-q-choices');
+    const statusEl = document.getElementById('quiz-q-status');
+    if (qNum)     qNum.textContent  = `Q.${data.question_number ?? '—'} / ${data.total ?? '?'}`;
+    if (qText)    qText.textContent = data.gg ? `${data.gg.prenom} choisit la question…` : 'Le Gossip Girl choisit la question…';
+    if (choices)  choices.innerHTML = '';
+    if (statusEl) statusEl.textContent = 'Sélection en cours';
+  });
+
+  socket.on('question_tick', ({ remaining }) => {
+    const statusEl = document.getElementById('quiz-q-status');
+    if (statusEl && remaining != null) {
+      statusEl.textContent = `Temps restant : ${remaining}s` + (S.liveAnswer ? ` · Réponse : ${S.liveAnswer}` : '');
+    }
+  });
+
+  socket.on('question_answer', data => {
+    highlightLiveAnswer(data.answer);
+    const statusEl = document.getElementById('quiz-q-status');
+    if (statusEl) statusEl.textContent = data.explanation || `Bonne réponse : ${data.answer}`;
+  });
+
+  socket.on('quiz_ended', () => {
+    if (document.getElementById('section-scores')?.classList.contains('active')) loadScores();
+    else fetch('/api/admin/leaderboard').then(r => r.json()).then(d => renderMiniLeaderboard(d.leaderboard || [])).catch(() => {});
   });
 
   socket.on('roster_state', () => refreshRosterTaken());
