@@ -1,0 +1,39 @@
+{
+  "presets": [
+    {
+      "label": "Quiz dans 5 min",
+      "content": "Le prochain quiz commence dans 5 minutes. Verre en main, cerveau allumé. XOXO.",
+      "identity": "chuck",
+      "sound": "new_gg",
+      "pin": false
+    },
+    {
+      "label": "Last call au bar",
+      "content": "Last call. Le bar ferme dans 10 minutes — réclamez votre verre maintenant ou pleurez ensuite.",
+      "identity": "chuck",
+      "sound": "xoxo",
+      "pin": false
+    },
+    {
+      "label": "Trouvez Dan",
+      "content": "Trouvez Dan Humphrey dans la salle, dites-lui 'Lonely Boy' — 5 points bonus à la première personne.",
+      "identity": "gg",
+      "sound": "new_gg",
+      "pin": true
+    },
+    {
+      "label": "Toast de minuit",
+      "content": "Toast de minuit dans 15 minutes. Tout le monde au salon. Champagne offert par l'Empire.",
+      "identity": "chuck",
+      "sound": "new_gg",
+      "pin": true
+    },
+    {
+      "label": "Best dressed",
+      "content": "Le titre Best Dressed de la soirée sera décerné dans 30 minutes. Ajustez vos tenues — Blair surveille.",
+      "identity": "gg",
+      "sound": "xoxo",
+      "pin": false
+    }
+  ]
+}

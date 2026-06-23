@@ -265,6 +265,160 @@
       width: 100%; transition: width 10s linear;
     }
 
+    /* ── VIP BLAST overlay plein écran (déclenché par Blair) ── */
+    #vip-blast-overlay {
+      position: fixed; inset: 0; z-index: 260;
+      background: rgba(4,4,4,.97); backdrop-filter: blur(16px);
+      display: none; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    #vip-blast-overlay.show { display: flex; }
+    #vip-blast-overlay::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(201,168,76,.18) 0%, transparent 70%);
+      animation: vbGlow 5s ease forwards;
+    }
+    @keyframes vbGlow {
+      0%   { opacity: 0; transform: scale(.7); }
+      18%  { opacity: 1; transform: scale(1);  }
+      82%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .vb-content {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 48px; gap: 22px; max-width: 1100px;
+    }
+    .vb-gem {
+      font-size: clamp(110px, 14vw, 180px); line-height: 1;
+      animation: vbGemIn .7s cubic-bezier(.34,1.56,.64,1) forwards;
+      filter: drop-shadow(0 0 30px rgba(201,168,76,.4));
+    }
+    @keyframes vbGemIn {
+      0%   { transform: scale(0) rotate(-120deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0deg);    opacity: 1; }
+    }
+    .vb-eyebrow {
+      font-size: clamp(18px, 1.8vw, 26px);
+      letter-spacing: .6em; text-transform: uppercase;
+      color: var(--gold); font-weight: 600;
+      opacity: 0; animation: vbFadeUp .45s .4s ease forwards;
+    }
+    .vb-message {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 72px); font-weight: 700;
+      color: white; line-height: 1.2; max-width: 1000px;
+      opacity: 0; animation: vbFadeUp .45s .6s ease forwards;
+    }
+    .vb-sig {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(20px, 2vw, 30px); font-style: italic;
+      color: var(--gold); letter-spacing: .08em;
+      opacity: 0; animation: vbFadeUp .45s .9s ease forwards;
+    }
+    @keyframes vbFadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .vb-particles { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+    .vb-particles span {
+      position: absolute; top: 50%; left: 50%;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--gold); opacity: 0;
+      animation: vbParticle 1.6s ease-out forwards;
+    }
+    .vb-particles span:nth-child(1) { --dx:-260px; --dy:-180px; animation-delay:.05s; }
+    .vb-particles span:nth-child(2) { --dx:0;      --dy:-280px; animation-delay:.10s; width:7px; height:7px; background:var(--gold-light); }
+    .vb-particles span:nth-child(3) { --dx:260px;  --dy:-180px; animation-delay:.05s; }
+    .vb-particles span:nth-child(4) { --dx:320px;  --dy:20px;   animation-delay:.15s; width:7px; height:7px; }
+    .vb-particles span:nth-child(5) { --dx:200px;  --dy:230px;  animation-delay:.08s; }
+    .vb-particles span:nth-child(6) { --dx:-40px;  --dy:300px;  animation-delay:.12s; background:var(--gold-light); }
+    .vb-particles span:nth-child(7) { --dx:-260px; --dy:200px;  animation-delay:.06s; }
+    .vb-particles span:nth-child(8) { --dx:-320px; --dy:20px;   animation-delay:.18s; width:7px; height:7px; }
+    @keyframes vbParticle {
+      0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+      30%  { opacity: 1; }
+      100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2); }
+    }
+
+    /* ── ADMIN BLAST (Chuck Mode) — overlay plein écran multi-thème ── */
+    #admin-blast-overlay {
+      --ab-accent: var(--gold);
+      --ab-glow:   rgba(201,168,76,.18);
+      --ab-bg:     rgba(4,4,4,.97);
+      position: fixed; inset: 0; z-index: 270;
+      background: var(--ab-bg); backdrop-filter: blur(16px);
+      display: none; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    #admin-blast-overlay.show { display: flex; }
+    #admin-blast-overlay::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 55% at 50% 50%, var(--ab-glow) 0%, transparent 70%);
+      animation: abGlow 5s ease forwards;
+    }
+    @keyframes abGlow {
+      0%   { opacity: 0; transform: scale(.7); }
+      18%  { opacity: 1; transform: scale(1);  }
+      82%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    #admin-blast-overlay.theme-chuck {
+      --ab-accent: #B5252F;
+      --ab-glow:   rgba(181,37,47,.22);
+      --ab-bg:     rgba(8,3,3,.97);
+    }
+    #admin-blast-overlay.theme-gg {
+      --ab-accent: var(--gold);
+      --ab-glow:   rgba(201,168,76,.20);
+    }
+    #admin-blast-overlay.theme-custom {
+      --ab-accent: var(--cream);
+      --ab-glow:   rgba(245,240,232,.14);
+    }
+    .ab-content {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 48px; gap: 22px; max-width: 1100px;
+    }
+    .ab-icon {
+      font-size: clamp(100px, 13vw, 170px); line-height: 1;
+      animation: abIconIn .7s cubic-bezier(.34,1.56,.64,1) forwards;
+      filter: drop-shadow(0 0 28px var(--ab-glow));
+    }
+    @keyframes abIconIn {
+      0%   { transform: scale(0) rotate(-90deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0deg);   opacity: 1; }
+    }
+    .ab-eyebrow {
+      font-size: clamp(18px, 1.8vw, 26px);
+      letter-spacing: .6em; text-transform: uppercase;
+      color: var(--ab-accent); font-weight: 600;
+      opacity: 0; animation: abFadeUp .45s .4s ease forwards;
+    }
+    .ab-message {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(34px, 4.6vw, 68px); font-weight: 700;
+      color: white; line-height: 1.2; max-width: 1000px;
+      opacity: 0; animation: abFadeUp .45s .6s ease forwards;
+    }
+    .ab-image {
+      max-width: min(520px, 72vw); max-height: 38vh;
+      object-fit: cover; border-radius: 12px;
+      border: 1px solid var(--ab-accent);
+      opacity: 0; animation: abFadeUp .5s .65s ease forwards;
+    }
+    .ab-sig {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(20px, 2vw, 30px); font-style: italic;
+      color: var(--ab-accent); letter-spacing: .08em;
+      opacity: 0; animation: abFadeUp .45s .9s ease forwards;
+    }
+    @keyframes abFadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     #custom-message-overlay {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
       background: rgba(6,6,6,.95); border-top: 1px solid rgba(201,168,76,.2);
@@ -538,6 +692,31 @@
   <img  class="scoop-popup-img"   id="scoop-popup-img" src="" alt="" style="display:none"/>
   <div class="scoop-popup-xoxo">XOXO, Gossip Girl</div>
   <div class="scoop-popup-bar"><div class="scoop-popup-bar-fill" id="scoop-popup-bar"></div></div>
+</div>
+
+<!-- VIP Blast plein écran (déclenché par Blair via /api/vip/blast) -->
+<div id="vip-blast-overlay">
+  <div class="vb-particles">
+    <span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span>
+  </div>
+  <div class="vb-content">
+    <div class="vb-gem">💎</div>
+    <div class="vb-eyebrow">New VIP Blast</div>
+    <div class="vb-message" id="vip-blast-message"></div>
+    <div class="vb-sig">✦ Blair Waldorf ✦</div>
+  </div>
+</div>
+
+<!-- Admin Blast plein écran (Chuck Mode — /api/admin/blast) -->
+<div id="admin-blast-overlay">
+  <div class="ab-content">
+    <div class="ab-icon"      id="admin-blast-icon">♠</div>
+    <div class="ab-eyebrow"   id="admin-blast-eyebrow">EMPIRE INSIDER</div>
+    <div class="ab-message"   id="admin-blast-message"></div>
+    <img class="ab-image"     id="admin-blast-image" src="" alt="" style="display:none">
+    <div class="ab-sig"       id="admin-blast-sig">— Chuck Bass</div>
+  </div>
 </div>
 
 <!-- Scoop Ticker (pendant quiz) -->
@@ -960,7 +1139,7 @@ function addScoop(scoop, prepend = true) {
   div.id = `scoop-${scoop.id}`;
   div.innerHTML = `
     <div class="scoop-meta">
-      <div class="scoop-author ${scoop.is_official ? 'gg' : ''}">${scoop.is_official ? '✦ Gossip Girl' : esc(scoop.author_name)}</div>
+      <div class="scoop-author ${scoop.is_official ? 'gg' : ''}">${scoop.is_official ? '✦ ' : ''}${esc(scoop.author_name)}</div>
       <div class="scoop-time">${time}</div>
     </div>
     ${scoop.content    ? `<div class="scoop-content">${esc(scoop.content)}</div>` : ''}
@@ -981,12 +1160,11 @@ function loadScoopHistory() {
     .then(r => r.json())
     .then(data => {
       if (!data.scoops || !data.scoops.length) return;
-      // Les scoops arrivent en ordre chronologique asc → on les ajoute en queue
-      // pour que le feed affiche bien le plus récent en haut après insertion
-      data.scoops.forEach(s => addScoop(s, false));
-      // Une fois tous insérés, scroll en bas pour que le plus récent soit visible
+      // Les scoops arrivent en ordre chronologique asc. On les prepende un par un :
+      // chaque insertion place l'élément en tête → le plus récent finit tout en haut.
+      data.scoops.forEach(s => addScoop(s, true));
       const feed = document.getElementById('proj-scoop-feed');
-      if (feed) feed.scrollTop = feed.scrollHeight;
+      if (feed) feed.scrollTop = 0;
     })
     .catch(() => {});
 }
@@ -1018,7 +1196,7 @@ function _showScoopPopupNow(scoop) {
   const imgEl    = document.getElementById('scoop-popup-img');
   const barEl    = document.getElementById('scoop-popup-bar');
 
-  authorEl.textContent = scoop.is_official ? '✦ Gossip Girl' : esc(scoop.author_name);
+  authorEl.textContent = (scoop.is_official ? '✦ ' : '') + (scoop.author_name || '');
   authorEl.className   = 'scoop-popup-author' + (scoop.is_official ? ' gg' : '');
   textEl.textContent   = scoop.content || '';
 
@@ -1375,6 +1553,67 @@ socket.on('new_gg', data => {
 
 socket.on('new_scoop', scoop => {
   enqueueScoopPopup(scoop);   // Queue → popup séquentiel → puis addScoop
+});
+
+// ── VIP Blast plein écran (déclenché par Blair) ────────────────
+let _vipBlastTimer = null;
+socket.on('vip_blast', data => {
+  const overlay = document.getElementById('vip-blast-overlay');
+  const msgEl   = document.getElementById('vip-blast-message');
+  if (!overlay || !msgEl) return;
+
+  msgEl.textContent = data.content || '';
+  overlay.classList.remove('show');
+  void overlay.offsetWidth;        // force reflow → relance les animations CSS
+  overlay.classList.add('show');
+
+  clearTimeout(_vipBlastTimer);
+  _vipBlastTimer = setTimeout(() => overlay.classList.remove('show'), 5000);
+});
+
+// ── Admin Blast (Chuck Mode) — overlay plein écran multi-thème ─
+const ADMIN_BLAST_THEMES = {
+  gg:     { icon: '✦', eyebrow: 'GOSSIP GIRL DECREE', sig: 'XOXO, Gossip Girl' },
+  chuck:  { icon: '♠', eyebrow: 'EMPIRE INSIDER',     sig: '— Chuck Bass'      },
+  custom: { icon: '✧', eyebrow: 'BREAKING NEWS',      sig: ''                  },
+};
+let _adminBlastTimer = null;
+socket.on('admin_blast', data => {
+  const overlay  = document.getElementById('admin-blast-overlay');
+  const iconEl   = document.getElementById('admin-blast-icon');
+  const eyebrow  = document.getElementById('admin-blast-eyebrow');
+  const msgEl    = document.getElementById('admin-blast-message');
+  const imgEl    = document.getElementById('admin-blast-image');
+  const sigEl    = document.getElementById('admin-blast-sig');
+  if (!overlay || !msgEl) return;
+
+  const identity = (data.identity in ADMIN_BLAST_THEMES) ? data.identity : 'chuck';
+  const theme    = ADMIN_BLAST_THEMES[identity];
+
+  overlay.className = '';
+  overlay.classList.add(`theme-${identity}`);
+
+  iconEl.textContent  = theme.icon;
+  eyebrow.textContent = theme.eyebrow;
+  msgEl.textContent   = data.content || '';
+  sigEl.textContent   = identity === 'custom'
+    ? `— ${data.author_name || ''}`
+    : theme.sig;
+
+  if (data.image_path) {
+    imgEl.src = data.image_path;
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.removeAttribute('src');
+    imgEl.style.display = 'none';
+  }
+
+  overlay.classList.remove('show');
+  void overlay.offsetWidth;        // force reflow → relance les animations CSS
+  overlay.classList.add('show');
+
+  clearTimeout(_adminBlastTimer);
+  _adminBlastTimer = setTimeout(() => overlay.classList.remove('show'), 6000);
 });
 
 // ── Bandeau défilant pendant le quiz ──────────────────────────

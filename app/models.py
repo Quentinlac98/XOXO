@@ -274,7 +274,6 @@ class ReservedSlot(db.Model):
 
     id         = db.Column(db.Integer, primary_key=True)
     personnage = db.Column(db.String(64), unique=True, nullable=False)
-    held_by    = db.Column(db.String(64), nullable=True)
     session_id = db.Column(db.String(128), nullable=True)
     is_locked  = db.Column(db.Boolean, default=True)
 

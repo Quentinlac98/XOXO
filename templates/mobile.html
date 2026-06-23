@@ -273,6 +273,16 @@
       overflow: hidden;
     }
     .blast-overlay.show { opacity: 1; pointer-events: auto; }
+    /* Variations d'identité pour #admin-blast-overlay */
+    .blast-overlay.theme-chuck::before { background: radial-gradient(ellipse 65% 55% at 50% 50%, rgba(181,37,47,.20) 0%, transparent 70%); }
+    .blast-overlay.theme-chuck .blast-eyebrow,
+    .blast-overlay.theme-chuck .blast-sig { color: #D14550; }
+    .blast-overlay.theme-gg::before { background: radial-gradient(ellipse 65% 55% at 50% 50%, rgba(201,168,76,.18) 0%, transparent 70%); }
+    .blast-overlay.theme-gg .blast-eyebrow,
+    .blast-overlay.theme-gg .blast-sig { color: var(--gold); }
+    .blast-overlay.theme-custom::before { background: radial-gradient(ellipse 65% 55% at 50% 50%, rgba(245,240,232,.12) 0%, transparent 70%); }
+    .blast-overlay.theme-custom .blast-eyebrow,
+    .blast-overlay.theme-custom .blast-sig { color: var(--cream); }
     .blast-overlay::before {
       content: ''; position: absolute; inset: 0;
       background: radial-gradient(ellipse 65% 55% at 50% 50%, rgba(201,168,76,.14) 0%, transparent 70%);
@@ -541,6 +551,17 @@
       <div class="blast-eyebrow">VIP BLAST</div>
       <div class="blast-message" id="blast-message"></div>
       <div class="blast-sig">✦ Blair Waldorf ✦</div>
+    </div>
+  </div>
+
+  <!-- ADMIN BLAST OVERLAY — reçu via socket admin_blast (Chuck Mode) -->
+  <div id="admin-blast-overlay" class="blast-overlay theme-chuck">
+    <div class="blast-content">
+      <div class="blast-gem" id="ab-icon">♠</div>
+      <div class="blast-eyebrow" id="ab-eyebrow">EMPIRE INSIDER</div>
+      <div class="blast-message" id="ab-message"></div>
+      <img id="ab-image" alt="" style="display:none;max-width:80%;max-height:34vh;border-radius:10px;border:1px solid var(--gold);margin-top:6px"/>
+      <div class="blast-sig" id="ab-sig">— Chuck Bass</div>
     </div>
   </div>
 </div>
@@ -1050,16 +1071,20 @@ function removeImage() {
   document.getElementById('file-input').value = '';
 }
 
+const _renderedScoopIds = new Set();
 function addScoopToFeed(scoop) {
   const feed = document.getElementById('scoop-feed');
-  if (!feed) return;
+  if (!feed || !scoop || scoop.id == null) return;
+  if (_renderedScoopIds.has(scoop.id)) return;   // dedup : déjà rendu (live + history overlap)
+  _renderedScoopIds.add(scoop.id);
+
   const time = new Date(scoop.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
   const div  = document.createElement('div');
   div.className = 'scoop-item' + (scoop.is_official ? ' official' : '');
   div.id = `scoop-${scoop.id}`;
   div.innerHTML = `
     <div class="scoop-meta">
-      <div class="scoop-author ${scoop.is_official?'gg':''}">${scoop.is_official?'✦ Gossip Girl':esc(scoop.author_name)}</div>
+      <div class="scoop-author ${scoop.is_official?'gg':''}">${scoop.is_official?'✦ ':''}${esc(scoop.author_name)}</div>
       <div class="scoop-time">${time}</div>
     </div>
     ${scoop.content  ? `<div class="scoop-content">${esc(scoop.content)}</div>` : ''}
@@ -1137,8 +1162,20 @@ socket.on('connect', () => {
     socket.emit('reconnect_player', { token: state.playerToken });
   }
   socket.emit('get_game_state');
+  loadScoopHistory();                        // Restore feed après F5 / reconnexion
   document.getElementById('reconnect-overlay').classList.remove('show');
 });
+
+function loadScoopHistory() {
+  fetch('/api/scoops?limit=30')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.scoops || !data.scoops.length) return;
+      // Asc → on prepende un par un : le plus récent finit en tête.
+      data.scoops.forEach(s => addScoopToFeed(s));
+    })
+    .catch(() => {});
+}
 
 socket.on('disconnect', () => {
   if (state.player) {
@@ -1577,6 +1614,49 @@ function showBlastOverlay(data) {
   _blastTimer = setTimeout(() => overlay.classList.remove('show'), 4500);
 }
 socket.on('vip_blast', showBlastOverlay);
+
+/* Admin Blast (Chuck Mode) — overlay distinct, multi-thème */
+const ADMIN_BLAST_THEMES = {
+  gg:     { icon: '✦', eyebrow: 'GOSSIP GIRL DECREE', sig: 'XOXO, Gossip Girl' },
+  chuck:  { icon: '♠', eyebrow: 'EMPIRE INSIDER',     sig: '— Chuck Bass'      },
+  custom: { icon: '✧', eyebrow: 'BREAKING NEWS',      sig: ''                  },
+};
+let _adminBlastTimer = null;
+socket.on('admin_blast', data => {
+  const overlay = document.getElementById('admin-blast-overlay');
+  const iconEl  = document.getElementById('ab-icon');
+  const eyebrow = document.getElementById('ab-eyebrow');
+  const msgEl   = document.getElementById('ab-message');
+  const imgEl   = document.getElementById('ab-image');
+  const sigEl   = document.getElementById('ab-sig');
+  if (!overlay || !msgEl) return;
+
+  const identity = (data.identity in ADMIN_BLAST_THEMES) ? data.identity : 'chuck';
+  const theme    = ADMIN_BLAST_THEMES[identity];
+
+  overlay.classList.remove('theme-gg', 'theme-chuck', 'theme-custom');
+  overlay.classList.add(`theme-${identity}`);
+
+  iconEl.textContent  = theme.icon;
+  eyebrow.textContent = theme.eyebrow;
+  msgEl.textContent   = data.content || '';
+  sigEl.textContent   = identity === 'custom' ? `— ${data.author_name || ''}` : theme.sig;
+
+  if (data.image_path) {
+    imgEl.src = data.image_path;
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.removeAttribute('src');
+    imgEl.style.display = 'none';
+  }
+
+  overlay.classList.remove('show');
+  void overlay.offsetWidth;
+  overlay.classList.add('show');
+
+  clearTimeout(_adminBlastTimer);
+  _adminBlastTimer = setTimeout(() => overlay.classList.remove('show'), 5500);
+});
 
   </script>
 </body>

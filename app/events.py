@@ -64,6 +64,9 @@ def on_admin_identify(data=None):
 @socketio.on("disconnect")
 def on_disconnect():
     sid    = request.sid
+    # Purge le flag VIP Blair : la session Flask survit aux reconnexions socket,
+    # un cookie laissé sur l'appareil ne doit pas accorder l'accès /vip à l'occupant suivant.
+    session.pop("blair_vip_verified", None)
     player = Player.query.filter_by(session_id=sid).first()
     if player and not player.is_admin:
         player.is_connected = False
@@ -321,6 +324,10 @@ def on_join_player(data):
         player = existing
         player.session_id   = sid
         player.is_connected = True
+        # Reset le flag GG : un nouveau venu reprenant un personnage offline
+        # ne doit pas hériter du rôle Gossip Girl de l'ancien occupant.
+        # Le bloc Dan Humphrey plus bas le réactivera si nécessaire.
+        player.is_gg        = False
     else:
         player = Player.query.filter_by(session_id=sid).first()
         if not player:

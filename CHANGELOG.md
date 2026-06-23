@@ -6,6 +6,83 @@ XOXO, Chuck Bass.
 
 ---
 
+## [v4.8.0] — 2026-06-23
+
+Durcissement issu de l'audit `AUDIT.md` (Bug A : routage upload — Bug B : audio Chuck Mode) + nouvelle **Chuck Blast Composer** (parité admin avec le VIP Blast de Blair) + refonte UX du top bar Chuck Mode pour usage iPhone Safari. Rehydratation du feed scoop à la reconnexion sur mobile et VIP.
+
+### Added
+
+#### Chuck Blast Composer (admin)
+
+- **Section `♠ Blast`** (`templates/admin.html`) — nouvel item de sidebar dédié, panneau composer + aperçu live côte à côte. Sélecteur d'identité **Chuck Bass / Gossip Girl / Custom**, textarea 500 caractères avec compteur, upload d'image (réutilise `/api/upload-image`), dropdown son d'accompagnement (7 presets), toggle **📌 Auto-pin**, row de templates one-tap, raccourci **Ctrl+↵**.
+- **Route `POST /api/admin/blast`** (`app/main.py`) — persiste un `Scoop` (avec `is_pinned` optionnel), émet `admin_blast` (payload : `content`, `image_path`, `author_name`, `is_official`, `identity`) + `play_sound` (si choisi, whitelist serveur) + `scoop_published` pour refresh des Scoop Managers. Identité résolue serveur-autoritatif (`gg`/`chuck`/`custom`).
+- **Route `GET /api/admin/blast-presets`** — lit `blast-presets.json` à la volée (no restart).
+- **Fichier `blast-presets.json`** à la racine — 5 templates par défaut (Quiz dans 5 min · Last call · Trouvez Dan · Toast minuit · Best dressed). Path configurable via `BLAST_PRESETS_PATH`.
+- **Overlay `#admin-blast-overlay`** multi-thème (`theme-gg` or · `theme-chuck` crimson · `theme-custom` cream) sur **projector + mobile + vip**, déclenché par `socket.on('admin_blast', …)`. Icône, eyebrow et signature s'adaptent à l'identité.
+
+#### Voix off Chuck
+
+- **Panneau "Poster en tant que Chuck"** (`templates/admin.html`, section Scoops) — sous le panneau GG, publication attribuée nominativement à Chuck Bass (`is_official=False`, pas de tag ✦ doré).
+- **Route `POST /api/admin/post-as-chuck`** (`app/main.py`).
+
+#### Rehydratation du feed scoop
+
+- **`loadScoopHistory()`** (`templates/mobile.html`, `templates/vip.html`) — appelée sur `socket.on('connect')` pour reconstruire le feed après F5 / reconnexion. Set `_renderedScoopIds` pour dedup (race live ↔ historique).
+
+#### Top bar Chuck Mode (mobile iPhone Safari)
+
+- **`.cmd-anchor`** (`templates/admin.html`) — cluster gauche figé : `☰` + brand + phase pill. Jamais scrollé, toujours visible.
+- **`.cmd-scroller`** — strip droit avec `overflow-x: auto`, momentum iOS, scrollbar masquée, fade-mask CSS sur le bord droit comme indice de swipe.
+- **Popover `#phase-menu`** — le phase pill devient `<button>` avec chevron `▾` ; tap → menu de 3 items (Lobby / Libre / Pause) ancré sous le pill, phase active en or. Ferme au clic dehors / ESC.
+
+### Fixed
+
+#### Routage upload — Bug A
+
+- **Route `/uploads/<path:filename>`** (`app/main.py`) servie via `send_from_directory(UPLOAD_FOLDER)` — la route manquait totalement (l'import `send_from_directory` n'était pas utilisé), toutes les images de scoops retournaient 404 sur projector / mobile / vip. **`/static/uploads/<path>`** ajouté en alias rétro-compat pour les scoops persistés avec l'ancienne URL.
+- **`api_upload_image`** retourne désormais `/uploads/<fname>` au lieu de `/static/uploads/<fname>`.
+
+#### Audio Chuck Mode — Bug B
+
+- **`toggleProjectorSound()`** (`templates/admin.html`) — payload `{ muted: !S.soundOn }` au lieu de `{ enabled: S.soundOn }`. Le serveur lit `data.get("muted")`, le toggle ne faisait donc strictement rien : `muted` valait toujours `False` (clé absente → défaut), le projecteur recevait `muted: false` à chaque clic, et la pill admin basculait uniquement son texte local.
+- **`triggerSound()`** (`templates/admin.html`) — URL `'\api\admin\play-sound'` (backslashes interprétés comme escapes JS → `apiadminplay-sound`) corrigée en `'/api/admin/play-sound'`. Toute la sound board admin retournait 404 silencieusement.
+
+#### Sessions & sécurité
+
+- **Reset `is_gg = False`** sur réutilisation d'un profil offline (`app/events.py`, `on_join_player`) — un nouveau joueur qui se connectait sur le slot d'un ancien GG héritait du flag `is_gg=True`, contournant la branche d'attribution Dan Humphrey. **[Defect S1]**
+- **`session.pop("blair_vip_verified", None)`** sur `on_disconnect` (`app/events.py`) — le flag VIP persistait indéfiniment dans le cookie Flask, n'étant nettoyé que par `admin_logout`. Un téléphone qui changeait de joueur conservait l'accès `/vip` jusqu'à expiration cookie. **[Defect S2]**
+
+#### Rendu & ordre des scoops
+
+- **`postAsGG()`** (`templates/admin.html`) — payload `{ content: … }` au lieu de `{ message: … }`. Le serveur lit `data.get("content")`, donc le bouton "Publier en tant que GG" retournait toujours **"✗ Contenu vide."**.
+- **Labels auteur** (`templates/projector.html` × 2 sites, `mobile.html`, `vip.html` × 2 sites, `admin.html`) — `is_official ? '✦ Gossip Girl' : author_name` remplacé par `(is_official ? '✦ ' : '') + author_name`. Les blasts de Blair s'affichaient encore comme "✦ Gossip Girl" sur tous les feeds malgré l'attribution DB correcte.
+- **Feed Scoop Manager admin** (`templates/admin.html`) — `s.author / s.message / s.time / s.pinned / s.is_gg` (clés inexistantes côté `Scoop.to_dict()`) alignées sur les vraies clés `author_name / content / created_at / is_pinned / is_official`. Toutes les entrées s'affichaient "Anonyme" avec texte vide depuis la mise en place du panneau.
+- **Ordre du feed projecteur** (`templates/projector.html`, `loadScoopHistory`) — `prepend=true` au lieu de `append + scrollTop=scrollHeight` ; le plus récent finit désormais en tête de liste, conforme à l'intention documentée du commentaire.
+
+#### Affichage des images dans les Scoop Managers
+
+- **`.sm-image`** (`templates/vip.html`) — règle CSS + balise `<img class="sm-image" src="${s.image_path}">` dans `_smRender`. Les scoops avec image apparaissent maintenant dans le Scoop Manager de Blair.
+- **`.scoop-image`** (`templates/admin.html`) — même fix côté Chuck Mode, le HTML de `loadScoops` rend désormais l'image.
+
+#### VIP Blast — branding et doublon projecteur
+
+- **`api_vip_blast`** (`app/main.py`) — `author_name = "Blair Waldorf"` (au lieu de "Gossip Girl") + suppression de l'emit `new_scoop` qui doublait l'overlay VIP avec le popup projecteur générique "✦ Gossip Girl". Emit `scoop_published` ajouté pour rafraîchir les Scoop Managers.
+- **Overlay VIP Blast projecteur** (`templates/projector.html`) — `#vip-blast-overlay` dédié (💎 + "New VIP Blast" + signature `✦ Blair Waldorf ✦`) déclenché par `socket.on('vip_blast', …)`. Plus de popup générique pour les blasts.
+
+### Changed
+
+- **Scoop Manager admin** auto-refresh sur `scoop_published`, `scoop_deleted`, `scoop_pinned` (`scoop_new` conservé en back-compat).
+- **Payload `postAsGG` / `postAsChuck`** — clé harmonisée à `content` (cohérent avec `api_vip_blast` et `api_admin_blast`).
+- **`updatePhaseUI`** (`templates/admin.html`) écrit désormais dans `#phase-pill-label` au lieu de remplacer `pill.innerHTML` (préserve dot + chevron) ; marque l'élément actif dans `#phase-menu`.
+
+### Removed
+
+- **`_enter_lobby(game, *, emit_event)`** (`app/main.py`) — helper de retour LOBBY jamais appelé (toutes les transitions passent par `game.transition_to(STATE_LOBBY)` directement). Code mort.
+- **`ReservedSlot.held_by`** (`app/models.py`) — colonne jamais lue ni écrite ailleurs. Slot Blair n'utilise que `personnage` + `is_locked`.
+- **Inline `.cmd-phase-group`** + **`.cmd-spacer`** + **`.cmd-right`** (`templates/admin.html`) — remplacés par le popover phase-menu + la structure `.cmd-anchor` / `.cmd-scroller`.
+
+---
+
 ## [v4.7.0] — 2026-05-20
 
 Durcissement issu de l'audit de code v4.7, complété par deux correctifs architecturaux validés en QA (protocole `AXE 1→5`) sur la **gestion de session** et les **timers de la machine à états**. Aucune nouvelle fonctionnalité.

@@ -97,6 +97,22 @@ select option { background: var(--dark2); color: var(--cream); }
   }
   #sidebar.open { transform: translateX(0); }
   #nav-backdrop.show { display: block; }
+
+  /* ── Command bar : ancre statique à gauche, scroller swipable à droite ── */
+  #cmd-bar { padding: 0 10px; gap: 6px; }
+  .cmd-anchor { gap: 7px; padding-right: 8px; }
+  /* Fade le bord droit du scroller pour signaler le swipe horizontal */
+  .cmd-scroller {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%);
+            mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%);
+  }
+  /* Compactage : la marque et le pill prennent moins de place */
+  .cmd-brand { font-size: 14px; }
+  #phase-pill { padding: 4px 9px; font-size: 8px; letter-spacing: .15em; }
+  .cmd-btn { padding: 0 10px; font-size: 8px; letter-spacing: .12em; }
+  #cmd-player-count { padding: 4px 9px; font-size: 8px; }
+  /* Menu phase : aligné sur le pill (anchor a 10px de padding gauche) */
+  .phase-menu { left: 10px; min-width: 150px; }
 }
 
 /* ══════════════════════════════════════════════════
@@ -115,14 +131,37 @@ select option { background: var(--dark2); color: var(--cream); }
   gap: 8px;
 }
 
+/* Anchor : cluster gauche figé (hamburger + brand + phase pill) */
+.cmd-anchor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-right: 12px;
+  border-right: 1px solid var(--panel-border);
+}
+
+/* Scroller : tout le reste, scrollable horizontalement quand ça déborde */
+.cmd-scroller {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-left: 4px;
+}
+.cmd-scroller::-webkit-scrollbar { display: none; }
+
 .cmd-brand {
   font-family: 'Playfair Display', serif;
   font-size: 19px;
   font-style: italic;
   color: var(--gold);
   letter-spacing: .03em;
-  padding-right: 16px;
-  border-right: 1px solid var(--panel-border);
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -142,6 +181,53 @@ select option { background: var(--dark2); color: var(--cream); }
   color: var(--stone);
   white-space: nowrap;
   flex-shrink: 0;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .18s, border-color .18s;
+}
+#phase-pill:hover { background: rgba(255,255,255,.05); }
+.phase-chevron {
+  font-size: 10px;
+  opacity: .55;
+  margin-left: 1px;
+  transition: transform .18s;
+}
+#phase-pill[aria-expanded="true"] .phase-chevron { transform: rotate(180deg); opacity: .9; }
+
+/* Popover : menu Phase ancré sous le pill */
+.phase-menu {
+  position: absolute;
+  top: calc(var(--cmd-h) - 6px);
+  left: 16px;
+  z-index: 105;
+  display: none;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 6px;
+  background: var(--dark);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.55);
+}
+.phase-menu.show { display: flex; }
+.pm-item {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--cream);
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-align: left;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.pm-item:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
+.pm-item.active {
+  color: var(--gold);
+  border-color: rgba(201,168,76,.3);
+  background: rgba(201,168,76,.06);
 }
 #phase-pill .dot {
   width: 7px; height: 7px;
@@ -163,9 +249,6 @@ select option { background: var(--dark2); color: var(--cream); }
 }
 
 .cmd-sep { width: 1px; height: 22px; background: var(--panel-border); flex-shrink: 0; }
-.cmd-phase-group { display: flex; gap: 5px; flex-shrink: 0; }
-.cmd-spacer { flex: 1; min-width: 0; }
-.cmd-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 .cmd-btn {
   height: 32px;
@@ -665,7 +748,132 @@ tr:hover td { background: rgba(255,255,255,.018); }
   word-break: break-word;
 }
 .scoop-time { font-size: 9px; color: var(--stone2); margin-left: 8px; }
+.scoop-image {
+  display: block;
+  max-width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(201,168,76,.18);
+  margin-top: 8px;
+  background: rgba(0,0,0,.2);
+}
 .scoop-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+/* ── Blast Composer ─────────────────────────────── */
+.bc-label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-bottom: 6px;
+}
+.bc-identity-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.bc-id-btn {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--stone);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+  font-family: 'Montserrat', sans-serif;
+}
+.bc-id-btn:hover { border-color: rgba(201,168,76,.3); color: var(--cream); }
+.bc-id-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201,168,76,.08);
+}
+.bc-image-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.bc-pin-toggle {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--stone);
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,.03);
+  user-select: none;
+}
+.bc-pin-toggle input { accent-color: var(--gold); }
+.bc-pin-toggle:has(input:checked) { color: var(--gold); border-color: rgba(201,168,76,.4); background: rgba(201,168,76,.06); }
+.bc-presets-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.bc-preset-btn {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--cream);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  font-family: 'Montserrat', sans-serif;
+}
+.bc-preset-btn:hover { border-color: rgba(201,168,76,.35); background: rgba(201,168,76,.06); }
+
+/* Aperçu : miniature stylisée du rendu projecteur */
+.bc-preview {
+  --bcp-accent: var(--gold);
+  --bcp-glow:   rgba(201,168,76,.14);
+  --bcp-bg:     rgba(6,6,6,.92);
+  position: relative;
+  border-radius: 14px;
+  background: var(--bcp-bg);
+  border: 1px solid rgba(201,168,76,.18);
+  padding: 28px 24px;
+  min-height: 320px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: 12px;
+  overflow: hidden;
+}
+.bc-preview::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 65% 55% at 50% 50%, var(--bcp-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+.bc-preview.theme-chuck  { --bcp-accent: #D14550; --bcp-glow: rgba(181,37,47,.18); --bcp-bg: rgba(10,4,4,.94); }
+.bc-preview.theme-gg     { --bcp-accent: var(--gold); --bcp-glow: rgba(201,168,76,.18); }
+.bc-preview.theme-custom { --bcp-accent: var(--cream); --bcp-glow: rgba(245,240,232,.12); }
+.bc-preview > * { position: relative; z-index: 1; }
+.bc-preview-icon {
+  font-size: 54px; line-height: 1;
+  filter: drop-shadow(0 0 14px var(--bcp-glow));
+}
+.bc-preview-eyebrow {
+  font-size: 9px; letter-spacing: .45em; text-transform: uppercase;
+  color: var(--bcp-accent); font-weight: 600;
+}
+.bc-preview-message {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 700;
+  color: white; line-height: 1.25;
+  max-width: 100%;
+  word-break: break-word;
+}
+.bc-preview-image {
+  max-width: 80%; max-height: 140px;
+  object-fit: cover; border-radius: 8px;
+  border: 1px solid var(--bcp-accent);
+}
+.bc-preview-sig {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px; font-style: italic;
+  color: var(--bcp-accent); letter-spacing: .06em;
+}
 
 /* ── Log rows ───────────────────────────────────── */
 .log-row {
@@ -1012,30 +1220,35 @@ tr:hover td { background: rgba(255,255,255,.018); }
      ══════════════════════════════════════════════ -->
 <header id="cmd-bar">
 
-  <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
-  <span class="cmd-brand">Chuck Mode</span>
-
-  <div id="phase-pill" class="phase-lobby">
-    <span class="dot"></span>Lobby
+  <!-- ── Anchor : toujours visible, jamais scrollé ─────────────── -->
+  <div class="cmd-anchor">
+    <button id="nav-toggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+    <span class="cmd-brand">Chuck Mode</span>
+    <button id="phase-pill" type="button"
+            class="phase-lobby"
+            onclick="togglePhaseMenu(event)"
+            aria-haspopup="menu" aria-expanded="false" aria-controls="phase-menu">
+      <span class="dot"></span>
+      <span id="phase-pill-label">Lobby</span>
+      <span class="phase-chevron">▾</span>
+    </button>
   </div>
 
-  <div class="cmd-sep"></div>
-
-  <div class="cmd-phase-group">
-    <button class="cmd-btn" onclick="setPhase('LOBBY')">🏠 Lobby</button>
-    <button class="cmd-btn" onclick="setPhase('LIBRE')">🕊 Libre</button>
-    <button class="cmd-btn" onclick="setPhase('PAUSE')">⏸ Pause</button>
-  </div>
-
-  <div class="cmd-spacer"></div>
-
-  <div class="cmd-right">
+  <!-- ── Scroller : actions secondaires, swipe horizontal sur mobile ── -->
+  <div class="cmd-scroller">
     <span id="cmd-player-count">👥 0 invités</span>
     <div class="cmd-sep"></div>
     <button class="cmd-btn" id="cmd-sound-btn" onclick="toggleProjectorSound()">🔇 Son OFF</button>
     <button class="cmd-btn" onclick="adminAction('/api/admin/refresh-clients')">↻ Mobiles</button>
     <button class="cmd-btn" onclick="adminAction('/api/admin/projector-refresh')">↻ Projecteur</button>
     <button class="cmd-btn gold" onclick="window.open('/projector','_blank')">↗ Ouvrir Projecteur</button>
+  </div>
+
+  <!-- ── Popover Phase (ancré sous le pill) ────────────────────── -->
+  <div id="phase-menu" class="phase-menu" role="menu" aria-labelledby="phase-pill">
+    <button type="button" class="pm-item" data-phase="LOBBY" role="menuitem" onclick="pickPhase('LOBBY')">🏠 Lobby</button>
+    <button type="button" class="pm-item" data-phase="LIBRE" role="menuitem" onclick="pickPhase('LIBRE')">🕊 Libre</button>
+    <button type="button" class="pm-item" data-phase="PAUSE" role="menuitem" onclick="pickPhase('PAUSE')">⏸ Pause</button>
   </div>
 
 </header>
@@ -1071,6 +1284,9 @@ tr:hover td { background: rgba(255,255,255,.018); }
       <button class="sidebar-item" data-sec="scoops" onclick="showSection('scoops',this)">
         <span class="icon">📸</span> Scoops
         <span class="sidebar-badge" id="badge-scoops">!</span>
+      </button>
+      <button class="sidebar-item" data-sec="blast" onclick="showSection('blast',this)">
+        <span class="icon">♠</span> Blast
       </button>
 
       <div class="sidebar-section">Contenu</div>
@@ -1304,6 +1520,13 @@ tr:hover td { background: rgba(255,255,255,.018); }
                       placeholder="Your message, darling… XOXO&#10;(Ctrl+↵ pour envoyer)" rows="4"></textarea>
             <button class="btn btn-gold" onclick="postAsGG()">✦ Publier en tant que GG</button>
           </div>
+          <div class="panel">
+            <div class="panel-title">Poster en tant que Chuck</div>
+            <div class="panel-sub">Voix off · Chuck Bass · publication non-officielle</div>
+            <textarea class="input-field" id="chuck-message-input"
+                      placeholder="I'm Chuck Bass.&#10;(Ctrl+↵ pour envoyer)" rows="4"></textarea>
+            <button class="btn btn-gold" onclick="postAsChuck()">♠ Publier en tant que Chuck</button>
+          </div>
         </div>
 
         <div class="panel">
@@ -1319,6 +1542,99 @@ tr:hover td { background: rgba(255,255,255,.018); }
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ╔══════════════════════════════╗
+         ║  BLAST                       ║
+         ╚══════════════════════════════╝ -->
+    <div id="section-blast" class="section" data-screen-label="04 Blast">
+      <div class="page-title">Blast Composer</div>
+      <div class="page-sub">Diffusion plein écran · projecteur + mobiles + VIP</div>
+
+      <div class="panel-grid">
+        <!-- ── Colonne gauche : Composer ─────────────────────── -->
+        <div class="panel">
+          <div class="panel-title">Composer</div>
+          <div class="panel-sub">Identité, message, image, son · diffusé instantanément</div>
+
+          <!-- Identité -->
+          <label class="bc-label">Identité</label>
+          <div class="bc-identity-row">
+            <button type="button" class="bc-id-btn active" data-identity="chuck" onclick="setBlastIdentity('chuck')">♠ Chuck Bass</button>
+            <button type="button" class="bc-id-btn"        data-identity="gg"    onclick="setBlastIdentity('gg')">✦ Gossip Girl</button>
+            <button type="button" class="bc-id-btn"        data-identity="custom" onclick="setBlastIdentity('custom')">✧ Custom</button>
+          </div>
+          <input type="text" id="bc-custom-name" class="input-field" placeholder="Nom personnalisé (ex: Serena, Lily…)" maxlength="32" style="display:none;margin-top:6px;" oninput="updateBlastPreview()"/>
+
+          <!-- Message -->
+          <label class="bc-label" style="margin-top:14px;">Message</label>
+          <textarea id="bc-content" class="input-field" rows="4" maxlength="500"
+                    placeholder="Le message diffusé en plein écran… (Ctrl+↵ pour envoyer)"
+                    oninput="updateBlastPreview()"></textarea>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--stone);margin-top:4px;">
+            <span id="bc-char-count">0 / 500</span>
+            <span>Astuce : court &amp; punchy</span>
+          </div>
+
+          <!-- Image -->
+          <label class="bc-label" style="margin-top:14px;">Image (optionnel)</label>
+          <div class="bc-image-row">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('bc-file').click()">📎 Joindre une image</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="bc-image-clear" onclick="clearBlastImage()" style="display:none;">✕ Retirer</button>
+            <span id="bc-image-status" style="font-size:10px;color:var(--stone);">Aucune image</span>
+            <input type="file" id="bc-file" accept="image/*" style="display:none;" onchange="onBlastImageSelected(event)"/>
+          </div>
+
+          <!-- Son + Pin -->
+          <div style="display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end;margin-top:14px;">
+            <div>
+              <label class="bc-label">Son d'accompagnement</label>
+              <select id="bc-sound" class="input-field" onchange="updateBlastPreview()">
+                <option value="new_gg">👑 New GG (6.1s) · défaut</option>
+                <option value="xoxo">💋 XOXO (5.4s)</option>
+                <option value="quiz_start">⚡ Quiz Start (22s)</option>
+                <option value="correct">✓ Correct (2.7s)</option>
+                <option value="countdown">⏱ Countdown (2.3s)</option>
+                <option value="phase2_start">🖤 Mode Libre (15s)</option>
+                <option value="">🔇 Aucun</option>
+              </select>
+            </div>
+            <label class="bc-pin-toggle">
+              <input type="checkbox" id="bc-pin"/>
+              <span>📌 Auto-pin</span>
+            </label>
+          </div>
+
+          <!-- Presets -->
+          <label class="bc-label" style="margin-top:14px;">Templates one-tap</label>
+          <div id="bc-presets" class="bc-presets-row">
+            <div style="font-size:10px;color:var(--stone);">Chargement…</div>
+          </div>
+
+          <!-- Send -->
+          <button class="btn btn-gold" id="bc-send" onclick="sendBlast()" style="margin-top:18px;width:100%;font-size:13px;">
+            ♠ Envoyer le Blast
+          </button>
+        </div>
+
+        <!-- ── Colonne droite : Preview ──────────────────────── -->
+        <div class="panel">
+          <div class="panel-title">Aperçu projecteur</div>
+          <div class="panel-sub">Rendu live · vérifie avant de diffuser</div>
+
+          <div class="bc-preview theme-chuck" id="bc-preview">
+            <div class="bc-preview-icon" id="bc-preview-icon">♠</div>
+            <div class="bc-preview-eyebrow" id="bc-preview-eyebrow">EMPIRE INSIDER</div>
+            <div class="bc-preview-message" id="bc-preview-message">— Ton message ici —</div>
+            <img class="bc-preview-image" id="bc-preview-image" alt="" style="display:none;"/>
+            <div class="bc-preview-sig" id="bc-preview-sig">— Chuck Bass</div>
+          </div>
+
+          <div style="margin-top:14px;font-size:10px;color:var(--stone);line-height:1.5;">
+            <strong style="color:var(--cream);">Diffusion :</strong> projecteur (5s plein écran) · mobiles &amp; VIP (overlay) · feed Scoops (entrée permanente).
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1791,6 +2107,7 @@ function showSection(name, btn) {
     players: () => { loadPlayers(); loadRoster(); },
     scoops:  loadScoops,
     scores:  loadScores,
+    blast:   () => { loadBlastPresets(); updateBlastPreview(); },
     debug:   () => { refreshBotList(); loadLogs(); }
   };
   if (loaders[name]) loaders[name]();
@@ -1825,7 +2142,15 @@ function updatePhaseUI(phase) {
   };
   const { label, cls, stat } = map[phase] || { label: phase, cls: '', stat: phase };
 
-  if (pill) { pill.className = cls; pill.innerHTML = `<span class="dot"></span>${label}`; }
+  if (pill) {
+    pill.className = cls;
+    const lbl = document.getElementById('phase-pill-label');
+    if (lbl) lbl.textContent = label;
+  }
+  // Marque l'élément actif dans le popover (LOBBY / LIBRE / PAUSE) si présent
+  document.querySelectorAll('#phase-menu .pm-item').forEach(it => {
+    it.classList.toggle('active', it.dataset.phase === phase);
+  });
   if (statEl) { statEl.textContent = stat; statEl.className = 'status-val sm'; }
   if (statCardEl) { statCardEl.textContent = stat; }
   if (subEl) subEl.textContent = (phase === 'QUIZ' || phase === 'PAUSE')
@@ -1861,6 +2186,27 @@ function updatePauseBtn(phase) {
 
 function setPhase(phase) {
   adminAction('/api/admin/phase', { phase }).then(r => r && updatePhaseUI(phase));
+}
+
+/* ── Phase menu (popover sous le pill) ───────────────────────── */
+function togglePhaseMenu(evt) {
+  if (evt) evt.stopPropagation();
+  const menu = document.getElementById('phase-menu');
+  const pill = document.getElementById('phase-pill');
+  if (!menu || !pill) return;
+  const open = !menu.classList.contains('show');
+  menu.classList.toggle('show', open);
+  pill.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function closePhaseMenu() {
+  const menu = document.getElementById('phase-menu');
+  const pill = document.getElementById('phase-pill');
+  if (menu) menu.classList.remove('show');
+  if (pill) pill.setAttribute('aria-expanded', 'false');
+}
+function pickPhase(phase) {
+  closePhaseMenu();
+  setPhase(phase);
 }
 
 /* ══════════════════════════════════════════════════
@@ -2001,7 +2347,7 @@ function enableStopSound(on) {
 
 function toggleProjectorSound() {
   S.soundOn = !S.soundOn;
-  adminAction('/api/admin/projector-sound', { enabled: S.soundOn });
+  adminAction('/api/admin/projector-sound', { muted: !S.soundOn });
   const btn = document.getElementById('cmd-sound-btn');
   if (btn) btn.textContent = S.soundOn ? '🔊 Son ON' : '🔇 Son OFF';
 }
@@ -2229,28 +2575,183 @@ async function loadScoops() {
     list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l'instant.</div>`;
     return;
   }
-  list.innerHTML = scoops.map(s => `
-    <div class="scoop-row ${s.is_gg ? 'official' : ''}">
+  list.innerHTML = scoops.map(s => {
+    const author = `${s.is_official ? '✦ ' : ''}${s.author_name || 'Anonyme'}`;
+    const time   = s.created_at ? new Date(s.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+    return `
+    <div class="scoop-row ${s.is_official ? 'official' : ''}">
       <div class="scoop-info">
-        <div class="scoop-author-label ${s.is_gg ? 'gg' : ''}">${escHtml(s.author || 'Anonyme')}<span class="scoop-time">${escHtml(s.time || '')}</span>${s.pinned ? ' · 📌' : ''}</div>
-        <div class="scoop-text">${escHtml(s.message || '')}</div>
+        <div class="scoop-author-label ${s.is_official ? 'gg' : ''}">${escHtml(author)}<span class="scoop-time">${escHtml(time)}</span>${s.is_pinned ? ' · 📌' : ''}</div>
+        ${s.content ? `<div class="scoop-text">${escHtml(s.content)}</div>` : ''}
+        ${s.image_path ? `<img class="scoop-image" src="${escHtml(s.image_path)}" alt="" loading="lazy">` : ''}
         <div class="scoop-actions">
-          <button class="btn btn-ghost btn-xs" onclick="pinScoop(${s.id})">📌 Épingler</button>
+          <button class="btn btn-ghost btn-xs" onclick="pinScoop(${s.id})">${s.is_pinned ? '📌 Désépingler' : '📌 Épingler'}</button>
           <button class="btn btn-danger btn-xs" onclick="deleteScoop(${s.id})">🗑 Supprimer</button>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function postAsGG() {
   const inp = document.getElementById('gg-message-input');
   if (!inp?.value.trim()) return;
-  adminAction('/api/admin/post-as-gg', { message: inp.value.trim() }).then(r => {
+  adminAction('/api/admin/post-as-gg', { content: inp.value.trim() }).then(r => {
+    if (r) { inp.value = ''; loadScoops(); }
+  });
+}
+function postAsChuck() {
+  const inp = document.getElementById('chuck-message-input');
+  if (!inp?.value.trim()) return;
+  adminAction('/api/admin/post-as-chuck', { content: inp.value.trim() }).then(r => {
     if (r) { inp.value = ''; loadScoops(); }
   });
 }
 function deleteScoop(id) { adminAction('/api/admin/delete-scoop', { scoop_id: id }).then(r => r && loadScoops()); }
 function pinScoop(id)    { adminAction('/api/admin/pin-scoop',    { scoop_id: id }).then(r => r && loadScoops()); }
+
+/* ══════════════════════════════════════════════════
+   BLAST COMPOSER (Chuck Mode)
+   ══════════════════════════════════════════════════ */
+const BLAST_THEMES = {
+  gg:     { icon: '✦', eyebrow: 'GOSSIP GIRL DECREE', sig: 'XOXO, Gossip Girl' },
+  chuck:  { icon: '♠', eyebrow: 'EMPIRE INSIDER',     sig: '— Chuck Bass'      },
+  custom: { icon: '✧', eyebrow: 'BREAKING NEWS',      sig: ''                  },
+};
+const blastState = {
+  identity:   'chuck',
+  customName: '',
+  content:    '',
+  imagePath:  null,
+  sound:      'new_gg',
+  pin:        false,
+};
+
+function setBlastIdentity(id) {
+  if (!(id in BLAST_THEMES)) return;
+  blastState.identity = id;
+  document.querySelectorAll('.bc-id-btn').forEach(b => b.classList.toggle('active', b.dataset.identity === id));
+  const customInp = document.getElementById('bc-custom-name');
+  if (customInp) customInp.style.display = (id === 'custom') ? 'block' : 'none';
+  updateBlastPreview();
+}
+
+function updateBlastPreview() {
+  // Lit l'état depuis le DOM (source de vérité pendant l'édition)
+  blastState.content    = (document.getElementById('bc-content')?.value || '');
+  blastState.customName = (document.getElementById('bc-custom-name')?.value || '').trim();
+  blastState.sound      = document.getElementById('bc-sound')?.value || '';
+
+  const preview = document.getElementById('bc-preview');
+  const theme   = BLAST_THEMES[blastState.identity] || BLAST_THEMES.chuck;
+
+  preview.classList.remove('theme-gg', 'theme-chuck', 'theme-custom');
+  preview.classList.add(`theme-${blastState.identity}`);
+
+  document.getElementById('bc-preview-icon').textContent    = theme.icon;
+  document.getElementById('bc-preview-eyebrow').textContent = theme.eyebrow;
+  document.getElementById('bc-preview-message').textContent = blastState.content.trim() || '— Ton message ici —';
+  document.getElementById('bc-preview-sig').textContent     = blastState.identity === 'custom'
+    ? (blastState.customName ? `— ${blastState.customName}` : '— …')
+    : theme.sig;
+
+  const imgEl = document.getElementById('bc-preview-image');
+  if (blastState.imagePath) { imgEl.src = blastState.imagePath; imgEl.style.display = 'block'; }
+  else                      { imgEl.removeAttribute('src');     imgEl.style.display = 'none';  }
+
+  // Compteur de caractères
+  const cc = document.getElementById('bc-char-count');
+  if (cc) cc.textContent = `${blastState.content.length} / 500`;
+}
+
+async function onBlastImageSelected(evt) {
+  const file = evt.target.files?.[0];
+  if (!file) return;
+  const status = document.getElementById('bc-image-status');
+  if (status) status.textContent = 'Envoi…';
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    const r = await fetch('/api/upload-image', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.image_path) {
+      blastState.imagePath = d.image_path;
+      if (status) status.textContent = file.name;
+      document.getElementById('bc-image-clear').style.display = 'inline-block';
+    } else {
+      if (status) status.textContent = d.error || 'Échec upload.';
+    }
+  } catch {
+    if (status) status.textContent = 'Erreur réseau.';
+  }
+  evt.target.value = '';   // permet de re-choisir le même fichier
+  updateBlastPreview();
+}
+
+function clearBlastImage() {
+  blastState.imagePath = null;
+  document.getElementById('bc-image-status').textContent = 'Aucune image';
+  document.getElementById('bc-image-clear').style.display = 'none';
+  updateBlastPreview();
+}
+
+async function loadBlastPresets() {
+  const wrap = document.getElementById('bc-presets');
+  if (!wrap) return;
+  try {
+    const r = await fetch('/api/admin/blast-presets');
+    const d = await r.json();
+    const presets = d.presets || [];
+    if (!presets.length) {
+      wrap.innerHTML = '<div style="font-size:10px;color:var(--stone);">Aucun preset (édite blast-presets.json).</div>';
+      return;
+    }
+    wrap.innerHTML = presets.map((p, i) =>
+      `<button type="button" class="bc-preset-btn" onclick="applyBlastPreset(${i})">${escHtml(p.label || 'Preset')}</button>`
+    ).join('');
+    wrap._presets = presets;
+  } catch {
+    wrap.innerHTML = '<div style="font-size:10px;color:var(--red);">Erreur chargement presets.</div>';
+  }
+}
+
+function applyBlastPreset(idx) {
+  const p = document.getElementById('bc-presets')?._presets?.[idx];
+  if (!p) return;
+  if (p.content)             document.getElementById('bc-content').value = p.content;
+  if (p.sound !== undefined) document.getElementById('bc-sound').value   = p.sound || '';
+  if (typeof p.pin === 'boolean') document.getElementById('bc-pin').checked = p.pin;
+  if (p.identity && p.identity in BLAST_THEMES) setBlastIdentity(p.identity);
+  updateBlastPreview();
+}
+
+async function sendBlast() {
+  updateBlastPreview();
+  blastState.pin = !!document.getElementById('bc-pin')?.checked;
+  const content = blastState.content.trim();
+  if (!content && !blastState.imagePath) { showToast('✗ Blast vide.', 'error'); return; }
+
+  const btn = document.getElementById('bc-send');
+  if (btn) { btn.disabled = true; btn.textContent = '… Envoi en cours'; }
+
+  const payload = {
+    content:     content,
+    identity:    blastState.identity,
+    custom_name: blastState.customName,
+    image_path:  blastState.imagePath,
+    sound:       blastState.sound || null,
+    pin:         blastState.pin,
+  };
+  const result = await adminAction('/api/admin/blast', payload);
+  if (result && result.ok !== false) {
+    document.getElementById('bc-content').value = '';
+    clearBlastImage();
+    document.getElementById('bc-pin').checked = false;
+    blastState.pin = false;
+    updateBlastPreview();
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '♠ Envoyer le Blast'; }
+}
 
 /* ══════════════════════════════════════════════════
    SCORES
@@ -2645,10 +3146,14 @@ function initSocket() {
   socket.on('roster_state', () => refreshRosterTaken());
 
   socket.on('bot_log', data => { if (data?.line) appendBotLog(data.line); });
-  socket.on('scoop_new', () => {
+  const _onNewScoopSignal = () => {
     const b = document.getElementById('badge-scoops'); if (b) b.classList.add('show');
     if (document.getElementById('section-scoops')?.classList.contains('active')) loadScoops();
-  });
+  };
+  socket.on('scoop_new',       _onNewScoopSignal);
+  socket.on('scoop_published', _onNewScoopSignal);
+  socket.on('scoop_deleted',   () => { if (document.getElementById('section-scoops')?.classList.contains('active')) loadScoops(); });
+  socket.on('scoop_pinned',    () => { if (document.getElementById('section-scoops')?.classList.contains('active')) loadScoops(); });
 
   setInterval(() => {
     if (document.getElementById('section-debug')?.classList.contains('active')) refreshBotList();
@@ -2668,6 +3173,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.sbd-hdr')?.addEventListener('click', toggleSoundBoard);
   document.getElementById('custom-msg-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') sendCustomMessage(); });
   document.getElementById('gg-message-input')?.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) postAsGG(); });
+  document.getElementById('chuck-message-input')?.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) postAsChuck(); });
+  document.getElementById('bc-content')?.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) sendBlast(); });
+  // Phase menu : ferme au clic en dehors / touche ESC
+  document.addEventListener('click', e => {
+    const menu = document.getElementById('phase-menu');
+    const pill = document.getElementById('phase-pill');
+    if (!menu?.classList.contains('show')) return;
+    if (menu.contains(e.target) || pill?.contains(e.target)) return;
+    closePhaseMenu();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePhaseMenu(); });
   document.getElementById('danger-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeDangerZone(); });
 });
 </script>

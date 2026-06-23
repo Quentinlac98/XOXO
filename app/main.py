@@ -52,10 +52,11 @@ def create_app():
     def abs_path(p):
         return os.path.join(BASE_DIR, p) if not os.path.isabs(p) else p
 
-    db_path         = abs_path(os.getenv("DB_PATH",         "data/db/gossip.db"))
-    upload_path     = abs_path(os.getenv("UPLOAD_PATH",     "data/uploads"))
-    questions_path  = abs_path(os.getenv("QUESTIONS_PATH",  "questions/gossipgirl_qcm.jsonl"))
-    characters_path = abs_path(os.getenv("CHARACTERS_PATH", "characters.json"))
+    db_path         = abs_path(os.getenv("DB_PATH",             "data/db/gossip.db"))
+    upload_path     = abs_path(os.getenv("UPLOAD_PATH",         "data/uploads"))
+    questions_path  = abs_path(os.getenv("QUESTIONS_PATH",      "questions/gossipgirl_qcm.jsonl"))
+    characters_path = abs_path(os.getenv("CHARACTERS_PATH",     "characters.json"))
+    presets_path    = abs_path(os.getenv("BLAST_PRESETS_PATH",  "blast-presets.json"))
 
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     os.makedirs(upload_path, exist_ok=True)
@@ -67,6 +68,7 @@ def create_app():
     app.config["UPLOAD_FOLDER"]               = upload_path
     app.config["QUESTIONS_PATH"]              = questions_path
     app.config["CHARACTERS_PATH"]             = characters_path
+    app.config["BLAST_PRESETS_PATH"]          = presets_path
     app.config["QUESTIONS_PER_SESSION"]       = int(os.getenv("QUESTIONS_PER_SESSION", 10))
     app.config["LIBRE_DURATION_MINUTES"]      = int(os.getenv("PHASE2_DURATION_MINUTES", 15))
     app.config["POST_DELAY"]                  = int(os.getenv("POST_DELAY_SECONDS", 3))
@@ -250,16 +252,19 @@ def api_vip_blast():
 
     scoop = Scoop(
         player_id   = None,
-        author_name = "Gossip Girl",
+        author_name = "Blair Waldorf",
         is_official = True,
         content     = content,
     )
     db.session.add(scoop)
     db.session.commit()
 
-    socketio.emit("new_scoop",   scoop.to_dict())
-    socketio.emit("play_sound",  {"sound": "new_gg"})
-    socketio.emit("vip_blast",   {"content": content, "scoop_id": scoop.id})
+    # Le VIP Blast a son propre overlay plein écran (mobile / vip / projector)
+    # déclenché par `vip_blast`. On n'émet PAS `new_scoop` pour éviter le
+    # doublon "Nouveau Scoop ✦ Gossip Girl" sur le projecteur.
+    socketio.emit("play_sound",      {"sound": "new_gg"})
+    socketio.emit("vip_blast",       {"content": content, "scoop_id": scoop.id})
+    socketio.emit("scoop_published", scoop.to_dict())   # refresh Scoop Managers
     log_activity("vip_blast", "Blair VIP", content[:80])
     return jsonify({"ok": True, "scoop_id": scoop.id})
 
@@ -734,6 +739,122 @@ def api_post_as_gg():
     return jsonify({"ok": True, "message": "Scoop GG publié. XOXO."})
 
 
+@app.route("/api/admin/post-as-chuck", methods=["POST"])
+@admin_required
+def api_post_as_chuck():
+    """Permet à l'admin de publier un scoop attribué nominativement à Chuck Bass
+    (voix off, non-officielle — distinct du canal Gossip Girl)."""
+    data    = request.json or {}
+    content = (data.get("content", "") or "").strip()[:500]
+    if not content:
+        return jsonify({"ok": False, "error": "Contenu vide."})
+
+    scoop = Scoop(
+        player_id   = None,
+        author_name = "Chuck Bass",
+        is_official = False,
+        content     = content,
+        image_path  = data.get("image_path", None),
+    )
+    db.session.add(scoop)
+    db.session.commit()
+
+    socketio.emit("admin_new_scoop", {
+        "scoop_id":    scoop.id,
+        "author_name": "Chuck Bass",
+        "content":     content[:80],
+        "state":       get_or_create_game_session().current_state,
+    })
+    _broadcast_scoop(scoop)
+    log_activity("chuck_scoop", "Chuck Bass", content[:60])
+    return jsonify({"ok": True, "message": "Scoop Chuck publié."})
+
+
+# ============================================================
+#  CHUCK BLAST — composer plein écran (parité avec VIP Blast)
+# ============================================================
+
+# Sons autorisés pour un blast (whitelist côté serveur, défense en profondeur).
+_BLAST_ALLOWED_SOUNDS = {"xoxo", "quiz_start", "correct", "new_gg", "phase2_start", "countdown"}
+
+# Identités autorisées : fixe le mapping author_name / is_official côté serveur
+# pour qu'un client ne puisse pas usurper "Gossip Girl" sans passer par "gg".
+_BLAST_IDENTITIES = {
+    "gg":     {"author_name": "Gossip Girl", "is_official": True},
+    "chuck":  {"author_name": "Chuck Bass",  "is_official": False},
+    # "custom" est résolu dynamiquement (voir api_admin_blast)
+}
+
+
+@app.route("/api/admin/blast-presets")
+@admin_required
+def api_blast_presets():
+    """Retourne les templates one-tap du composer (éditable via blast-presets.json)."""
+    try:
+        with open(app.config["BLAST_PRESETS_PATH"], "r", encoding="utf-8") as f:
+            return jsonify(json.load(f))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return jsonify({"presets": []})
+
+
+@app.route("/api/admin/blast", methods=["POST"])
+@admin_required
+def api_admin_blast():
+    """Chuck Mode Blast : overlay plein écran sur tous les clients, persisté en Scoop."""
+    data        = request.json or {}
+    content     = (data.get("content", "") or "").strip()[:500]
+    identity    = data.get("identity", "chuck")
+    custom_name = (data.get("custom_name", "") or "").strip()[:32]
+    image_path  = data.get("image_path") or None
+    sound       = data.get("sound") or None
+    pin         = bool(data.get("pin", False))
+
+    if not content and not image_path:
+        return jsonify({"ok": False, "error": "Blast vide. Manhattan mérite mieux."})
+
+    # Résolution d'identité (serveur autoritatif)
+    if identity == "custom" and custom_name:
+        author_name = custom_name
+        is_official = False
+    else:
+        meta        = _BLAST_IDENTITIES.get(identity, _BLAST_IDENTITIES["chuck"])
+        author_name = meta["author_name"]
+        is_official = meta["is_official"]
+        identity    = identity if identity in _BLAST_IDENTITIES else "chuck"
+
+    # Validation du son (whitelist)
+    if sound not in _BLAST_ALLOWED_SOUNDS:
+        sound = None
+
+    scoop = Scoop(
+        player_id   = None,
+        author_name = author_name,
+        is_official = is_official,
+        content     = content,
+        image_path  = image_path,
+        is_pinned   = pin,
+    )
+    db.session.add(scoop)
+    db.session.commit()
+
+    payload = {
+        "scoop_id":    scoop.id,
+        "content":     content,
+        "image_path":  image_path,
+        "author_name": author_name,
+        "is_official": is_official,
+        "identity":    identity,           # 'gg' | 'chuck' | 'custom' → thème du overlay
+    }
+    socketio.emit("admin_blast", payload)
+    if sound:
+        socketio.emit("play_sound", {"sound": sound})
+    socketio.emit("scoop_published", scoop.to_dict())
+
+    log_activity("admin_blast", "Chuck Bass",
+                 f"[{identity}] {('📌 ' if pin else '')}{content[:60]}")
+    return jsonify({"ok": True, "scoop_id": scoop.id})
+
+
 @app.route("/api/admin/custom-message", methods=["POST"])
 @admin_required
 def api_custom_message():
@@ -1100,7 +1221,18 @@ def api_upload_image():
     fname = f"{secrets.token_hex(8)}{ext}"
     fpath = os.path.join(app.config["UPLOAD_FOLDER"], fname)
     f.save(fpath)
-    return jsonify({"image_path": f"/static/uploads/{fname}"})
+    return jsonify({"image_path": f"/uploads/{fname}"})
+
+
+@app.route("/uploads/<path:filename>")
+def serve_upload(filename):
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+
+@app.route("/static/uploads/<path:filename>")
+def serve_upload_legacy(filename):
+    # Backward-compat alias for scoops persisted before the route rename.
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 
 # ============================================================
@@ -1169,29 +1301,6 @@ def _broadcast_scoop(scoop: Scoop):
 # ============================================================
 #  STATE MACHINE — Transitions
 # ============================================================
-
-# ─── LOBBY ─────────────────────────────────────────────────
-
-def _enter_lobby(game: GameSession, *, emit_event: bool = True):
-    """
-    Retour en LOBBY (fin de quiz sans passer en LIBRE, ou reset partiel).
-    Le rôle GG est conservé — il n'est PAS réattribué à Dan.
-    """
-    _cancel_all_timers()
-    game.transition_to(STATE_LOBBY)
-    game.is_paused             = False
-    game.libre_ends_at         = None
-    game.current_question_data = None
-    game.question_started_at   = None
-    db.session.commit()
-
-    if emit_event:
-        socketio.emit("phase_changed", {
-            "phase": STATE_LOBBY,
-            "gg":    _get_current_gg_dict(game),
-        })
-    log_activity("enter_lobby", "system", "Retour en LOBBY")
-
 
 # ─── PAUSE / RESUME / STOP QUIZ ────────────────────────────
 
