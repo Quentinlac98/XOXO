@@ -211,8 +211,11 @@ def blair_vip():
     token = request.args.get("token", "")
     if token == app.config["BLAIR_VIP_TOKEN"]:
         session["blair_vip_verified"] = True
-        return redirect(url_for("vip_page"))
-    return redirect(url_for("mobile"))
+    # Que le token soit valide, absent ou invalide (ou accès direct à /vip non
+    # authentifié) : on renvoie systématiquement vers l'écran de login mobile
+    # filtré sur Blair Waldorf (prénom + code secret restent obligatoires, afin
+    # que Blair existe comme joueuse — quiz, classement — comme tout le monde).
+    return redirect(url_for("mobile", vip="blair"))
 
 
 @app.route("/vip")
@@ -1284,16 +1287,25 @@ def _broadcast_roster():
     socketio.emit("roster_state", {"taken": get_taken_characters()})
 
 
-def _broadcast_scoop(scoop: Scoop):
-    """Émet new_scoop après un délai non-bloquant."""
+def _broadcast_scoop(scoop: Scoop, announce: bool = True):
+    """Émet le scoop après un délai non-bloquant.
+
+    announce=True  → "new_scoop" : popup plein écran + son sur le projecteur.
+                      Réservé à Gossip Girl (officiel), Chuck Bass et l'admin —
+                      les seules voix qui méritent d'interrompre les 20-25 joueurs.
+    announce=False → "new_scoop_silent" : rejoint directement le feed, sans
+                      popup ni son. C'est le cas par défaut pour un joueur normal.
+    """
     delay      = app.config["POST_DELAY"]
     scoop_dict = scoop.to_dict()   # sérialise AVANT le background task
+    event_name = "new_scoop" if announce else "new_scoop_silent"
 
     def _delayed_emit():
         import eventlet
         eventlet.sleep(delay)
-        socketio.emit("new_scoop", scoop_dict)
-        socketio.emit("play_sound", {"sound": "xoxo"})
+        socketio.emit(event_name, scoop_dict)
+        if announce:
+            socketio.emit("play_sound", {"sound": "xoxo"})
 
     socketio.start_background_task(_delayed_emit)
 

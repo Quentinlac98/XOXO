@@ -125,7 +125,7 @@
     .choice-item.revealed { opacity: .4; }
     .choice-letter { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--gold); flex-shrink: 0; width: 28px; text-align: center; }
     .choice-item.correct .choice-letter { color: #4ade80; }
-    .choice-text { font-size: clamp(13px,1.6vw,17px); color: var(--cream); line-height: 1.35; }
+    .choice-text { font-size: clamp(16px,2.1vw,24px); color: var(--cream); line-height: 1.35; }
     .quiz-timer-block { text-align: center; }
     .quiz-timer-num { font-family: 'Playfair Display', serif; font-size: 80px; font-weight: 700; color: var(--gold); line-height: 1; transition: color .4s; min-width: 110px; }
     .quiz-timer-label { font-size: 8px; letter-spacing: .35em; text-transform: uppercase; color: var(--stone); }
@@ -1553,6 +1553,12 @@ socket.on('new_gg', data => {
 
 socket.on('new_scoop', scoop => {
   enqueueScoopPopup(scoop);   // Queue → popup séquentiel → puis addScoop
+});
+
+// Scoop d'un joueur normal : rejoint le feed direct, sans popup ni son
+// (réservés à Gossip Girl officielle / Chuck / Admin — cf. new_scoop ci-dessus).
+socket.on('new_scoop_silent', scoop => {
+  addScoop(scoop, true);
 });
 
 // ── VIP Blast plein écran (déclenché par Blair) ────────────────

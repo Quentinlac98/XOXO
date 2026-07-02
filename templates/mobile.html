@@ -68,7 +68,7 @@
     .perso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-bottom: 16px; max-height: 340px; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(201,168,76,.2) transparent; padding-right: 2px; }
     .perso-grid::-webkit-scrollbar { width: 3px; }
     .perso-grid::-webkit-scrollbar-thumb { background: rgba(201,168,76,.2); border-radius: 2px; }
-    .perso-chip { background: rgba(255,255,255,.03); border: 1px solid rgba(201,168,76,.1); border-radius: 12px; padding: 11px 10px; cursor: pointer; text-align: center; transition: all .2s; user-select: none; }
+    .perso-chip { background: rgba(255,255,255,.03); border: 1px solid rgba(201,168,76,.1); border-radius: 12px; padding: 12px 10px; min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; text-align: center; transition: all .2s; user-select: none; }
     .perso-chip:active { transform: scale(.97); }
     .perso-chip.selected { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.45); }
     .perso-chip.locked { opacity: .35; cursor: not-allowed; }
@@ -81,6 +81,7 @@
     .chip-desc { font-size: 8px; color: var(--stone2); margin-top: 2px; line-height: 1.3; font-style: italic; }
     #blair-code-wrap { display: none; width: 100%; background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.2); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
     .blair-code-label { font-size: 8px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .blair-code-hint { font-size: 10px; font-style: italic; color: var(--stone2); margin-top: 8px; }
     .btn-login { width: 100%; background: var(--gold); color: var(--black); border: none; border-radius: 14px; padding: 16px; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; cursor: pointer; transition: background .2s, transform .15s, box-shadow .2s; box-shadow: 0 6px 20px rgba(201,168,76,.2); margin-top: 4px; }
     .btn-login:active { transform: scale(.98); }
     .btn-login:hover { background: var(--gold-light); }
@@ -173,7 +174,7 @@
     .question-card { background: rgba(201,168,76,.04); border: 1px solid rgba(201,168,76,.16); border-radius: 16px; padding: 18px; }
     .question-text { font-family: 'Playfair Display', serif; font-size: 18px; color: white; line-height: 1.4; font-weight: 700; }
     .answers-grid { display: flex; flex-direction: column; gap: 8px; }
-    .answer-btn { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 13px 14px; cursor: pointer; text-align: left; transition: all .2s; color: var(--cream); font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .answer-btn { display: flex; align-items: center; gap: 12px; min-height: 48px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 15px 16px; cursor: pointer; text-align: left; transition: all .2s; color: var(--cream); font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
     .answer-btn:active { transform: scale(.98); }
     .answer-btn.selected { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.4); }
     .answer-btn.correct { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.4); pointer-events: none; }
@@ -210,6 +211,7 @@
     .compose-img-btn:active { background: rgba(255,255,255,.08); }
     .gg-post-btn { display: none; background: rgba(201,168,76,.08); border: 1px solid rgba(201,168,76,.25); border-radius: 10px; padding: 9px 12px; color: var(--gold); font-size: 10px; letter-spacing: .1em; cursor: pointer; transition: all .2s; }
     .gg-post-btn:active { background: rgba(201,168,76,.15); }
+    .gg-post-btn.active { background: var(--gold); border-color: var(--gold); color: var(--black); font-weight: 700; box-shadow: 0 0 0 2px rgba(201,168,76,.25); }
     .img-preview-wrap { display: none; position: relative; margin-top: 10px; }
     .img-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; }
     .img-remove-btn { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.7); border: none; border-radius: 50%; width: 24px; height: 24px; color: white; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -342,11 +344,12 @@
         <div class="login-divider"><div class="login-divider-line"></div><div class="login-divider-dot"></div><div class="login-divider-line"></div></div>
         <div class="field-label">Ton prénom</div>
         <input id="input-prenom" class="login-input" type="text" placeholder="Comment t'appelle-t-on ce soir ?" maxlength="32" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="next"/>
-        <div class="field-label">Ton personnage <span style="color:var(--stone2);font-size:8px;letter-spacing:.1em;">— fais défiler pour voir tous les persos</span></div>
+        <div class="field-label">Ton personnage <span id="perso-hint" style="color:var(--stone2);font-size:8px;letter-spacing:.1em;">— fais défiler pour voir tous les persos</span></div>
         <div class="perso-grid" id="perso-grid"></div>
         <div id="blair-code-wrap">
           <div class="blair-code-label">🐱 Code secret Blair — Chuchote-le…</div>
           <input id="input-blair-code" class="login-input" type="password" placeholder="••••••" style="margin-bottom:0;"/>
+          <div class="blair-code-hint">Indice : la date de naissance de ton fils.</div>
         </div>
         <button class="btn-login" onclick="doLogin()">Entrer dans l'Upper East Side ✦</button>
       </div>
@@ -480,7 +483,7 @@
             </div>
             <div class="compose-actions">
               <button class="compose-img-btn" onclick="document.getElementById('file-input').click()">📸 Photo</button>
-              <button class="gg-post-btn" id="gg-post-btn" onclick="state.asGG = !state.asGG; this.textContent = state.asGG ? '✦ En tant que GG ✓' : '✦ Poster en GG';">✦ Poster en GG</button>
+              <button class="gg-post-btn" id="gg-post-btn" onclick="state.asGG = !state.asGG; this.classList.toggle('active', state.asGG); this.textContent = state.asGG ? '✦ En tant que GG ✓' : '✦ Poster en GG';">✦ Poster en GG</button>
               <button class="btn-gold" style="flex:1;" onclick="submitScoop()">Envoyer XOXO</button>
             </div>
           </div>
@@ -609,7 +612,7 @@ const socket = io({
    TOAST
 ═══════════════════════════════════════ */
 let _toastT = null;
-function showToast(msg, duration = 2800) {
+function showToast(msg, duration = 4200) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
@@ -641,8 +644,14 @@ function buildPersoGrid() {
   if (!grid) return;
   grid.innerHTML = '';
   const blairVIP = sessionStorage.getItem('blair_vip') === '1';
+  // Lien VIP : Blair Waldorf est le seul personnage possible, inutile de montrer les autres.
+  const list = blairVIP ? PERSONNAGES.filter(p => p.blair) : PERSONNAGES;
+  const hint = document.getElementById('perso-hint');
+  if (hint) hint.style.display = blairVIP ? 'none' : '';
 
-  PERSONNAGES.forEach(p => {
+  let autoSelect = null;
+
+  list.forEach(p => {
     const chip          = document.createElement('div');
     const isBlairUnlock = p.blair && blairVIP;
     const isLocked      = p.locked && !isBlairUnlock;
@@ -663,9 +672,14 @@ function buildPersoGrid() {
       chip.onclick = () => selectPerso(chip, p.name, p.family, p.blair || false);
       // ré-applique la sélection courante après un rebuild temps réel
       if (state.selectedPerso === p.name + ' ' + p.family) chip.classList.add('selected');
+      if (isBlairUnlock) autoSelect = chip;
     }
     grid.appendChild(chip);
   });
+
+  // Un seul personnage possible via le lien VIP : on le sélectionne d'office,
+  // il reste quand même à saisir son prénom et le code secret.
+  if (blairVIP && autoSelect && !state.selectedPerso) autoSelect.onclick();
 }
 
 function applyRosterState(taken) {
@@ -1004,7 +1018,7 @@ function submitScoop() {
   removeImage();
   state.asGG = false;
   const ggBtn = document.getElementById('gg-post-btn');
-  if (ggBtn) ggBtn.textContent = '✦ Poster en GG';
+  if (ggBtn) { ggBtn.textContent = '✦ Poster en GG'; ggBtn.classList.remove('active'); }
 }
 
 // Compresse une image côté client avant upload (non-bloquant via toBlob)
@@ -1565,6 +1579,13 @@ socket.on('client_reload', () => {
 });
 
 socket.on('new_scoop', scoop => {
+  addScoopToFeed(scoop);
+  document.getElementById('nav-badge-scoops').classList.add('show');
+});
+
+// Scoop d'un joueur normal (pas d'annonce plein écran sur le projecteur) :
+// rejoint quand même le feed sur les téléphones.
+socket.on('new_scoop_silent', scoop => {
   addScoopToFeed(scoop);
   document.getElementById('nav-badge-scoops').classList.add('show');
 });
