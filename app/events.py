@@ -707,7 +707,9 @@ def on_post_scoop(data):
         "content":     content[:80],
         "state":       game.current_state,
     })
-    _broadcast_scoop(scoop)
+    # Annonce plein écran + son réservée à Gossip Girl (officiel) et à l'admin.
+    # Les scoops des autres joueurs rejoignent le feed sans interrompre tout le monde.
+    _broadcast_scoop(scoop, announce=(as_gg or player.is_admin))
     log_activity("scoop", player.prenom, content[:60])
 
 
