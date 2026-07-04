@@ -2088,7 +2088,9 @@ def _libre_tick_task(game_id: int, ends_at: datetime):
                 if not g or not g.is_libre:
                     break
                 if g.libre_ends_at:
-                    ends_at   = g.libre_ends_at
+                    ends_at = g.libre_ends_at
+                    if ends_at.tzinfo is None:
+                        ends_at = ends_at.replace(tzinfo=timezone.utc)
                     remaining = (ends_at - now).total_seconds()
 
         socketio.emit("timer_tick", {"remaining": max(0, int(remaining))})
