@@ -1,11 +1,11 @@
-# 🖤 XOXO — Gossip Girl Party App `v4.8.0`
+# 🖤 XOXO — Gossip Girl Party App `v4.9.0`
 
 > *The one and only source into the scandalous lives of Manhattan's elite.*
 
 Application événementielle temps réel pour soirée à thème Gossip Girl.  
 Stack : **Flask · Flask-SocketIO · APScheduler · SQLite · Docker**
 
-> **Version actuelle : v4.8.0** — 2026-06-23
+> **Version actuelle : v4.9.0** — 2026-07-03
 
 ---
 
@@ -68,7 +68,7 @@ gossip-girl-party/
 │
 ├── static/
 │   ├── sounds/                 # Fichiers MP3 (à fournir — voir section Sons)
-│   │   └── vip/                # Sons VIP Soundboard : champagne/drama/gossip/scandale/suspens/victoire.mp3
+│   │   └── vip/                # Sons VIP Toolbox — 6 mp3 (voir tableau "Fichiers VIP" plus bas)
 │   └── dino/                   # Photos Dino Gallery : drop *.jpg/*.png/*.webp ici
 │
 ├── questions/
@@ -280,38 +280,48 @@ Ce lien :
 
 Toutes les routes `/vip` et `/api/vip/*` sont protégées par le décorateur `@vip_required` : sans `session["blair_vip_verified"]`, l'accès est refusé et l'utilisateur est renvoyé vers la connexion VIP.
 
-> Depuis v4.8.0, le flag `blair_vip_verified` est **purgé automatiquement** quand le socket se déconnecte (`on_disconnect`), évitant qu'un cookie Flask reste valide indéfiniment si Blair change de téléphone ou si quelqu'un d'autre récupère l'appareil.
+> Le flag `blair_vip_verified` est **stable** une fois posé côté HTTP (par la route `/blair-vip?token=…`). Depuis v4.9.0, la purge défensive dans `on_disconnect` a été retirée : avec `manage_session=True` (défaut Flask-SocketIO) elle n'atteignait jamais le cookie HTTP de toute façon, mais rendait le flux d'auth VIP illisible.  
+> Par ailleurs, un reconnect via `player_token` re-émet `blair_vip_granted` vers `/vip` si le personnage a `role == "vip"` — Blair retrouve automatiquement son 5ᵉ onglet 💎 après un F5.
 
 ### Dashboard VIP — 4 tuiles
 
 | Tuile | Panneau | Description |
 |---|---|---|
 | 🐱 Dino Gallery | `vip-panel-gallery` | Carrousel photo avec gestes swipe, indicateurs de points, transition fondu |
-| 🔊 VIP Soundboard | `vip-panel-soundboard` | 6 boutons audio ; MP3 si disponibles, sinon tonalités Web Audio API |
+| 🧰 VIP Toolbox *(v4.9.0)* | `vip-panel-toolbox` | Hub 3 sous-outils : **QR** (QR `/mobile` + lightbox plein écran) · **Sons** (6 MP3 Gossip Girl, fallback Web Audio) · **Affichage Projecteur** (toggle Scores en grand / QR Code — parité admin) |
 | 📰 Scoops Manager | `vip-panel-scoops-manager` | Liste des scoops avec actions Épingler / Supprimer + toggle QR Code (images affichées) |
-| ✨ Custom Blast | `vip-panel-blast` | Compose un message attribué à **Blair Waldorf** + animation wow plein écran sur tous les clients (mobiles, VIP, projecteur) |
+| 💎 Custom Blast *(v4.9.0)* | `vip-panel-blast` | **Composer complet** (parité admin, sans identité Chuck) : identité `✦ Gossip Girl` / `✧ Custom`, message 500 caractères, image, son whitelisté, Auto-pin, presets, preview projecteur live |
 
-### Custom Blast (depuis v4.8.0)
+### Custom Blast — composer complet (v4.9.0)
 
-- Le scoop est désormais persisté sous le nom **Blair Waldorf** (`is_official=True`), au lieu de l'ancien "Gossip Girl" générique qui doublait le canal officiel.
-- Le projecteur dispose d'un **overlay VIP Blast dédié** (`#vip-blast-overlay` : 💎 + "New VIP Blast" + signature `✦ Blair Waldorf ✦`), distinct du popup générique des scoops — déclenché par `socket.on('vip_blast')`.
-- Plus de doublon : la route `/api/vip/blast` n'émet plus `new_scoop` (le bandeau dédié remplace le popup). Elle émet `vip_blast`, `play_sound(new_gg)` et `scoop_published` (refresh des Scoop Managers).
+Depuis v4.9.0, la tuile Custom Blast n'est plus un simple textarea + bouton : c'est un **clone de la Chuck Blast Composer admin**, avec les seules restrictions suivantes :
+
+- Sélecteur d'identité limité à `✦ Gossip Girl` et `✧ Custom` (pas de Chuck) — imposé côté serveur par `/api/vip/blast-composer` (rejet de `identity == "chuck"`).
+- Les presets `blast-presets.json` avec `identity == "chuck"` sont filtrés à la lecture (`/api/vip/blast-presets`).
+
+Sous le capot, `/api/admin/blast` et `/api/vip/blast-composer` délèguent tous deux au helper `_publish_blast(...)` — même whitelist son, même persistance Scoop, mêmes émissions (`admin_blast` + `play_sound` + `scoop_published`).
+
+L'ancien overlay VIP (💎 + "New VIP Blast" + signature `✦ Blair Waldorf ✦`, déclenché par `vip_blast`) reste utilisable via `/api/vip/blast` — mais aucun bouton VIP ne l'appelle depuis v4.9.0.
 
 ### Ajouter des médias (drop-in, sans modifier le code)
 
 | Dossier | Contenu | Effet |
 |---|---|---|
 | `static/dino/` | `*.jpg` / `*.png` / `*.webp` | Remplace les emojis fallback dans la galerie |
-| `static/sounds/vip/` | `champagne.mp3` · `drama.mp3` · `gossip.mp3` · `scandale.mp3` · `suspens.mp3` · `victoire.mp3` | Active la lecture MP3 sur le soundboard (fallback Web Audio API si absent) |
+| `static/sounds/vip/` | `the_bitch_is_back.mp3` · `biggest_news_ever.mp3` · `i_wrote_my_first_post.mp3` · `ringtone_incoming_gossip.mp3` · `look_like_an_angel_talk_like_an_angel_the_devil_in_disguise_georgina.mp3` · `cant_keep_a_bad_girl.mp3` | Active la lecture MP3 sur le Soundboard VIP (fallback Web Audio API si absent) |
 
 ### Événements Socket.io VIP
 
 | Événement | Direction | Description |
 |---|---|---|
-| `vip_blast` | Serveur → Tous | Déclenche l'overlay Blast animé sur mobiles, VIP **et projecteur** (overlay dédié) |
+| `blair_vip_granted` | Serveur → SID Blair | Émis à Blair sur login ou reconnect valide — payload `{redirect: "/vip"}`, capté par `mobile.html` (redirection). `vip.html` n'a pas de handler → no-op. |
+| `admin_blast` | Serveur → Tous | Overlay Blast multi-thème (`gg` / `chuck` / `custom`) — déclenché par `/api/admin/blast` **ou** `/api/vip/blast-composer` |
+| `vip_blast` | Serveur → Tous | Ancien overlay VIP dédié (💎 + `✦ Blair Waldorf ✦`) — encore émis par `/api/vip/blast`, plus utilisé par le frontend v4.9.0 |
+| `projector_scores` | Serveur → Tous | Toggle overlay "Scores en grand" (payload : `visible`, `leaderboard`) |
+| `projector_qr` | Serveur → Tous | Toggle overlay QR sur le projecteur (payload : `visible`) |
 | `scoop_pinned` | Serveur → Tous | Scoop épinglé — refresh des Scoop Managers |
 | `scoop_deleted` | Serveur → Tous | Scoop retiré du flux |
-| `scoop_published` | Serveur → Tous | Nouveau scoop officiel (VIP Blast / Chuck Blast) — refresh des Scoop Managers |
+| `scoop_published` | Serveur → Tous | Nouveau scoop officiel (VIP Blast Composer / Chuck Blast) — refresh des Scoop Managers |
 
 ---
 
@@ -388,12 +398,14 @@ Dépose tes fichiers dans `static/sounds/` :
 | `xoxo.mp3` | 5.4s | Nouveau scoop publié |
 | `quiz_start.mp3` | 22.2s | Début de phase QUIZ |
 | `correct.mp3` | 2.7s | Révélation de réponse |
-| `new_gg.mp3` | 6.06s | Nouveau Gossip Girl désigné / Blast VIP / Chuck Blast (défaut) |
+| `new_gg.mp3` | 6.06s | Nouveau Gossip Girl désigné (défaut) / Blast VIP legacy / Chuck Blast (défaut) |
+| `new_gg_serena.mp3` *(v4.9.0)* | 16.30s | **Nouveau Gossip Girl = Serena van der Woodsen** (override contextuel — `_new_gg_sound_for()`) |
+| `chuck_bass_blast.mp3` *(v4.9.0)* | 7.08s | Sélectionnable dans le Blast Composer admin (whitelist `_BLAST_ALLOWED_SOUNDS`) |
 | `phase2_start.mp3` | 14.9s | Début de phase LIBRE |
 | `timer_end.mp3` | 21.3s | Fin du timer LIBRE |
 | `countdown.mp3` | 2.3s | Manuel uniquement (Chuck Mode) |
 
-> La durée de `new_gg.mp3` est utilisée comme constante `NEW_GG_AUDIO_DURATION = 6.06` dans `main.py` pour synchroniser le démarrage du Mode Libre avec la fin de l'animation. Ce même son est le défaut des Blasts (VIP et Chuck).
+> La durée de `new_gg.mp3` est utilisée comme constante `NEW_GG_AUDIO_DURATION = 6.06` dans `main.py` pour synchroniser le démarrage du Mode Libre avec la fin de l'animation. Depuis v4.9.0, `NEW_GG_SERENA_AUDIO_DURATION = 16.30` fait le même calcul quand Serena devient GG (sinon Mode Libre démarrerait au milieu de sa fanfare).
 
 ### Architecture audio — flux complet
 
@@ -793,13 +805,17 @@ Toutes les routes sont protégées par `@vip_required` (session Flask — `blair
 | Méthode | Route | Description |
 |---|---|---|
 | `GET`  | `/vip` | Interface VIP Blair (template `vip.html`) |
-| `GET`  | `/blair-vip` | Auth token VIP → pose session + redirige vers `/vip` |
+| `GET`  | `/blair-vip` | Auth token VIP → pose session + redirige vers `/mobile?vip=blair` |
 | `GET`  | `/api/vip/gallery` | Liste des photos Dino Gallery (JSON) |
-| `GET`  | `/api/vip/sounds` | Liste des sons du Soundboard avec URLs MP3 (JSON) |
+| `GET`  | `/api/vip/sounds` | Liste des sons du VIP Toolbox Soundboard avec URLs MP3 (JSON) — 6 entrées `{id, name, icon, url}` |
 | `GET`  | `/api/vip/scoops` | Liste des scoops publiés (JSON, image_path inclus) |
 | `POST` | `/api/vip/scoops/<id>/pin` | Épingle un scoop (émet `scoop_pinned`) |
 | `POST` | `/api/vip/scoops/<id>/delete` | Supprime un scoop (émet `scoop_deleted`) |
-| `POST` | `/api/vip/blast` | Publie un scoop attribué à **Blair Waldorf** + émet `vip_blast` (overlay plein écran sur mobile / VIP / projecteur) + `play_sound(new_gg)` + `scoop_published` |
+| `POST` | `/api/vip/blast` | *(legacy)* Publie un scoop attribué à **Blair Waldorf** + émet `vip_blast` (ancien overlay 💎) + `play_sound(new_gg)` + `scoop_published`. Plus utilisé par le frontend v4.9.0. |
+| `POST` | `/api/vip/blast-composer` *(v4.9.0)* | **Blast Composer VIP** (parité admin, sans Chuck) — délègue à `_publish_blast(...)`. Rejette `identity == "chuck"`. |
+| `GET`  | `/api/vip/blast-presets` *(v4.9.0)* | Presets `blast-presets.json` filtrés (les entrées `identity == "chuck"` sont retirées) |
+| `POST` | `/api/vip/projector-scores` *(v4.9.0)* | Toggle overlay "Scores en grand" sur le projecteur (payload : `{visible}`) — parité `/api/admin/projector-scores` |
+| `POST` | `/api/vip/projector-qr` *(v4.9.0)* | Toggle overlay QR sur le projecteur (payload : `{visible}`) — parité `/api/admin/projector-qr` |
 
 ---
 

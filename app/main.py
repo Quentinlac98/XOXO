@@ -123,6 +123,15 @@ scheduler.start()
 # F6 — durée audio new_gg pour caler le délai LIBRE (évite que le Mode Libre
 #       démarre pendant l'animation du nouveau GG)
 NEW_GG_AUDIO_DURATION = 6.06   # secondes (durée réelle du fichier new_gg.mp3)
+# Serena a droit à sa propre fanfare (16.30s) quand elle devient GG.
+NEW_GG_SERENA_AUDIO_DURATION = 16.30
+
+
+def _new_gg_sound_for(player):
+    """Retourne le nom du son 'nouveau GG' à jouer + sa durée, selon le personnage."""
+    if player and (player.personnage or "").startswith("Serena"):
+        return "new_gg_serena", NEW_GG_SERENA_AUDIO_DURATION
+    return "new_gg", NEW_GG_AUDIO_DURATION
 
 _questions_cache = None
 _tick_task_generation = 0   # incrémenté à chaque _send_question pour invalider les ghost tasks
@@ -160,9 +169,25 @@ def admin_required(f):
 def vip_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not session.get("blair_vip_verified"):
-            return redirect(url_for("blair_vip"))
-        return f(*args, **kwargs)
+        if session.get("blair_vip_verified"):
+            return f(*args, **kwargs)
+
+        # Token fallback: Flask-SocketIO's default `manage_session=True` never
+        # writes session mutations made in socket handlers back to the cookie,
+        # so a session flag set inside `on_join_player`/`on_reconnect` is
+        # invisible to the next HTTP request — causing /vip ↔ /mobile bounce.
+        # Validate the player_token directly instead, then persist the flag
+        # from within this HTTP request so future navigations skip the check.
+        token = (request.args.get("token", "") or "").strip()
+        if token:
+            player = Player.query.filter_by(player_token=token).first()
+            if player and player.personnage:
+                char = get_character(player.personnage)
+                if char and (char.get("role") == "vip" or char.get("requires_code")):
+                    session["blair_vip_verified"] = True
+                    return f(*args, **kwargs)
+
+        return redirect(url_for("blair_vip"))
     return decorated
 
 
@@ -225,12 +250,18 @@ def vip_page():
 
 
 VIP_SOUNDS = [
-    {"id": "champagne", "name": "Champagne", "icon": "🥂"},
-    {"id": "drama",     "name": "Drama",     "icon": "🎭"},
-    {"id": "gossip",    "name": "Gossip",    "icon": "🤫"},
-    {"id": "scandale",  "name": "Scandale",  "icon": "😱"},
-    {"id": "suspens",   "name": "Suspens",   "icon": "⏱"},
-    {"id": "victoire",  "name": "Victoire",  "icon": "🏆"},
+    {"id": "bitch_back",   "name": "The Bitch Is Back", "icon": "💅",
+     "file": "the_bitch_is_back.mp3"},
+    {"id": "biggest_news", "name": "Biggest News Ever", "icon": "🗞",
+     "file": "biggest_news_ever.mp3"},
+    {"id": "first_post",   "name": "First Post",        "icon": "✍",
+     "file": "i_wrote_my_first_post.mp3"},
+    {"id": "ringtone",     "name": "Incoming Gossip",   "icon": "📱",
+     "file": "ringtone_incoming_gossip.mp3"},
+    {"id": "georgina",     "name": "Devil In Disguise", "icon": "😈",
+     "file": "look_like_an_angel_talk_like_an_angel_the_devil_in_disguise_georgina.mp3"},
+    {"id": "bad_girl",     "name": "Bad Girl",          "icon": "🖤",
+     "file": "cant_keep_a_bad_girl.mp3"},
 ]
 
 
@@ -239,10 +270,33 @@ VIP_SOUNDS = [
 def api_vip_sounds():
     sounds = []
     for s in VIP_SOUNDS:
-        fpath = os.path.join(app.static_folder, "sounds", "vip", f"{s['id']}.mp3")
-        url   = f"/static/sounds/vip/{s['id']}.mp3" if os.path.exists(fpath) else None
-        sounds.append({**s, "url": url})
+        fpath = os.path.join(app.static_folder, "sounds", s["file"])
+        url   = f"/static/sounds/{s['file']}" if os.path.exists(fpath) else None
+        sounds.append({"id": s["id"], "name": s["name"], "icon": s["icon"], "url": url})
     return jsonify({"sounds": sounds})
+
+
+_VIP_SOUND_IDS = {s["id"] for s in VIP_SOUNDS}
+
+
+@app.route("/api/vip/play-sound", methods=["POST"])
+@vip_required
+def api_vip_play_sound():
+    """Diffuse un son du soundboard VIP sur le projecteur (audience)."""
+    data     = request.json or {}
+    sound_id = data.get("sound", "")
+    if sound_id not in _VIP_SOUND_IDS:
+        return jsonify({"ok": False, "error": "unknown sound"}), 400
+    socketio.emit("play_sound", {"sound": sound_id})
+    log_activity("vip_sound", "Blair VIP", sound_id)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/vip/stop-sound", methods=["POST"])
+@vip_required
+def api_vip_stop_sound():
+    socketio.emit("stop_sound", {})
+    return jsonify({"ok": True})
 
 
 @app.route("/api/vip/blast", methods=["POST"])
@@ -612,8 +666,9 @@ def api_transfer_gg():
         # Transfert silencieux : met à jour l'UI admin/mobile sans son ni overlay projecteur
         socketio.emit("gg_updated_silent", new_gg.to_dict())
     else:
+        sound, _ = _new_gg_sound_for(new_gg)
         socketio.emit("new_gg", new_gg.to_dict())
-        socketio.emit("play_sound", {"sound": "new_gg"})
+        socketio.emit("play_sound", {"sound": sound})
     socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
     log_activity("transfer_gg", "admin", f"→ {new_gg.prenom} ({new_gg.personnage}){' [silent]' if silent else ''}")
     return jsonify({"ok": True})
@@ -778,7 +833,7 @@ def api_post_as_chuck():
 # ============================================================
 
 # Sons autorisés pour un blast (whitelist côté serveur, défense en profondeur).
-_BLAST_ALLOWED_SOUNDS = {"xoxo", "quiz_start", "correct", "new_gg", "phase2_start", "countdown"}
+_BLAST_ALLOWED_SOUNDS = {"xoxo", "quiz_start", "correct", "new_gg", "phase2_start", "countdown", "chuck_bass_blast"}
 
 # Identités autorisées : fixe le mapping author_name / is_official côté serveur
 # pour qu'un client ne puisse pas usurper "Gossip Girl" sans passer par "gg".
@@ -789,43 +844,54 @@ _BLAST_IDENTITIES = {
 }
 
 
+def _load_blast_presets():
+    """Charge les templates one-tap du composer depuis blast-presets.json."""
+    try:
+        with open(app.config["BLAST_PRESETS_PATH"], "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"presets": []}
+
+
 @app.route("/api/admin/blast-presets")
 @admin_required
 def api_blast_presets():
-    """Retourne les templates one-tap du composer (éditable via blast-presets.json)."""
-    try:
-        with open(app.config["BLAST_PRESETS_PATH"], "r", encoding="utf-8") as f:
-            return jsonify(json.load(f))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return jsonify({"presets": []})
+    return jsonify(_load_blast_presets())
 
 
-@app.route("/api/admin/blast", methods=["POST"])
-@admin_required
-def api_admin_blast():
-    """Chuck Mode Blast : overlay plein écran sur tous les clients, persisté en Scoop."""
-    data        = request.json or {}
-    content     = (data.get("content", "") or "").strip()[:500]
-    identity    = data.get("identity", "chuck")
-    custom_name = (data.get("custom_name", "") or "").strip()[:32]
-    image_path  = data.get("image_path") or None
-    sound       = data.get("sound") or None
-    pin         = bool(data.get("pin", False))
+def _publish_blast(*, content, identity, custom_name, image_path, sound, pin,
+                   actor, allow_chuck=True):
+    """
+    Cœur du blast (partagé admin + VIP) :
+    - Résolution autoritative de l'identité (server-side, ne fait pas confiance au client)
+    - Filtre le son via la whitelist
+    - Persiste un Scoop puis émet admin_blast + play_sound + scoop_published
+
+    allow_chuck=False : le blaster n'a pas accès à l'identité "chuck" → fallback vers "gg".
+    Retourne (payload_json, status_code).
+    """
+    content     = (content or "").strip()[:500]
+    custom_name = (custom_name or "").strip()[:32]
+    image_path  = image_path or None
+    sound       = sound or None
+    pin         = bool(pin)
 
     if not content and not image_path:
-        return jsonify({"ok": False, "error": "Blast vide. Manhattan mérite mieux."})
+        return {"ok": False, "error": "Blast vide. Manhattan mérite mieux."}, 200
 
     # Résolution d'identité (serveur autoritatif)
     if identity == "custom" and custom_name:
         author_name = custom_name
         is_official = False
     else:
-        meta        = _BLAST_IDENTITIES.get(identity, _BLAST_IDENTITIES["chuck"])
+        default_id  = "chuck" if allow_chuck else "gg"
+        if identity == "chuck" and not allow_chuck:
+            identity = default_id
+        meta        = _BLAST_IDENTITIES.get(identity, _BLAST_IDENTITIES[default_id])
         author_name = meta["author_name"]
         is_official = meta["is_official"]
-        identity    = identity if identity in _BLAST_IDENTITIES else "chuck"
+        identity    = identity if identity in _BLAST_IDENTITIES else default_id
 
-    # Validation du son (whitelist)
     if sound not in _BLAST_ALLOWED_SOUNDS:
         sound = None
 
@@ -846,16 +912,65 @@ def api_admin_blast():
         "image_path":  image_path,
         "author_name": author_name,
         "is_official": is_official,
-        "identity":    identity,           # 'gg' | 'chuck' | 'custom' → thème du overlay
+        "identity":    identity,           # 'gg' | 'chuck' | 'custom' → thème de l'overlay
     }
     socketio.emit("admin_blast", payload)
     if sound:
         socketio.emit("play_sound", {"sound": sound})
     socketio.emit("scoop_published", scoop.to_dict())
 
-    log_activity("admin_blast", "Chuck Bass",
+    log_activity("admin_blast", actor,
                  f"[{identity}] {('📌 ' if pin else '')}{content[:60]}")
-    return jsonify({"ok": True, "scoop_id": scoop.id})
+    return {"ok": True, "scoop_id": scoop.id}, 200
+
+
+@app.route("/api/admin/blast", methods=["POST"])
+@admin_required
+def api_admin_blast():
+    """Chuck Mode Blast : overlay plein écran sur tous les clients, persisté en Scoop."""
+    data = request.json or {}
+    result, status = _publish_blast(
+        content     = data.get("content", ""),
+        identity    = data.get("identity", "chuck"),
+        custom_name = data.get("custom_name", ""),
+        image_path  = data.get("image_path"),
+        sound       = data.get("sound"),
+        pin         = data.get("pin", False),
+        actor       = "Chuck Bass",
+        allow_chuck = True,
+    )
+    return jsonify(result), status
+
+
+@app.route("/api/vip/blast-composer", methods=["POST"])
+@vip_required
+def api_vip_blast_composer():
+    """Composer plein Blair Waldorf — clone du composer admin, sans l'identité Chuck."""
+    data     = request.json or {}
+    identity = data.get("identity", "gg")
+    if identity == "chuck":
+        return jsonify({"ok": False,
+                        "error": "L'identité Chuck est réservée à l'admin. XOXO."}), 200
+    result, status = _publish_blast(
+        content     = data.get("content", ""),
+        identity    = identity,
+        custom_name = data.get("custom_name", ""),
+        image_path  = data.get("image_path"),
+        sound       = data.get("sound"),
+        pin         = data.get("pin", False),
+        actor       = "Blair VIP",
+        allow_chuck = False,
+    )
+    return jsonify(result), status
+
+
+@app.route("/api/vip/blast-presets")
+@vip_required
+def api_vip_blast_presets():
+    """Presets one-tap pour Blair : filtre ceux qui utilisent l'identité Chuck."""
+    data = _load_blast_presets()
+    data["presets"] = [p for p in data.get("presets", []) if p.get("identity") != "chuck"]
+    return jsonify(data)
 
 
 @app.route("/api/admin/custom-message", methods=["POST"])
@@ -915,6 +1030,29 @@ def api_projector_refresh():
     """Force un rechargement de la page projecteur."""
     socketio.emit("projector_reload", {})
     log_activity("projector_refresh", "admin", "Reload projecteur demandé")
+    return jsonify({"ok": True})
+
+
+# ─── Contrôles projecteur VIP (parité admin, restreint à Blair) ─────
+@app.route("/api/vip/projector-qr", methods=["POST"])
+@vip_required
+def api_vip_projector_qr():
+    data    = request.json or {}
+    visible = data.get("visible", True)
+    socketio.emit("projector_qr", {"visible": visible})
+    log_activity("projector_qr", "Blair VIP", f"QR overlay → {'show' if visible else 'hide'}")
+    return jsonify({"ok": True})
+
+
+@app.route("/api/vip/projector-scores", methods=["POST"])
+@vip_required
+def api_vip_projector_scores():
+    data    = request.json or {}
+    visible = data.get("visible", True)
+    lb      = get_leaderboard() if visible else []
+    socketio.emit("projector_scores", {"visible": visible, "leaderboard": lb})
+    log_activity("projector_scores", "Blair VIP",
+                 f"Scores overlay → {'show' if visible else 'hide'}")
     return jsonify({"ok": True})
 
 
@@ -1205,6 +1343,22 @@ def api_qr_code():
     buf.seek(0)
     b64 = base64.b64encode(buf.read()).decode()
     return jsonify({"qr_base64": b64, "url": mobile_url})
+
+
+@app.route("/api/admin/blair-vip-qr")
+@admin_required
+def api_admin_blair_vip_qr():
+    base_url = request.host_url.rstrip("/")
+    vip_url  = f"{base_url}/blair-vip?token={app.config['BLAIR_VIP_TOKEN']}"
+    qr = qrcode.QRCode(box_size=8, border=2)
+    qr.add_data(vip_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    b64 = base64.b64encode(buf.read()).decode()
+    return jsonify({"qr_base64": b64, "url": vip_url})
 
 
 # ============================================================
@@ -1830,6 +1984,7 @@ def _end_quiz(game: GameSession):
     leaderboard = get_leaderboard()
     winner      = leaderboard[0] if leaderboard else None
 
+    new_gg_sound_duration = NEW_GG_AUDIO_DURATION
     if winner:
         Player.query.update({"is_gg": False}, synchronize_session=False)
         new_gg = Player.query.get(winner["id"])
@@ -1838,6 +1993,7 @@ def _end_quiz(game: GameSession):
             game.current_gg_id = new_gg.id
             db.session.commit()
 
+            sound, new_gg_sound_duration = _new_gg_sound_for(new_gg)
             socketio.emit("quiz_ended", {
                 "leaderboard": leaderboard,
                 "new_gg":      winner,
@@ -1847,14 +2003,14 @@ def _end_quiz(game: GameSession):
             # sans F5, via le handler socket.on('new_gg', ...) déjà présent.
             socketio.emit("new_gg", new_gg.to_dict())
             socketio.emit("leaderboard_update", {"leaderboard": leaderboard})
-            socketio.emit("play_sound", {"sound": "new_gg"})
+            socketio.emit("play_sound", {"sound": sound})
             log_activity("quiz_ended", "system",
                          f"Nouveau GG: {winner['prenom']} ({winner['personnage']})")
 
     # Transition → LIBRE : délai calé sur la durée audio new_gg + marge
     # pour éviter que le Mode Libre démarre pendant l'animation du nouveau GG
     # ⚡ Turbo : 1s (on skip l'attente du son new_gg)
-    libre_delay = _t(max(NEW_GG_AUDIO_DURATION + 1.5, 5.0), 1.0)
+    libre_delay = _t(max(new_gg_sound_duration + 1.5, 5.0), 1.0)
     _cancel_all_timers()
     game_id = game.id
 

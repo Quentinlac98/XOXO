@@ -64,9 +64,10 @@ def on_admin_identify(data=None):
 @socketio.on("disconnect")
 def on_disconnect():
     sid    = request.sid
-    # Purge le flag VIP Blair : la session Flask survit aux reconnexions socket,
-    # un cookie laissé sur l'appareil ne doit pas accorder l'accès /vip à l'occupant suivant.
-    session.pop("blair_vip_verified", None)
+    # NB : ne pas purger `session["blair_vip_verified"]` ici — les changements
+    # de session dans un handler socket avec manage_session=True restent locaux
+    # au SID et ne se répercutent PAS sur le cookie HTTP. Le pop() était donc
+    # sans effet réel, mais il embrouillait la lecture du flux d'auth VIP.
     player = Player.query.filter_by(session_id=sid).first()
     if player and not player.is_admin:
         player.is_connected = False
@@ -107,6 +108,14 @@ def on_reconnect(data):
             emit("reconnect_failed", {"message": "Ton personnage a ete repris. Reconnecte-toi."})
             return
         _broadcast_roster()
+
+        # Reconnecting VIP (Blair) : réaffirme le flag de session et redirige vers /vip
+        # pour retrouver le 5ᵉ onglet 💎 (absent de /mobile). Le token player_token vaut
+        # preuve d'authentification — Blair a déjà passé le code secret au login initial.
+        char = get_character(player.personnage)
+        if char and (char.get("role") == "vip" or char.get("requires_code")):
+            session["blair_vip_verified"] = True
+            emit("blair_vip_granted", {"redirect": "/vip", "token": player.player_token})
 
         game = get_or_create_game_session()
         emit("reconnect_success", {
@@ -299,12 +308,14 @@ def on_join_player(data):
         emit("login_error", {"message": "Chuck Bass est en God Mode. XOXO."})
         return
 
-    if char and (char.get("role") == "vip" or char.get("requires_code")):
+    is_vip = bool(char and (char.get("role") == "vip" or char.get("requires_code")))
+    if is_vip:
         if blair_code != app.config.get("BLAIR_SECRET_CODE", ""):
             emit("login_error", {"message": "Blair Waldorf necessite un code secret. XOXO."})
             return
         session["blair_vip_verified"] = True
-        emit("blair_vip_granted", {"redirect": "/vip"})
+        # blair_vip_granted émis après commit — on a besoin de player.player_token
+        # pour que le client construise /vip?token=... (cf. main.py:vip_required).
 
     existing = Player.query.filter_by(personnage=personnage).first()
     if existing and existing.session_id != sid and existing.is_connected:
@@ -345,11 +356,18 @@ def on_join_player(data):
     is_dan = bool(char and (char.get("role") == "first_gg"
                             or (char.get("name") == "Dan" and char.get("family") == "Humphrey")))
 
-    if is_dan and not game.current_gg_id:
-        player.is_gg = True
-        db.session.flush()
-        game.current_gg_id = player.id
-        log_activity("first_gg", prenom, "Dan Humphrey = premier Gossip Girl")
+    # Dan hérite du rôle GG si aucun joueur actuellement connecté n'a le flag is_gg.
+    # On ne se fie pas à `game.current_gg_id` seul : il peut pointer sur un profil
+    # hors-ligne d'une soirée précédente (state DB persistant entre les runs).
+    if is_dan:
+        active_gg = Player.query.filter_by(is_gg=True, is_connected=True).first()
+        if not active_gg:
+            # Nettoie un éventuel flag is_gg stale sur un profil offline
+            Player.query.update({"is_gg": False}, synchronize_session=False)
+            player.is_gg = True
+            db.session.flush()
+            game.current_gg_id = player.id
+            log_activity("first_gg", prenom, "Dan Humphrey = premier Gossip Girl")
 
     # Verrou atomique : si un autre client a réservé ce personnage entre-temps,
     # l'index unique partiel (is_connected=1) lève IntegrityError → on perd la course.
@@ -359,6 +377,9 @@ def on_join_player(data):
         db.session.rollback()
         emit("login_error", {"message": f"{personnage} est deja choisi ce soir."})
         return
+
+    if is_vip:
+        emit("blair_vip_granted", {"redirect": "/vip", "token": player.player_token})
 
     emit("login_success", {
         "player":      player.to_dict(),

@@ -1234,7 +1234,14 @@ socket.on('player_left', data => {
 });
 
 socket.on('blair_vip_granted', data => {
-  window.location.href = data.redirect || '/vip';
+  // Token en query param → validé côté HTTP par @vip_required (cf. main.py).
+  // Sans ça, /vip retombe sur la session cookie non-mise-à-jour → boucle.
+  const target = data.redirect || '/vip';
+  const token  = data.token || state.playerToken;
+  const sep    = target.includes('?') ? '&' : '?';
+  window.location.href = token
+    ? `${target}${sep}token=${encodeURIComponent(token)}`
+    : target;
 });
 
 // ✅ FIX: reconnexion silencieuse

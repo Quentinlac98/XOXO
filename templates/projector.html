@@ -849,9 +849,19 @@
 <audio id="snd-quiz-start" src="/static/sounds/quiz_start.mp3"   preload="auto"></audio>
 <audio id="snd-correct"    src="/static/sounds/correct.mp3"      preload="auto"></audio>
 <audio id="snd-new-gg"     src="/static/sounds/new_gg.mp3"       preload="auto"></audio>
+<audio id="snd-new-gg-serena" src="/static/sounds/new_gg_serena.mp3" preload="auto"></audio>
+<audio id="snd-chuck-blast" src="/static/sounds/chuck_bass_blast.mp3" preload="auto"></audio>
 <audio id="snd-phase2"     src="/static/sounds/phase2_start.mp3" preload="auto"></audio>
 <audio id="snd-timer-end"  src="/static/sounds/timer_end.mp3"    preload="auto"></audio>
 <audio id="snd-countdown"  src="/static/sounds/countdown.mp3"    preload="auto"></audio>
+
+<!-- Soundboard Blair (VIP) -->
+<audio id="snd-bitch-back"   src="/static/sounds/the_bitch_is_back.mp3" preload="auto"></audio>
+<audio id="snd-biggest-news" src="/static/sounds/biggest_news_ever.mp3" preload="auto"></audio>
+<audio id="snd-first-post"   src="/static/sounds/i_wrote_my_first_post.mp3" preload="auto"></audio>
+<audio id="snd-ringtone"     src="/static/sounds/ringtone_incoming_gossip.mp3" preload="auto"></audio>
+<audio id="snd-georgina"     src="/static/sounds/look_like_an_angel_talk_like_an_angel_the_devil_in_disguise_georgina.mp3" preload="auto"></audio>
+<audio id="snd-bad-girl"     src="/static/sounds/cant_keep_a_bad_girl.mp3" preload="auto"></audio>
 
 <!-- ═══ SCRIPTS ═══ -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -903,24 +913,35 @@ socket.on('projector_toggle_sound', data => {
    SONS (projecteur uniquement)
 ═══════════════════════════════════════ */
 const soundMap = {
-  xoxo:         'snd-xoxo',
-  quiz_start:   'snd-quiz-start',
-  correct:      'snd-correct',
-  new_gg:       'snd-new-gg',
-  phase2_start: 'snd-phase2',
-  timer_end:    'snd-timer-end',
-  countdown:    'snd-countdown',
+  xoxo:              'snd-xoxo',
+  quiz_start:        'snd-quiz-start',
+  correct:           'snd-correct',
+  new_gg:            'snd-new-gg',
+  new_gg_serena:     'snd-new-gg-serena',
+  chuck_bass_blast:  'snd-chuck-blast',
+  phase2_start:      'snd-phase2',
+  timer_end:         'snd-timer-end',
+  countdown:         'snd-countdown',
+  // Soundboard Blair (VIP)
+  bitch_back:        'snd-bitch-back',
+  biggest_news:      'snd-biggest-news',
+  first_post:        'snd-first-post',
+  ringtone:          'snd-ringtone',
+  georgina:          'snd-georgina',
+  bad_girl:          'snd-bad-girl',
 };
 
 // Durées réelles des sons (en secondes) — source de vérité pour la sync admin
 const soundDurations = {
-  xoxo:         5.41,
-  quiz_start:   22.15,
-  correct:      2.72,
-  new_gg:       6.06,
-  phase2_start: 14.87,
-  timer_end:    21.25,
-  countdown:    2.30,
+  xoxo:              5.41,
+  quiz_start:        22.15,
+  correct:           2.72,
+  new_gg:            6.06,
+  new_gg_serena:     16.30,
+  chuck_bass_blast:  7.08,
+  phase2_start:      14.87,
+  timer_end:         21.25,
+  countdown:         2.30,
 };
 
 // Référence à l'élément audio actuellement en lecture (une seule piste à la fois)
@@ -1239,7 +1260,9 @@ function showNewGG(prenom, personnage) {
   document.getElementById('new-gg-name').textContent  = prenom;
   document.getElementById('new-gg-perso').textContent = personnage;
   document.getElementById('new-gg-overlay').classList.add('show');
-  playSound('new_gg');
+  // Serena a sa propre fanfare — sinon on garde le son standard.
+  const sound = (personnage || '').startsWith('Serena') ? 'new_gg_serena' : 'new_gg';
+  playSound(sound);
   launchConfetti();
   setTimeout(() => document.getElementById('new-gg-overlay').classList.remove('show'), 7000);
 }
@@ -1677,7 +1700,10 @@ socket.on('phase2_ended', () => {
   playSound('timer_end');
   const overlay = document.getElementById('phase2-ended-overlay');
   overlay.classList.add('show');
-  setTimeout(() => { overlay.classList.remove('show'); showView('waiting'); }, 6000);
+  // La transition vers QUIZ est déjà pilotée par `phase_changed(QUIZ)` émis
+  // juste après par le serveur : on ne force PAS showView('waiting'), sinon
+  // l'écran du projecteur retombe sur "En attente" alors que le quiz démarre.
+  setTimeout(() => overlay.classList.remove('show'), 6000);
 });
 
 socket.on('game_paused', data => {
