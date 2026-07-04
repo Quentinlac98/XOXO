@@ -1260,9 +1260,8 @@ function showNewGG(prenom, personnage) {
   document.getElementById('new-gg-name').textContent  = prenom;
   document.getElementById('new-gg-perso').textContent = personnage;
   document.getElementById('new-gg-overlay').classList.add('show');
-  // Serena a sa propre fanfare — sinon on garde le son standard.
-  const sound = (personnage || '').startsWith('Serena') ? 'new_gg_serena' : 'new_gg';
-  playSound(sound);
+  // Le son est déclenché par l'event serveur `play_sound` (variante choisie côté serveur),
+  // pas ici, pour éviter un double départ de la fanfare.
   launchConfetti();
   setTimeout(() => document.getElementById('new-gg-overlay').classList.remove('show'), 7000);
 }

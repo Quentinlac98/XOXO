@@ -6,6 +6,34 @@ XOXO, Chuck Bass.
 
 ---
 
+## [v4.9.1] — 2026-07-04
+
+Salve de correctifs sortie de la session **fix/final-run** : crash serveur sur le tick timer LIBRE, actions admin cassées sur les prénoms à apostrophe, token VIP qui survivait à un `force_logout`, double fanfare "nouveau GG" sur le projecteur, et toast d'erreur du soundboard VIP qui levait un `ReferenceError`.
+
+### Fixed
+
+#### Crash tick timer LIBRE — mélange tz-naive / tz-aware
+
+- **`_libre_tick_task`** (`app/main.py`) — toutes les 10 s, la tâche recharge `game.libre_ends_at` depuis la DB pour capter les décalages `+30s / −30s` de l'admin. SQLite ne conserve pas le `tzinfo`, donc l'objet ressort **naive** ; `datetime.now(timezone.utc)` étant **aware**, la soustraction levait `TypeError: can't subtract offset-naive and offset-aware datetimes` et tuait le tick (plus de `timer_tick` émis, timer figé côté clients). Fix : `ends_at.replace(tzinfo=timezone.utc)` si `tzinfo is None`, aligné sur le pattern déjà en place dans `/api/admin/adjust-timer`.
+
+#### Admin kick/delete cassé sur les prénoms à apostrophe
+
+- **`escHtml()` → `escJsAttr()`** (`templates/admin.html`) — l'ancien `escHtml` transformait `'` en `&#39;`, que le navigateur **décode avant** d'exécuter le `onclick`. Pour `"Jean'e"`, l'attribut `onclick="kickPlayer('Jean&#39;e')"` était réévalué en `onclick="kickPlayer('Jean'e')"` → `SyntaxError` silencieuse, aucun kick / delete / removeBot ne partait. Nouveau helper `escJsAttr()` échappe pour la couche "JS-string-dans-attribut-HTML" (`\` → `\\`, `'` → `\'`, `"` → `&quot;`, `<` → `<`, etc.) pour les identifiants et un `escHtml()` restreint aux vraies zones textuelles.
+
+#### Token VIP survivait à un `force_logout`
+
+- **Handlers `force_logout` / `session_reset`** (`templates/vip.html`) — supprimaient la clé `"player_token"` alors que le login VIP stockait sous `"gg_player_token"`. L'expulsion nettoyait donc une clé fantôme, la vraie restait ; au prochain reload, le socket `reconnect_player` reprenait le slot Blair et les cookies VIP redevenaient valides. Correction : purge de la clé exacte `gg_player_token`.
+
+#### Double fanfare "nouveau GG" sur le projecteur
+
+- **`showNewGG()`** (`templates/projector.html`) — l'overlay appelait localement `playSound('new_gg' | 'new_gg_serena')` **en plus** de l'event serveur `play_sound` (déjà émis avec la bonne variante par `_new_gg_sound_for(...)`). Résultat : la fanfare démarrait deux fois quasi simultanément, avec un léger stutter / redémarrage. `showNewGG()` ne fait plus que l'overlay + confetti ; le son est piloté uniquement par le handler `socket.on('play_sound', …)` — **une seule source de vérité**, côté serveur.
+
+#### Toast d'erreur du soundboard VIP levait un `ReferenceError`
+
+- **`sbPlay()` catch block** (`templates/vip.html`) — appelait `toast('Son indisponible — projecteur injoignable')` alors que le helper de la page est `showToast(msg, duration)`. Quand `/api/vip/play-sound` échouait (projecteur offline, réseau coupé), `ReferenceError: toast is not defined` remplaçait le toast d'erreur — exactement dans le cas où Blair a besoin de voir pourquoi le son ne part pas. Corrigé en `showToast(...)`.
+
+---
+
 ## [v4.9.0] — 2026-07-03
 
 Refonte du Soundboard VIP en **VIP Toolbox** (renommage + 3 sous-outils : QR / Sons / Affichage Projecteur), Custom Blast VIP promu au rang de **composer complet** (parité admin, sans identité Chuck), sons contextuels "nouveau GG" pour Serena et "Chuck Bass Blast" dans la whitelist blast. Plus une salve de correctifs sur le flux de reconnexion VIP, l'attribution du GG initial, la transition LIBRE → QUIZ sur le projecteur, et le verrouillage du feed Scoops côté VIP.

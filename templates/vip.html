@@ -2642,7 +2642,7 @@ async function sbPlay(id) {
     if (!data.ok) throw new Error(data.error || 'send failed');
   } catch (e) {
     _sbClearPlaying();
-    toast('Son indisponible — projecteur injoignable');
+    showToast('Son indisponible — projecteur injoignable');
   }
 }
 
