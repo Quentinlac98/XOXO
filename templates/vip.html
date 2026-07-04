@@ -2332,7 +2332,8 @@ function _safeReload(reason) {
 
 // Expulsion admin
 socket.on('force_logout', () => {
-  localStorage.removeItem('player_token');
+  localStorage.removeItem('gg_player_token');
+  state.playerToken = null;
   state.player = null;
   state.isGG   = false;
   showToast('Tu as été expulsé(e) par Chuck Bass. XOXO.', 5000);
@@ -2345,7 +2346,8 @@ socket.on('force_logout', () => {
 // Sinon (reset complet) : le joueur a été supprimé → on purge le token et on repart au login.
 socket.on('session_reset', (data) => {
   if (!data || !data.keep_players) {
-    localStorage.removeItem('player_token');
+    localStorage.removeItem('gg_player_token');
+    state.playerToken = null;
     state.player = null;
     state.isGG   = false;
   }

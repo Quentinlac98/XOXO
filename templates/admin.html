@@ -2143,6 +2143,21 @@ function escHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Escape a value for use as a single-quoted JS string inside an HTML
+// attribute (e.g. onclick="fn('...')"). HTML entities in attributes are
+// decoded BEFORE the JS runs, so escHtml() alone leaves apostrophes
+// unescaped and produces `fn('Jean'e')` — a syntax error that silently
+// disables the handler. Escape backslash and apostrophe for the JS layer,
+// and &/" for the outer HTML attribute.
+function escJsAttr(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
+}
+
 /* ── Core API helper ────────────────────────────── */
 async function adminAction(endpoint, body = {}, method = 'POST') {
   try {
@@ -2531,8 +2546,8 @@ async function loadPlayers() {
         <div style="display:flex;gap:5px;">
           <button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}}).then(loadPlayers)" title="Transférer GG">👑</button>
           <button class="btn btn-ghost btn-xs" onclick="refreshPlayer(${p.id})" title="Refresh">↻</button>
-          <button class="btn btn-ghost btn-xs" onclick="kickPlayer(${p.id},'${escHtml(p.prenom)}')">Kick</button>
-          <button class="btn btn-danger btn-xs" onclick="deletePlayer(${p.id},'${escHtml(p.prenom)}')">🗑</button>
+          <button class="btn btn-ghost btn-xs" onclick="kickPlayer(${p.id},'${escJsAttr(p.prenom)}')">Kick</button>
+          <button class="btn btn-danger btn-xs" onclick="deletePlayer(${p.id},'${escJsAttr(p.prenom)}')">🗑</button>
         </div>
       </td>
     </tr>`).join('');
@@ -3012,7 +3027,7 @@ function renderBotTable(bots) {
       <td style="color:${colors[b.phase]||'var(--stone)'};font-weight:500;">${escHtml(b.phase)}</td>
       <td style="text-align:center;">${parseInt(b.answers_sent)||0}</td>
       <td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${b.connected?'var(--green)':'var(--red)'};margin-right:6px;"></span>${b.connected?'Connecté':'Déco.'}</td>
-      <td><button class="btn btn-danger btn-xs" onclick="removeBot('${b.bot_id}','${escHtml(b.prenom)}')">✕</button></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeBot('${b.bot_id}','${escJsAttr(b.prenom)}')">✕</button></td>
     </tr>`).join('');
 }
 
