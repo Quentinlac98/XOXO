@@ -233,6 +233,9 @@ class Scoop(db.Model):
     created_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
+        dt = self.created_at
+        if dt is not None and dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         return {
             "id":          self.id,
             "author_name": self.author_name,
@@ -240,7 +243,7 @@ class Scoop(db.Model):
             "content":     self.content,
             "image_path":  self.image_path,
             "is_pinned":   self.is_pinned,
-            "created_at":  self.created_at.isoformat(),
+            "created_at":  dt.isoformat() if dt else None,
         }
 
 
@@ -257,12 +260,15 @@ class ActivityLog(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
+        dt = self.created_at
+        if dt is not None and dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         return {
             "id":         self.id,
             "event_type": self.event_type,
             "actor":      self.actor,
             "detail":     self.detail,
-            "created_at": self.created_at.isoformat(),
+            "created_at": dt.isoformat() if dt else None,
         }
 
 

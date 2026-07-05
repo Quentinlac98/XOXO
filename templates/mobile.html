@@ -1605,6 +1605,14 @@ socket.on('new_scoop_silent', scoop => {
   document.getElementById('nav-badge-scoops').classList.add('show');
 });
 
+// Blast admin/VIP (Chuck Mode / Blair) : le popup s'affiche via admin_blast,
+// mais le scoop doit aussi rejoindre le feed sans F5.
+socket.on('scoop_published', scoop => {
+  if (!scoop || scoop.id == null) return;
+  addScoopToFeed(scoop);
+  document.getElementById('nav-badge-scoops').classList.add('show');
+});
+
 // F13 — Erreur de réponse (double submit, GG qui tente de répondre, etc.)
 socket.on('answer_error', data => {
   showToast(data.message || 'Erreur de réponse.', 3000);

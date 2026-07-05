@@ -3060,7 +3060,14 @@ socket.on('admin_blast', data => {
 });
 
 /* Keep scoops list in sync with live game events */
-socket.on('scoop_published', () => {
+socket.on('new_scoop', scoop => {
+  addScoopToFeed(scoop);
+});
+socket.on('new_scoop_silent', scoop => {
+  addScoopToFeed(scoop);
+});
+socket.on('scoop_published', scoop => {
+  if (scoop && scoop.id != null) addScoopToFeed(scoop);
   if (_vipCurrentPanel === 'scoops-manager') smRefresh();
 });
 socket.on('scoop_deleted', () => {

@@ -2883,9 +2883,10 @@ async function loadScores() {
 function editScore(el) {
   const nv = prompt('Nouveau score :', el.dataset.score);
   if (nv === null || nv === el.dataset.score) return;
-  const delta = parseInt(nv) - parseInt(el.dataset.score);
-  adminAction('/api/admin/adjust-score', { player_id: el.dataset.id, delta }).then(r => {
-    if (r) { el.textContent = nv; el.dataset.score = nv; }
+  const score_total = parseInt(nv);
+  if (Number.isNaN(score_total)) return;
+  adminAction('/api/admin/adjust-score', { player_id: el.dataset.id, score_total }).then(r => {
+    if (r) { el.textContent = score_total; el.dataset.score = score_total; }
   });
 }
 
