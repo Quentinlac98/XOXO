@@ -2951,25 +2951,28 @@ function loadScoresHistory() {
     if (!el) return;
     const h = res?.history || [];
     if (!h.length) { el.innerHTML = ''; return; }
-    // Endpoint /api/admin/scores-history renvoie { quiz_number, scores:[{prenom,personnage,points}] }
-    // — on résume chaque quiz en 1 ligne : "Flash Quiz #N — podium (points)".
-    el.innerHTML = `
-      <div class="panel panel-full">
-        <div class="panel-title">Historique par Flash Quiz</div>
-        <div class="panel-sub tight">Sessions précédentes</div>
-        <div style="margin-top:12px;">${h.map(e => {
-          const podium = (e.scores || [])
-            .slice(0, 3)
-            .map(s => `${escHtml(s.prenom || '?')} · ${s.points || 0}`)
-            .join(' — ');
-          return `
-          <div class="log-row">
-            <span class="log-time">Flash Quiz #${escHtml(String(e.quiz_number ?? '?'))}</span>
-            <span class="log-detail">${podium || '<em>Aucun point</em>'}</span>
-          </div>`;
-        }).join('')}
-        </div>
+    // Un panel par quiz avec la liste complète des joueurs ayant marqué des points.
+    // Ordre chronologique inverse (le plus récent en tête).
+    const ordered = [...h].sort((a, b) => (b.quiz_number ?? 0) - (a.quiz_number ?? 0));
+    el.innerHTML = ordered.map(e => {
+      const scorers = (e.scores || []).filter(s => (s.points || 0) > 0);
+      const total   = scorers.reduce((sum, s) => sum + (s.points || 0), 0);
+      const rows    = scorers.length ? scorers.map((s, i) => `
+        <div class="log-row">
+          <span class="log-time" style="min-width:28px;">${i + 1}</span>
+          <span class="log-detail" style="flex:1;">
+            <strong>${escHtml(s.prenom || '?')}</strong>
+            <span style="color:var(--stone);"> · ${escHtml(s.personnage || '—')}</span>
+          </span>
+          <span class="log-detail" style="font-weight:700;color:var(--gold);min-width:56px;text-align:right;">${s.points || 0} pt${(s.points || 0) > 1 ? 's' : ''}</span>
+        </div>`).join('') : `<div style="text-align:center;color:var(--stone);padding:16px;font-size:12px;"><em>Aucun point marqué sur ce quiz.</em></div>`;
+      return `
+      <div class="panel panel-full" style="margin-top:14px;">
+        <div class="panel-title">Flash Quiz #${escHtml(String(e.quiz_number ?? '?'))}</div>
+        <div class="panel-sub tight">${scorers.length} joueur${scorers.length > 1 ? 's' : ''} · ${total} point${total > 1 ? 's' : ''} distribué${total > 1 ? 's' : ''}</div>
+        <div style="margin-top:10px;">${rows}</div>
       </div>`;
+    }).join('');
   });
 }
 
