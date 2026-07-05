@@ -1127,6 +1127,66 @@ tr:hover td { background: rgba(255,255,255,.018); }
 }
 #danger-overlay.open { display: flex; }
 
+/* ══════════════════════════════════════════════════
+   BLAIR VIP QR MODAL
+   ══════════════════════════════════════════════════ */
+#blair-qr-overlay {
+  position: fixed; inset: 0; z-index: 310;
+  background: rgba(0,0,0,.85);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#blair-qr-overlay.open { display: flex; }
+#blair-qr-modal {
+  width: 380px; max-width: 92vw;
+  background: var(--dark2);
+  border: 1px solid rgba(201,168,76,.28);
+  border-radius: 18px;
+  box-shadow: 0 28px 72px rgba(0,0,0,.9);
+  overflow: hidden;
+}
+#blair-qr-modal .qr-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 22px;
+  background: rgba(201,168,76,.08);
+  border-bottom: 1px solid rgba(201,168,76,.18);
+}
+#blair-qr-modal .qr-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-style: italic;
+  color: var(--gold, #C9A84C); flex: 1;
+  letter-spacing: .02em;
+}
+#blair-qr-modal .qr-close {
+  font-size: 18px; color: var(--stone);
+  background: transparent; border: none;
+  cursor: pointer; padding: 0 4px;
+}
+#blair-qr-modal .qr-close:hover { color: var(--cream); }
+#blair-qr-modal .qr-body {
+  padding: 24px; display: flex; flex-direction: column;
+  align-items: center; gap: 12px;
+}
+#blair-qr-modal .qr-img {
+  width: 260px; height: 260px;
+  background: white; border-radius: 12px;
+  padding: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+#blair-qr-modal .qr-url-label {
+  font-size: 10px; letter-spacing: .3em;
+  text-transform: uppercase; color: var(--stone);
+  margin-top: 4px;
+}
+#blair-qr-modal .qr-url {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 12px; font-style: italic;
+  color: var(--gold, #C9A84C);
+  word-break: break-all; text-align: center;
+  max-width: 320px;
+}
+
 #danger-modal {
   width: 440px;
   max-width: 92vw;
@@ -1535,7 +1595,10 @@ tr:hover td { background: rgba(255,255,255,.018); }
               <div class="panel-title">Feed · Modération</div>
               <div class="panel-sub tight">Plus récents en premier</div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="loadScoops()">↻ Rafraîchir</button>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="loadScoops()">↻ Rafraîchir</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteAllScoops()">🗑 Supprimer tous les scoops</button>
+            </div>
           </div>
           <div id="scoops-list">
             <div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l'instant.</div>
@@ -1592,6 +1655,7 @@ tr:hover td { background: rgba(255,255,255,.018); }
               <label class="bc-label">Son d'accompagnement</label>
               <select id="bc-sound" class="input-field" onchange="updateBlastPreview()">
                 <option value="new_gg">👑 New GG (6.1s) · défaut</option>
+                <option value="chuck_bass_blast">♠ Chuck Bass Blast (7.1s)</option>
                 <option value="xoxo">💋 XOXO (5.4s)</option>
                 <option value="quiz_start">⚡ Quiz Start (22s)</option>
                 <option value="correct">✓ Correct (2.7s)</option>
@@ -1752,6 +1816,7 @@ tr:hover td { background: rgba(255,255,255,.018); }
           <div class="btn-row">
             <button class="btn btn-danger"  onclick="freeBlairSlot()">🔓 Libérer le slot</button>
             <button class="btn btn-ghost"   onclick="copyBlair()">📋 Copier lien VIP</button>
+            <button class="btn btn-ghost"   onclick="showBlairQR()">📱 QR Code VIP</button>
             <button class="btn btn-gold"    onclick="openBlairLogin()">🌹 Ouvrir login Blair</button>
           </div>
         </div>
@@ -1994,6 +2059,23 @@ tr:hover td { background: rgba(255,255,255,.018); }
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     BLAIR VIP QR MODAL
+     ══════════════════════════════════════════════ -->
+<div id="blair-qr-overlay">
+  <div id="blair-qr-modal">
+    <div class="qr-hdr">
+      <span class="qr-title">🌹 QR Code · Login VIP</span>
+      <button class="qr-close" onclick="closeBlairQR()">✕</button>
+    </div>
+    <div class="qr-body">
+      <img id="blair-qr-img" class="qr-img" alt="QR VIP"/>
+      <div class="qr-url-label">Lien magique</div>
+      <div id="blair-qr-url" class="qr-url">—</div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Toast ─────────────────────────────────────── -->
 <div id="toast"></div>
 
@@ -2062,6 +2144,21 @@ function escHtml(str) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// Escape a value for use as a single-quoted JS string inside an HTML
+// attribute (e.g. onclick="fn('...')"). HTML entities in attributes are
+// decoded BEFORE the JS runs, so escHtml() alone leaves apostrophes
+// unescaped and produces `fn('Jean'e')` — a syntax error that silently
+// disables the handler. Escape backslash and apostrophe for the JS layer,
+// and &/" for the outer HTML attribute.
+function escJsAttr(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
 }
 
 /* ── Core API helper ────────────────────────────── */
@@ -2284,7 +2381,7 @@ function _updateTimerDisplay() {
 /* ══════════════════════════════════════════════════
    SOUND
    ══════════════════════════════════════════════════ */
-const SOUND_DUR = { xoxo: 5410, quiz_start: 22150, correct: 2720, new_gg: 6060, phase2_start: 14870, countdown: 2300 };
+const SOUND_DUR = { xoxo: 5410, quiz_start: 22150, correct: 2720, new_gg: 6060, phase2_start: 14870, countdown: 2300, chuck_bass_blast: 7080 };
 
 function triggerSound(name) {
   adminAction('/api/admin/play-sound', { sound: name }).then(() => {
@@ -2452,8 +2549,8 @@ async function loadPlayers() {
         <div style="display:flex;gap:5px;">
           <button class="btn btn-outline btn-xs" onclick="adminAction('/api/admin/transfer-gg',{player_id:${p.id}}).then(loadPlayers)" title="Transférer GG">👑</button>
           <button class="btn btn-ghost btn-xs" onclick="refreshPlayer(${p.id})" title="Refresh">↻</button>
-          <button class="btn btn-ghost btn-xs" onclick="kickPlayer(${p.id},'${escHtml(p.prenom)}')">Kick</button>
-          <button class="btn btn-danger btn-xs" onclick="deletePlayer(${p.id},'${escHtml(p.prenom)}')">🗑</button>
+          <button class="btn btn-ghost btn-xs" onclick="kickPlayer(${p.id},'${escJsAttr(p.prenom)}')">Kick</button>
+          <button class="btn btn-danger btn-xs" onclick="deletePlayer(${p.id},'${escJsAttr(p.prenom)}')">🗑</button>
         </div>
       </td>
     </tr>`).join('');
@@ -2609,6 +2706,10 @@ function postAsChuck() {
 }
 function deleteScoop(id) { adminAction('/api/admin/delete-scoop', { scoop_id: id }).then(r => r && loadScoops()); }
 function pinScoop(id)    { adminAction('/api/admin/pin-scoop',    { scoop_id: id }).then(r => r && loadScoops()); }
+function deleteAllScoops() {
+  if (!confirm('Supprimer tous les scoops ? Cette action est irréversible.')) return;
+  adminAction('/api/admin/delete-all-scoops').then(r => r && loadScoops());
+}
 
 /* ══════════════════════════════════════════════════
    BLAST COMPOSER (Chuck Mode)
@@ -2782,9 +2883,10 @@ async function loadScores() {
 function editScore(el) {
   const nv = prompt('Nouveau score :', el.dataset.score);
   if (nv === null || nv === el.dataset.score) return;
-  const delta = parseInt(nv) - parseInt(el.dataset.score);
-  adminAction('/api/admin/adjust-score', { player_id: el.dataset.id, delta }).then(r => {
-    if (r) { el.textContent = nv; el.dataset.score = nv; }
+  const score_total = parseInt(nv);
+  if (Number.isNaN(score_total)) return;
+  adminAction('/api/admin/adjust-score', { player_id: el.dataset.id, score_total }).then(r => {
+    if (r) { el.textContent = score_total; el.dataset.score = score_total; }
   });
 }
 
@@ -2849,17 +2951,28 @@ function loadScoresHistory() {
     if (!el) return;
     const h = res?.history || [];
     if (!h.length) { el.innerHTML = ''; return; }
-    el.innerHTML = `
-      <div class="panel panel-full">
-        <div class="panel-title">Historique par Flash Quiz</div>
-        <div class="panel-sub tight">Sessions précédentes</div>
-        <div style="margin-top:12px;">${h.map(e => `
-          <div class="log-row">
-            <span class="log-time">${escHtml(e.date || '')}</span>
-            <span class="log-detail">${escHtml(e.quiz_name || '')}</span>
-          </div>`).join('')}
-        </div>
+    // Un panel par quiz avec la liste complète des joueurs ayant marqué des points.
+    // Ordre chronologique inverse (le plus récent en tête).
+    const ordered = [...h].sort((a, b) => (b.quiz_number ?? 0) - (a.quiz_number ?? 0));
+    el.innerHTML = ordered.map(e => {
+      const scorers = (e.scores || []).filter(s => (s.points || 0) > 0);
+      const total   = scorers.reduce((sum, s) => sum + (s.points || 0), 0);
+      const rows    = scorers.length ? scorers.map((s, i) => `
+        <div class="log-row">
+          <span class="log-time" style="min-width:28px;">${i + 1}</span>
+          <span class="log-detail" style="flex:1;">
+            <strong>${escHtml(s.prenom || '?')}</strong>
+            <span style="color:var(--stone);"> · ${escHtml(s.personnage || '—')}</span>
+          </span>
+          <span class="log-detail" style="font-weight:700;color:var(--gold);min-width:56px;text-align:right;">${s.points || 0} pt${(s.points || 0) > 1 ? 's' : ''}</span>
+        </div>`).join('') : `<div style="text-align:center;color:var(--stone);padding:16px;font-size:12px;"><em>Aucun point marqué sur ce quiz.</em></div>`;
+      return `
+      <div class="panel panel-full" style="margin-top:14px;">
+        <div class="panel-title">Flash Quiz #${escHtml(String(e.quiz_number ?? '?'))}</div>
+        <div class="panel-sub tight">${scorers.length} joueur${scorers.length > 1 ? 's' : ''} · ${total} point${total > 1 ? 's' : ''} distribué${total > 1 ? 's' : ''}</div>
+        <div style="margin-top:10px;">${rows}</div>
       </div>`;
+    }).join('');
   });
 }
 
@@ -2933,7 +3046,7 @@ function renderBotTable(bots) {
       <td style="color:${colors[b.phase]||'var(--stone)'};font-weight:500;">${escHtml(b.phase)}</td>
       <td style="text-align:center;">${parseInt(b.answers_sent)||0}</td>
       <td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${b.connected?'var(--green)':'var(--red)'};margin-right:6px;"></span>${b.connected?'Connecté':'Déco.'}</td>
-      <td><button class="btn btn-danger btn-xs" onclick="removeBot('${b.bot_id}','${escHtml(b.prenom)}')">✕</button></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeBot('${b.bot_id}','${escJsAttr(b.prenom)}')">✕</button></td>
     </tr>`).join('');
 }
 
@@ -3029,6 +3142,28 @@ function openBlairLogin() {
   window.open(`/blair-vip?token=${token}`, '_blank');
 }
 
+async function showBlairQR() {
+  const overlay = document.getElementById('blair-qr-overlay');
+  const img     = document.getElementById('blair-qr-img');
+  const urlEl   = document.getElementById('blair-qr-url');
+  overlay?.classList.add('open');
+  img.removeAttribute('src');
+  urlEl.textContent = 'Génération…';
+  try {
+    const r = await fetch('/api/admin/blair-vip-qr');
+    if (!r.ok) throw new Error('http ' + r.status);
+    const d = await r.json();
+    img.src = 'data:image/png;base64,' + d.qr_base64;
+    urlEl.textContent = d.url;
+  } catch (e) {
+    urlEl.textContent = 'Erreur — impossible de générer le QR';
+    showToast('Erreur QR Code VIP', 'error');
+  }
+}
+function closeBlairQR() {
+  document.getElementById('blair-qr-overlay')?.classList.remove('open');
+}
+
 /* ══════════════════════════════════════════════════
    DANGER ZONE
    ══════════════════════════════════════════════════ */
@@ -3120,7 +3255,7 @@ function initSocket() {
     const choices  = document.getElementById('quiz-q-choices');
     const statusEl = document.getElementById('quiz-q-status');
     if (qNum)     qNum.textContent  = `Q.${data.question_number ?? '—'} / ${data.total ?? '?'}`;
-    if (qText)    qText.textContent = data.gg ? `${data.gg.prenom} choisit la question…` : 'Le Gossip Girl choisit la question…';
+    if (qText)    qText.textContent = data.gg ? `${data.gg.prenom} choisit la question…` : 'Gossip Girl choisit la question…';
     if (choices)  choices.innerHTML = '';
     if (statusEl) statusEl.textContent = 'Sélection en cours';
   });
@@ -3185,6 +3320,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePhaseMenu(); });
   document.getElementById('danger-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeDangerZone(); });
+  document.getElementById('blair-qr-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeBlairQR(); });
 });
 </script>
 

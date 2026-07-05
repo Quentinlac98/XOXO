@@ -6,6 +6,115 @@ XOXO, Chuck Bass.
 
 ---
 
+## [v4.9.1] — 2026-07-04
+
+Salve de correctifs sortie de la session **fix/final-run** : crash serveur sur le tick timer LIBRE, actions admin cassées sur les prénoms à apostrophe, token VIP qui survivait à un `force_logout`, double fanfare "nouveau GG" sur le projecteur, et toast d'erreur du soundboard VIP qui levait un `ReferenceError`.
+
+### Fixed
+
+#### Crash tick timer LIBRE — mélange tz-naive / tz-aware
+
+- **`_libre_tick_task`** (`app/main.py`) — toutes les 10 s, la tâche recharge `game.libre_ends_at` depuis la DB pour capter les décalages `+30s / −30s` de l'admin. SQLite ne conserve pas le `tzinfo`, donc l'objet ressort **naive** ; `datetime.now(timezone.utc)` étant **aware**, la soustraction levait `TypeError: can't subtract offset-naive and offset-aware datetimes` et tuait le tick (plus de `timer_tick` émis, timer figé côté clients). Fix : `ends_at.replace(tzinfo=timezone.utc)` si `tzinfo is None`, aligné sur le pattern déjà en place dans `/api/admin/adjust-timer`.
+
+#### Admin kick/delete cassé sur les prénoms à apostrophe
+
+- **`escHtml()` → `escJsAttr()`** (`templates/admin.html`) — l'ancien `escHtml` transformait `'` en `&#39;`, que le navigateur **décode avant** d'exécuter le `onclick`. Pour `"Jean'e"`, l'attribut `onclick="kickPlayer('Jean&#39;e')"` était réévalué en `onclick="kickPlayer('Jean'e')"` → `SyntaxError` silencieuse, aucun kick / delete / removeBot ne partait. Nouveau helper `escJsAttr()` échappe pour la couche "JS-string-dans-attribut-HTML" (`\` → `\\`, `'` → `\'`, `"` → `&quot;`, `<` → `<`, etc.) pour les identifiants et un `escHtml()` restreint aux vraies zones textuelles.
+
+#### Token VIP survivait à un `force_logout`
+
+- **Handlers `force_logout` / `session_reset`** (`templates/vip.html`) — supprimaient la clé `"player_token"` alors que le login VIP stockait sous `"gg_player_token"`. L'expulsion nettoyait donc une clé fantôme, la vraie restait ; au prochain reload, le socket `reconnect_player` reprenait le slot Blair et les cookies VIP redevenaient valides. Correction : purge de la clé exacte `gg_player_token`.
+
+#### Double fanfare "nouveau GG" sur le projecteur
+
+- **`showNewGG()`** (`templates/projector.html`) — l'overlay appelait localement `playSound('new_gg' | 'new_gg_serena')` **en plus** de l'event serveur `play_sound` (déjà émis avec la bonne variante par `_new_gg_sound_for(...)`). Résultat : la fanfare démarrait deux fois quasi simultanément, avec un léger stutter / redémarrage. `showNewGG()` ne fait plus que l'overlay + confetti ; le son est piloté uniquement par le handler `socket.on('play_sound', …)` — **une seule source de vérité**, côté serveur.
+
+#### Toast d'erreur du soundboard VIP levait un `ReferenceError`
+
+- **`sbPlay()` catch block** (`templates/vip.html`) — appelait `toast('Son indisponible — projecteur injoignable')` alors que le helper de la page est `showToast(msg, duration)`. Quand `/api/vip/play-sound` échouait (projecteur offline, réseau coupé), `ReferenceError: toast is not defined` remplaçait le toast d'erreur — exactement dans le cas où Blair a besoin de voir pourquoi le son ne part pas. Corrigé en `showToast(...)`.
+
+---
+
+## [v4.9.0] — 2026-07-03
+
+Refonte du Soundboard VIP en **VIP Toolbox** (renommage + 3 sous-outils : QR / Sons / Affichage Projecteur), Custom Blast VIP promu au rang de **composer complet** (parité admin, sans identité Chuck), sons contextuels "nouveau GG" pour Serena et "Chuck Bass Blast" dans la whitelist blast. Plus une salve de correctifs sur le flux de reconnexion VIP, l'attribution du GG initial, la transition LIBRE → QUIZ sur le projecteur, et le verrouillage du feed Scoops côté VIP.
+
+### Added
+
+#### VIP Toolbox (remplace le Soundboard VIP)
+
+- **Tuile `🧰 VIP Toolbox`** (`templates/vip.html`) — remplace l'ancienne tuile "Soundboard VIP" dans la grille dashboard. Ouvre un hub avec 3 sous-tuiles (QR, Sons, Affichage Projecteur) qui drillent dans leur propre sous-panneau.
+- **Sous-panneau QR** — fetch `/api/qr-code` (endpoint déjà public), affiche le QR de `/mobile` dans un cadre blanc ; tap → lightbox plein écran (`#tbx-qr-lightbox`, `z-index: 700`).
+- **Sous-panneau Sons** — nouveau `VIP_SOUNDS` (6 mp3 Gossip Girl) : The Bitch Is Back 💅 · Biggest News Ever 🗞 · First Post ✍ · Incoming Gossip 📱 · Devil In Disguise 😈 · Bad Girl 🖤. Chaque entrée `{id, name, icon, file}` explicite le nom de fichier — le path n'est plus dérivé de `id`.
+- **Sous-panneau Affichage Projecteur** — deux toggles (Scores en grand / QR Code) qui pilotent le projecteur, parité admin.
+- **Route `POST /api/vip/projector-scores`** / **`POST /api/vip/projector-qr`** (`app/main.py`) — équivalents `@vip_required` des endpoints admin `/api/admin/projector-*`. Émettent respectivement `projector_scores` (payload : `visible`, `leaderboard`) et `projector_qr` (`visible`), captés par le projecteur.
+- **Navigation `backTo`** — `VIP_PANEL_META` gagne un champ `backTo`, `vipGoBack()` retourne au parent (les sous-tuiles Toolbox reviennent au Toolbox, pas à la racine du dashboard).
+
+#### Blast Composer VIP (clone du composer admin, sans Chuck)
+
+- **Panneau `vip-panel-blast` refondu** — sélecteur d'identité `✦ Gossip Girl` / `✧ Custom` (pas de Chuck), textarea 500 caractères avec compteur, upload d'image (`/api/upload-image`), dropdown son (whitelist serveur), toggle Auto-pin, presets one-tap, preview projecteur live. Remplace la version simple (un unique textarea 300 caractères + un bouton).
+- **Route `POST /api/vip/blast-composer`** (`app/main.py`) — mirror de `/api/admin/blast` avec `@vip_required` et rejet `identity == "chuck"` (fallback vers `gg`).
+- **Route `GET /api/vip/blast-presets`** (`app/main.py`) — sert `blast-presets.json` en filtrant les presets dont `identity == "chuck"`.
+- **Helper `_publish_blast(...)`** (`app/main.py`) — extrait la logique de `api_admin_blast` (persistance Scoop + résolution identité serveur-autoritative + whitelist son + émissions `admin_blast` / `play_sound` / `scoop_published`). `api_admin_blast` et `api_vip_blast_composer` délèguent tous deux à ce helper : **une seule source de vérité**.
+
+#### Sons contextuels "nouveau GG"
+
+- **`new_gg_serena.mp3`** (16.30 s) — fanfare dédiée quand Serena devient GG. Helper `_new_gg_sound_for(player)` retourne `("new_gg_serena", 16.30)` si le personnage commence par "Serena", sinon `("new_gg", 6.06)`.
+- **Constante `NEW_GG_SERENA_AUDIO_DURATION`** (`app/main.py`) + calcul dynamique de `libre_delay` dans `_end_quiz` : le passage en LIBRE attend la fin réelle de la fanfare (Serena ne coupe pas son son).
+- **`<audio id="snd-new-gg-serena">`** (`templates/projector.html`) + entrées `soundMap` / `soundDurations` (16.30 s). `showNewGG(prenom, personnage)` sélectionne aussi côté client selon le personnage — évite un flash du son par défaut avant que le `play_sound` serveur n'écrase.
+
+#### Son "Chuck Bass Blast"
+
+- **`chuck_bass_blast.mp3`** (7.08 s) ajouté à la whitelist `_BLAST_ALLOWED_SOUNDS` — sélectionnable depuis le Blast Composer admin (`templates/admin.html`).
+- **`snd-chuck-blast`** enregistré dans `soundMap` / `soundDurations` du projecteur + `SOUND_DUR` admin (7080 ms) pour la barre de progression.
+
+### Fixed
+
+#### Reconnexion VIP
+
+- **Blair reconnectant via son token localStorage** (`app/events.py`, `on_reconnect`) restait sur `/mobile` au lieu de retrouver `/vip` (5ᵉ onglet 💎 absent du template mobile). Le handler détecte désormais un personnage `role == "vip"` (ou `requires_code`), réaffirme le flag de session `blair_vip_verified` et émet `blair_vip_granted` avec `redirect: /vip` — l'écouteur côté `mobile.html` fait la redirection. Sur `/vip`, aucun handler ⇒ no-op, pas de boucle.
+
+#### Attribution du GG initial (Dan Humphrey)
+
+- **`on_join_player`** (`app/events.py`) — l'ancienne condition `is_dan and not game.current_gg_id` échouait quand `current_gg_id` pointait sur un profil hors-ligne d'une soirée précédente (état DB persistant entre les runs). Nouvelle condition : "aucun joueur actuellement connecté n'a le flag `is_gg=True`". Nettoie aussi les flags `is_gg` stales sur des profils offline avant d'attribuer.
+
+#### Auto-démarrage QUIZ à la fin du timer LIBRE
+
+- **Handler `phase2_ended` du projecteur** (`templates/projector.html`) — supprimé le `showView('waiting')` en `setTimeout(…, 6000)` qui clobbait la vue quiz déjà activée par `phase_changed(QUIZ)` émis immédiatement après par `_libre_end_job`. Symptôme observé : "le quiz ne démarre pas automatiquement" alors qu'il tournait bien côté serveur.
+
+#### Feed Scoops sur `/vip` en dehors du Mode Libre
+
+- **`.scoops-active { display: block; }`** (`templates/vip.html`) + `updatePhaseCard` retire la logique de verrouillage phase-dépendante — Blair voit le feed Scoops dans **toutes** les phases (parité admin). Le label `scoops-phase-label` change selon LOBBY / QUIZ / LIBRE mais le composer et le feed restent visibles.
+
+#### Filet anti-boucle sur les reloads `/vip`
+
+- **`_safeReload(reason)`** (`templates/vip.html`) — les 3 handlers `force_logout` / `session_reset` / `client_reload` passent par un throttle basé sur `sessionStorage.gg_last_reload_at`. Un second reload dans les 4 s est bloqué, avec un log console explicite (`[vip] reload BLOQUÉ (throttle) — raison: X`). Filet de sécurité pour diagnostiquer un émetteur en rafale sans figer la page.
+
+#### Soundboard VIP → diffusion projecteur (bips génériques remplacés par les mp3s Gossip Girl)
+
+- **Path des mp3s corrigé** (`app/main.py`, `api_vip_sounds`) — cherchait sous `static/sounds/vip/` alors que les fichiers sont dans `static/sounds/`. Résultat : `url = null` pour les 6 sons, fallback Web Audio synthétisé (les "bips courts et longs" génériques entendus sur l'iPhone VIP). Corrigé : lookup direct dans `static/sounds/`.
+- **Sortie audio redirigée vers le projecteur** — `sbPlay` postait un `new Audio(url).play()` local à l'iPhone VIP, personne d'autre n'entendait. Nouvelle route `POST /api/vip/play-sound` (`@vip_required`, whitelist des 6 IDs) qui `socketio.emit("play_sound", ...)` — le projecteur enchaîne via son handler existant. Route `POST /api/vip/stop-sound` pour le bouton ⏹ Stop.
+- **`<audio>` VIP enregistrés sur le projecteur** (`templates/projector.html`) — les 6 IDs (`bitch_back` · `biggest_news` · `first_post` · `ringtone` · `georgina` · `bad_girl`) rejoignent le `soundMap` avec leurs balises `<audio preload="auto">`.
+- **Sync UI via `sound_stopped`** (`templates/vip.html`) — l'état "playing" du bouton VIP retombe automatiquement quand le projecteur émet `sound_stopped` (rebroadcast par le serveur), plus un timeout de sécurité de 25 s au cas où l'événement se perd.
+
+#### Feedback réponse quiz sur `/vip` — résilience au desync `session_id`
+
+- **Bannière ✓/✕ synthétisée localement au clic** (`templates/vip.html`, `submitAnswer` → `_showAnswerBanner`) — le serveur envoie `answer_confirmed` uniquement au `request.sid` (`app/events.py:592`). Après le redirect mobile → `/vip`, si `reconnect_player` n'a pas encore remappé `player.session_id` ou qu'un autre onglet a repris le slot, l'écho silencieusement se perd et Blair reste bloquée sur ses boutons gelés sans jamais voir "Bonne réponse !". La bonne lettre étant déjà dans `new_question.answer` (payload Chuck Mode), on peint la bannière côté client dès le submit ; `answer_confirmed` affinera les points quand/s'il arrive.
+- **Fallback au reveal `question_answer`** — si `hasAnswered=true` mais la bannière n'a jamais reçu la classe `.show` (les deux voies précédentes ont échoué), le handler `question_answer` la synthétise à partir de `data.answer` broadcast à tout le monde. Filet ultime pour garantir que Blair voie ✓/✕ + explication avant la question suivante.
+
+### Changed
+
+- **`api_admin_blast`** (`app/main.py`) refactoré pour déléguer à `_publish_blast(...)`. Comportement identique (identités `gg` / `chuck` / `custom`, whitelist son, `is_pinned`, émissions).
+- **Schéma `VIP_SOUNDS`** (`app/main.py`) — passe de `{id, name, icon}` à `{id, name, icon, file}` : le nom de fichier n'est plus dérivé de `id`. Ex. `id="georgina"` → `file="look_like_an_angel_talk_like_an_angel_the_devil_in_disguise_georgina.mp3"`.
+- **`VIP_PANEL_META`** (`templates/vip.html`) — ajout du champ `backTo` pour les sous-panneaux. `vipGoBack()` remonte d'un cran (Toolbox sub-panel → Toolbox → tiles racine).
+
+### Removed
+
+- **`session.pop("blair_vip_verified", None)` dans `on_disconnect`** (`app/events.py`) — cette purge défensive introduite en v4.8.0 était sans effet réel : avec `manage_session=True` (défaut Flask-SocketIO), les modifications de `session` dans un handler socket restent locales au SID et ne se propagent pas au cookie HTTP. Le pop rendait le flux d'auth VIP illisible ("j'ai bien mis le flag côté socket, pourquoi il n'est pas là côté HTTP ?"). Vérification par cURL : ni `on_disconnect` ni `on_reconnect` ne modifient le cookie Flask. Le README de v4.8.0 promettait à tort cette purge — la promesse est retirée.
+- **Ancien Soundboard VIP** (`champagne` · `drama` · `gossip` · `scandale` · `suspens` · `victoire`) — remplacé par les 6 nouveaux sons Gossip Girl listés plus haut. Les anciens `.mp3` peuvent être supprimés du dossier `static/sounds/vip/`.
+- **Composer simple `/api/vip/blast`** — plus utilisé par le frontend (remplacé par le Blast Composer complet). L'endpoint reste en place pour compatibilité mais aucun bouton VIP ne l'appelle.
+
+---
+
 ## [v4.8.0] — 2026-06-23
 
 Durcissement issu de l'audit `AUDIT.md` (Bug A : routage upload — Bug B : audio Chuck Mode) + nouvelle **Chuck Blast Composer** (parité admin avec le VIP Blast de Blair) + refonte UX du top bar Chuck Mode pour usage iPhone Safari. Rehydratation du feed scoop à la reconnexion sur mobile et VIP.

@@ -233,6 +233,9 @@ class Scoop(db.Model):
     created_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
+        dt = self.created_at
+        if dt is not None and dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         return {
             "id":          self.id,
             "author_name": self.author_name,
@@ -240,7 +243,7 @@ class Scoop(db.Model):
             "content":     self.content,
             "image_path":  self.image_path,
             "is_pinned":   self.is_pinned,
-            "created_at":  self.created_at.isoformat(),
+            "created_at":  dt.isoformat() if dt else None,
         }
 
 
@@ -257,12 +260,15 @@ class ActivityLog(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
+        dt = self.created_at
+        if dt is not None and dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         return {
             "id":         self.id,
             "event_type": self.event_type,
             "actor":      self.actor,
             "detail":     self.detail,
-            "created_at": self.created_at.isoformat(),
+            "created_at": dt.isoformat() if dt else None,
         }
 
 
@@ -330,16 +336,19 @@ _LETTERS = ("A", "B", "C", "D")
 def _normalize_question(q: dict) -> dict:
     """
     Normalise le champ 'choices' et 'answer' pour garantir un format uniforme
-    quel que soit l'origine de la question (ancienne ou nouvelle).
+    quel que soit l'origine de la question (ancienne ou nouvelle), et shuffle
+    systématiquement les valeurs pour casser le biais A-dominant.
 
     Ancien format (questions 1-39) :
         choices = {"A": "texte A", "B": "texte B", "C": "texte C", "D": "texte D"}
-        answer  = "B"   ← déjà une lettre, ordre déjà aléatoire
+        answer  = "B"   ← déjà une lettre — MAIS les auteurs mettent souvent la
+                          bonne réponse en A par réflexe (mesuré : ~60% de A).
+        → On shuffle quand même et on recalibre 'answer'.
 
     Nouveau format (questions 40+) :
         choices = ["texte A", "texte B", "texte C", "texte D"]
         answer  = "texte A"  ← la valeur textuelle, TOUJOURS en position 0 dans le source
-        → On shuffle les valeurs avant d'assigner les lettres pour casser le biais.
+        → Shuffle + retrouver la lettre de la valeur shufflée.
 
     Après normalisation, toutes les questions ont :
         choices = {"A": "...", "B": "...", "C": "...", "D": "..."}
@@ -348,37 +357,37 @@ def _normalize_question(q: dict) -> dict:
     import random as _random
     choices = q.get("choices", {})
 
-    # Cas liste → shuffle + convertir en dict A/B/C/D
-    if isinstance(choices, list):
-        q = dict(q)  # copie pour ne pas muter le cache global
-
-        # Mémoriser la valeur textuelle de la bonne réponse AVANT le shuffle
+    # Étape 1 : extraire les 4 valeurs + la valeur textuelle correcte.
+    if isinstance(choices, dict):
+        raw_answer_letter = q.get("answer", "")
+        correct_text = choices.get(raw_answer_letter, "")
+        values = [choices.get(l, "") for l in _LETTERS]
+    elif isinstance(choices, list):
         raw_answer = q.get("answer", "")
-
-        # Shuffle : casse le biais "bonne réponse toujours en première position"
+        # Le format liste stocke 'answer' comme la valeur textuelle (position 0).
+        correct_text = raw_answer if raw_answer not in _LETTERS else (
+            choices[_LETTERS.index(raw_answer)] if _LETTERS.index(raw_answer) < len(choices) else ""
+        )
         values = list(choices)[:4]
-        _random.shuffle(values)
+    else:
+        return q  # format inconnu, on ne touche pas
 
-        choices_dict = {_LETTERS[i]: v for i, v in enumerate(values)}
-        q["choices"] = choices_dict
+    if len(values) != 4:
+        return q  # question malformée, laissée telle quelle
 
-        # Recalibrer answer : retrouver la lettre de la valeur shufflée
-        if raw_answer not in _LETTERS:
-            found = next(
-                (k for k, v in choices_dict.items()
-                 if v.strip().lower() == raw_answer.strip().lower()),
-                None
-            )
-            if found:
-                q["answer"] = found
-            else:
-                # Fallback : index numérique en string ("0","1"…) — rare
-                try:
-                    idx = int(raw_answer)
-                    q["answer"] = _LETTERS[idx] if 0 <= idx < 4 else "A"
-                except (ValueError, TypeError):
-                    q["answer"] = "A"  # valeur par défaut sécurisée
+    # Étape 2 : shuffle + reconstruire le dict {A,B,C,D}.
+    q = dict(q)  # copie pour ne pas muter le cache global
+    _random.shuffle(values)
+    choices_dict = {_LETTERS[i]: v for i, v in enumerate(values)}
+    q["choices"] = choices_dict
 
+    # Étape 3 : retrouver la lettre où a atterri la bonne réponse.
+    found = next(
+        (k for k, v in choices_dict.items()
+         if v.strip().lower() == correct_text.strip().lower()),
+        None
+    )
+    q["answer"] = found or "A"
     return q
 
 

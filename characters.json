@@ -3,7 +3,7 @@
     { "name": "Serena",   "family": "van der Woodsen",  "locked": false, "desc": "L'it-girl de l'UES—dorée, insaisissable, irrésistible" },
     { "name": "Chuck",    "family": "Bass",             "locked": true,  "desc": "God Mode uniquement",          "badge": "🔒 Admin", "role": "admin" },
     { "name": "Blair",    "family": "Waldorf",          "locked": true,  "blair": true, "requires_code": true, "desc": "La reine de l'UES", "badge": "🌹 VIP", "role": "vip" },
-    { "name": "Dan",      "family": "Humphrey",         "locked": false, "desc": "Le premier Gossip Girl—l'outsider devenu central" },
+    { "name": "Dan",      "family": "Humphrey",         "locked": false, "desc": "Le premier Gossip Girl 💎 —l'outsider devenu central" },
     { "name": "Nate",     "family": "Archibald",        "locked": false, "desc": "Le beau gosse—vapide mais attachant" },
     { "name": "Vanessa",  "family": "Abrams",           "locked": false, "desc": "L'outsider manipulatrice—boussole morale erratique" },
     { "name": "Jenny",    "family": "Humphrey",         "locked": false, "desc": "La petite sœur rebelle—ambitieuse et impitoyable" },

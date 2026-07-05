@@ -171,18 +171,18 @@
     .timer-num { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--gold-light); position: relative; z-index: 1; }
     .timer-num.urgent { color: var(--red); }
     .question-card { background: rgba(201,168,76,.04); border: 1px solid rgba(201,168,76,.16); border-radius: 16px; padding: 18px; }
-    .question-text { font-family: 'Playfair Display', serif; font-size: 18px; color: white; line-height: 1.4; font-weight: 700; }
-    .answers-grid { display: flex; flex-direction: column; gap: 8px; }
-    .answer-btn { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 13px 14px; cursor: pointer; text-align: left; transition: all .2s; color: var(--cream); font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .question-text { font-family: 'Playfair Display', serif; font-size: 22px; color: white; line-height: 1.35; font-weight: 700; }
+    .answers-grid { display: flex; flex-direction: column; gap: 10px; }
+    .answer-btn { display: flex; align-items: center; gap: 14px; min-height: 56px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 16px 18px; cursor: pointer; text-align: left; transition: all .2s; color: var(--cream); font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
     .answer-btn:active { transform: scale(.98); }
     .answer-btn.selected { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.4); }
     .answer-btn.correct { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.4); pointer-events: none; }
     .answer-btn.wrong { background: rgba(192,80,77,.08); border-color: rgba(192,80,77,.3); pointer-events: none; }
     .answer-btn.revealed { opacity: .45; pointer-events: none; }
     .answer-btn:disabled { opacity: .5; cursor: default; pointer-events: none; }
-    .answer-key { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold); flex-shrink: 0; width: 22px; }
+    .answer-key { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold); flex-shrink: 0; width: 26px; }
     .answer-btn.correct .answer-key { color: var(--green); }
-    .answer-text { font-size: 13px; line-height: 1.35; }
+    .answer-text { font-size: 16px; line-height: 1.35; }
     .answer-result { display: none; border-radius: 14px; padding: 16px 18px; text-align: center; }
     .answer-result.show { display: block; animation: resultIn .35s ease; }
     @keyframes resultIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -197,11 +197,12 @@
     #screen-scoops .scroll-area { padding: 16px 20px; }
     .scoops-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
     .scoops-title { font-family: 'Playfair Display', serif; font-size: 26px; color: white; }
+    /* VIP a un accès permanent au feed (parité admin) — le "locked" n'est plus utilisé. */
     .scoops-locked { display: none; text-align: center; padding: 60px 20px; }
     .scoops-locked-icon { font-size: 44px; margin-bottom: 14px; }
     .scoops-locked-title { font-family: 'Playfair Display', serif; font-size: 20px; color: white; margin-bottom: 8px; }
     .scoops-locked-sub { font-size: 12px; color: var(--stone); line-height: 1.7; }
-    .scoops-active { display: none; }
+    .scoops-active { display: block; }
     .compose-box { background: rgba(255,255,255,.02); border: 1px solid rgba(201,168,76,.12); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; }
     .compose-textarea { width: 100%; background: transparent; border: none; outline: none; color: var(--cream); font-family: 'Cormorant Garamond', serif; font-size: 16px; line-height: 1.5; resize: none; min-height: 72px; }
     .compose-textarea::placeholder { color: var(--stone2); font-style: italic; }
@@ -548,7 +549,180 @@
     .sm-del-btn:active { background: rgba(192,80,77,.12); color: var(--red); border-color: var(--red); }
     .sm-empty { text-align: center; padding: 40px 20px; color: var(--stone); font-size: 13px; font-style: italic; }
 
-    /* ════ BLAST COMPOSE PANEL ════ */
+    /* ════ VIP TOOLBOX PANEL ════ */
+    .tbx-grid {
+      display: grid; grid-template-columns: 1fr; gap: 12px;
+      padding: 20px 20px 24px;
+    }
+    .tbx-tile {
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(201,168,76,.14);
+      border-radius: 16px; padding: 18px 20px;
+      display: flex; align-items: center; gap: 16px;
+      cursor: pointer; transition: border-color .2s, background .2s, transform .12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tbx-tile:active { transform: scale(.98); background: rgba(201,168,76,.06); }
+    .tbx-tile-icon { font-size: 28px; line-height: 1; flex-shrink: 0; }
+    .tbx-tile-body { flex: 1; min-width: 0; }
+    .tbx-tile-name {
+      font-family: 'Playfair Display', serif; font-size: 15px; color: white;
+      margin-bottom: 3px;
+    }
+    .tbx-tile-desc {
+      font-size: 10px; letter-spacing: .1em; color: var(--stone);
+    }
+    .tbx-tile-arrow { color: var(--gold); font-size: 20px; opacity: .5; }
+
+    /* QR sub-panel */
+    .tbx-qr-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 24px 20px 40px;
+    }
+    .tbx-qr-eyebrow { font-size: 9px; letter-spacing: .3em; text-transform: uppercase; color: var(--stone); }
+    .tbx-qr-frame {
+      background: white; border-radius: 18px; padding: 14px;
+      cursor: zoom-in; transition: transform .15s;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+    }
+    .tbx-qr-frame:active { transform: scale(.97); }
+    .tbx-qr-img { width: 220px; height: 220px; display: block; }
+    .tbx-qr-url {
+      font-size: 12px; color: var(--gold); font-family: 'Cormorant Garamond', serif;
+      font-style: italic; word-break: break-all; text-align: center;
+    }
+    .tbx-qr-hint { font-size: 10px; color: var(--stone2); font-style: italic; }
+
+    /* QR lightbox — click to enlarge */
+    #tbx-qr-lightbox {
+      position: fixed; inset: 0; z-index: 700;
+      background: rgba(0,0,0,.94);
+      display: none; align-items: center; justify-content: center;
+      padding: 20px; cursor: zoom-out;
+    }
+    #tbx-qr-lightbox.show { display: flex; }
+    #tbx-qr-lightbox .lb-qr-frame {
+      background: white; padding: 24px; border-radius: 22px;
+      max-width: 90vmin; max-height: 90vmin;
+    }
+    #tbx-qr-lightbox .lb-qr-img { width: 100%; height: auto; display: block; }
+
+    /* Projector controls sub-panel */
+    .tbx-proj-wrap { padding: 20px 20px 40px; display: flex; flex-direction: column; gap: 12px; }
+    .tbx-proj-btn {
+      width: 100%;
+      background: rgba(255,255,255,.03); border: 1px solid rgba(201,168,76,.15);
+      color: var(--cream); border-radius: 14px; padding: 16px;
+      font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+      cursor: pointer; transition: all .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tbx-proj-btn:active { transform: scale(.98); }
+    .tbx-proj-btn.is-on {
+      color: var(--gold); border-color: var(--gold); background: rgba(201,168,76,.08);
+    }
+    .tbx-proj-hint { font-size: 10px; color: var(--stone); text-align: center; margin-top: 4px; }
+
+    /* ════ BLAST COMPOSER — clone du composer admin (sans Chuck) ════ */
+    .bc-wrap { padding: 18px 18px 40px; display: flex; flex-direction: column; gap: 14px; }
+    .bc-label {
+      display: block; font-size: 9px; letter-spacing: .25em; text-transform: uppercase;
+      color: var(--stone); margin-bottom: 6px;
+    }
+    .bc-identity-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .bc-id-btn {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+      color: var(--stone); border-radius: 10px; padding: 10px 12px;
+      font-size: 11px; letter-spacing: .08em; cursor: pointer;
+      transition: border-color .2s, color .2s, background .2s;
+      font-family: 'Montserrat', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bc-id-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,.08); }
+    .bc-input {
+      width: 100%; background: rgba(255,255,255,.03);
+      border: 1px solid rgba(201,168,76,.15); border-radius: 12px;
+      padding: 12px; color: white; outline: none;
+      font-family: 'Cormorant Garamond', serif; font-size: 15px;
+      resize: none; box-sizing: border-box;
+    }
+    .bc-input:focus { border-color: rgba(201,168,76,.45); }
+    .bc-select {
+      width: 100%; background: rgba(255,255,255,.03);
+      border: 1px solid rgba(201,168,76,.15); border-radius: 12px;
+      padding: 12px; color: white; outline: none;
+      font-family: 'Montserrat', sans-serif; font-size: 12px;
+      box-sizing: border-box;
+    }
+    .bc-image-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .bc-mini-btn {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(201,168,76,.2);
+      color: var(--cream); border-radius: 10px; padding: 8px 12px;
+      font-size: 10px; letter-spacing: .12em; cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bc-image-status { font-size: 10px; color: var(--stone); flex: 1; min-width: 0; }
+    .bc-pin-toggle {
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+      font-size: 11px; color: var(--stone);
+      padding: 10px 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px;
+      background: rgba(255,255,255,.03); user-select: none;
+    }
+    .bc-pin-toggle input { accent-color: var(--gold); }
+    .bc-pin-toggle:has(input:checked) { color: var(--gold); border-color: rgba(201,168,76,.4); background: rgba(201,168,76,.06); }
+    .bc-presets-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .bc-preset-btn {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+      color: var(--cream); border-radius: 999px; padding: 6px 12px;
+      font-size: 10px; cursor: pointer; font-family: 'Montserrat', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bc-preview {
+      --bcp-accent: var(--gold);
+      --bcp-glow:   rgba(201,168,76,.14);
+      --bcp-bg:     rgba(6,6,6,.92);
+      position: relative; border-radius: 14px; background: var(--bcp-bg);
+      border: 1px solid rgba(201,168,76,.18); padding: 24px 18px;
+      min-height: 220px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; gap: 10px; overflow: hidden;
+    }
+    .bc-preview::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 65% 55% at 50% 50%, var(--bcp-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .bc-preview.theme-gg     { --bcp-accent: var(--gold); --bcp-glow: rgba(201,168,76,.18); }
+    .bc-preview.theme-custom { --bcp-accent: var(--cream); --bcp-glow: rgba(245,240,232,.12); }
+    .bc-preview > * { position: relative; z-index: 1; }
+    .bc-preview-icon { font-size: 44px; line-height: 1; filter: drop-shadow(0 0 12px var(--bcp-glow)); }
+    .bc-preview-eyebrow {
+      font-size: 9px; letter-spacing: .35em; text-transform: uppercase;
+      color: var(--bcp-accent); font-weight: 600;
+    }
+    .bc-preview-message {
+      font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700;
+      color: white; line-height: 1.25; word-break: break-word;
+    }
+    .bc-preview-image { max-width: 80%; max-height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid var(--bcp-accent); }
+    .bc-preview-sig {
+      font-family: 'Cormorant Garamond', serif; font-size: 12px; font-style: italic;
+      color: var(--bcp-accent); letter-spacing: .06em;
+    }
+    .bc-send-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+      color: var(--black); border: none; border-radius: 14px;
+      padding: 16px; font-family: 'Montserrat', sans-serif;
+      font-size: 10px; font-weight: 600; letter-spacing: .28em; text-transform: uppercase;
+      cursor: pointer; transition: opacity .2s, transform .15s;
+      box-shadow: 0 6px 24px rgba(201,168,76,.28);
+    }
+    .bc-send-btn:active { transform: scale(.98); }
+    .bc-send-btn:disabled { opacity: .5; cursor: default; }
+
+    /* ════ BLAST COMPOSE PANEL (legacy — plus utilisé, remplacé par bc-*) ════ */
     .blast-compose {
       display: flex; flex-direction: column; align-items: center;
       padding: 28px 24px 40px; text-align: center; gap: 14px;
@@ -866,10 +1040,10 @@
             <div class="vip-tile-desc">Galerie photos exclusive</div>
           </div>
 
-          <div class="vip-tile" onclick="openVipPanel('soundboard')">
-            <div class="vip-tile-icon">🔊</div>
-            <div class="vip-tile-name">Soundboard VIP</div>
-            <div class="vip-tile-desc">Sons exclusifs</div>
+          <div class="vip-tile" onclick="openVipPanel('toolbox')">
+            <div class="vip-tile-icon">🧰</div>
+            <div class="vip-tile-name">VIP Toolbox</div>
+            <div class="vip-tile-desc">QR · Sons · Projecteur</div>
           </div>
 
           <div class="vip-tile" onclick="openVipPanel('scoops-manager')">
@@ -913,8 +1087,58 @@
       </div>
     </div>
 
-    <!-- Panel: VIP Soundboard -->
-    <div class="vip-panel hidden" id="vip-panel-soundboard">
+    <!-- Panel: VIP Toolbox (hub) -->
+    <div class="vip-panel hidden" id="vip-panel-toolbox">
+      <div class="vip-scroll">
+        <div class="tbx-grid">
+
+          <div class="tbx-tile" onclick="openVipPanel('toolbox-qr')">
+            <div class="tbx-tile-icon">📲</div>
+            <div class="tbx-tile-body">
+              <div class="tbx-tile-name">QR Code</div>
+              <div class="tbx-tile-desc">Lien /mobile · agrandir au tap</div>
+            </div>
+            <div class="tbx-tile-arrow">›</div>
+          </div>
+
+          <div class="tbx-tile" onclick="openVipPanel('toolbox-sons')">
+            <div class="tbx-tile-icon">🔊</div>
+            <div class="tbx-tile-body">
+              <div class="tbx-tile-name">Sons</div>
+              <div class="tbx-tile-desc">Soundboard Blair · exclusifs</div>
+            </div>
+            <div class="tbx-tile-arrow">›</div>
+          </div>
+
+          <div class="tbx-tile" onclick="openVipPanel('toolbox-projector')">
+            <div class="tbx-tile-icon">📺</div>
+            <div class="tbx-tile-body">
+              <div class="tbx-tile-name">Affichage Projecteur</div>
+              <div class="tbx-tile-desc">Scores en grand · QR Code overlay</div>
+            </div>
+            <div class="tbx-tile-arrow">›</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Toolbox · QR -->
+    <div class="vip-panel hidden" id="vip-panel-toolbox-qr">
+      <div class="vip-scroll">
+        <div class="tbx-qr-wrap">
+          <div class="tbx-qr-eyebrow">Scannez pour rejoindre</div>
+          <div class="tbx-qr-frame" id="tbx-qr-frame" onclick="tbxQrOpenLightbox()">
+            <img id="tbx-qr-img" class="tbx-qr-img" src="" alt="QR /mobile"/>
+          </div>
+          <div class="tbx-qr-url" id="tbx-qr-url">—</div>
+          <div class="tbx-qr-hint">Tap pour agrandir</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Toolbox · Sons -->
+    <div class="vip-panel hidden" id="vip-panel-toolbox-sons">
       <div class="vip-scroll">
         <div class="sb-grid" id="sb-grid">
           <!-- Populated by JS -->
@@ -925,22 +1149,113 @@
       </div>
     </div>
 
-    <!-- Panel: Custom Blast -->
+    <!-- Panel: Toolbox · Affichage Projecteur -->
+    <div class="vip-panel hidden" id="vip-panel-toolbox-projector">
+      <div class="vip-scroll">
+        <div class="tbx-proj-wrap">
+          <button class="tbx-proj-btn" id="tbx-btn-scores" onclick="tbxToggleScores()">
+            📊 Scores en grand
+          </button>
+          <button class="tbx-proj-btn" id="tbx-btn-qr" onclick="tbxToggleQR()">
+            📱 Afficher QR Code
+          </button>
+          <div class="tbx-proj-hint">Bascule les overlays plein écran sur le projecteur. XOXO.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Custom Blast (composer complet — clone admin sans Chuck) -->
     <div class="vip-panel hidden" id="vip-panel-blast">
       <div class="vip-scroll">
-        <div class="blast-compose">
-          <div class="blast-compose-gem">✨</div>
-          <div class="blast-compose-title">Custom Blast</div>
-          <div class="blast-compose-sub">Diffuse un message exclusif à tous les invités, accompagné d'une animation VIP et d'un son dramatique. XOXO.</div>
-          <textarea id="blast-input" class="blast-input"
-            placeholder="Spotted : ton message exclusif pour Manhattan…"
-            maxlength="300" rows="4"
-            oninput="blastUpdateCount()"></textarea>
-          <div class="blast-count-row"><span id="blast-count">0</span>/300</div>
-          <button class="blast-send-btn" id="blast-send-btn" onclick="blastSend()">
-            <span id="blast-btn-text">💎 Envoyer le Blast</span>
+        <div class="bc-wrap">
+
+          <!-- Identité -->
+          <div>
+            <label class="bc-label">Identité</label>
+            <div class="bc-identity-row">
+              <button type="button" class="bc-id-btn active" data-identity="gg"     onclick="setBlastIdentity('gg')">✦ Gossip Girl</button>
+              <button type="button" class="bc-id-btn"        data-identity="custom" onclick="setBlastIdentity('custom')">✧ Custom</button>
+            </div>
+            <input type="text" id="bc-custom-name" class="bc-input" placeholder="Nom personnalisé (ex: Serena, Lily…)"
+                   maxlength="32" style="display:none;margin-top:8px;" oninput="updateBlastPreview()"/>
+          </div>
+
+          <!-- Message -->
+          <div>
+            <label class="bc-label">Message</label>
+            <textarea id="bc-content" class="bc-input" rows="4" maxlength="500"
+                      placeholder="Spotted : ton message exclusif pour Manhattan…"
+                      oninput="updateBlastPreview()"></textarea>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--stone);margin-top:4px;">
+              <span id="bc-char-count">0 / 500</span>
+              <span>Court &amp; punchy</span>
+            </div>
+          </div>
+
+          <!-- Image -->
+          <div>
+            <label class="bc-label">Image (optionnel)</label>
+            <div class="bc-image-row">
+              <button type="button" class="bc-mini-btn" onclick="document.getElementById('bc-file').click()">📎 Joindre</button>
+              <button type="button" class="bc-mini-btn" id="bc-image-clear" onclick="clearBlastImage()" style="display:none;">✕ Retirer</button>
+              <span id="bc-image-status" class="bc-image-status">Aucune image</span>
+              <input type="file" id="bc-file" accept="image/*" style="display:none;" onchange="onBlastImageSelected(event)"/>
+            </div>
+          </div>
+
+          <!-- Son + Pin -->
+          <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+            <div>
+              <label class="bc-label">Son</label>
+              <select id="bc-sound" class="bc-select" onchange="updateBlastPreview()">
+                <option value="new_gg">👑 New GG (6.1s) · défaut</option>
+                <option value="chuck_bass_blast">♠ Chuck Bass Blast (7.1s)</option>
+                <option value="xoxo">💋 XOXO (5.4s)</option>
+                <option value="quiz_start">⚡ Quiz Start (22s)</option>
+                <option value="correct">✓ Correct (2.7s)</option>
+                <option value="countdown">⏱ Countdown (2.3s)</option>
+                <option value="phase2_start">🖤 Mode Libre (15s)</option>
+                <option value="">🔇 Aucun</option>
+              </select>
+            </div>
+            <label class="bc-pin-toggle">
+              <input type="checkbox" id="bc-pin"/>
+              <span>📌 Pin</span>
+            </label>
+          </div>
+
+          <!-- Presets -->
+          <div>
+            <label class="bc-label">Templates one-tap</label>
+            <div id="bc-presets" class="bc-presets-row">
+              <div style="font-size:10px;color:var(--stone);">Chargement…</div>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div>
+            <label class="bc-label">Aperçu projecteur</label>
+            <div class="bc-preview theme-gg" id="bc-preview">
+              <div class="bc-preview-icon" id="bc-preview-icon">✦</div>
+              <div class="bc-preview-eyebrow" id="bc-preview-eyebrow">GOSSIP GIRL</div>
+              <div class="bc-preview-message" id="bc-preview-message">— Ton message ici —</div>
+              <img class="bc-preview-image" id="bc-preview-image" alt="" style="display:none;"/>
+              <div class="bc-preview-sig" id="bc-preview-sig">XOXO, Gossip Girl</div>
+            </div>
+          </div>
+
+          <button class="bc-send-btn" id="bc-send" onclick="sendBlast()">
+            💎 Envoyer le Blast
           </button>
+
         </div>
+      </div>
+    </div>
+
+    <!-- QR Lightbox (agrandi plein écran) -->
+    <div id="tbx-qr-lightbox" onclick="tbxQrCloseLightbox()">
+      <div class="lb-qr-frame">
+        <img class="lb-qr-img" id="tbx-qr-lightbox-img" src="" alt="QR /mobile"/>
       </div>
     </div>
 
@@ -1171,17 +1486,20 @@ function updatePhaseCard(rawPhase, endsAt) {
   card.className    = 'phase-card ' + (phase || 'waiting');
   timerEl.style.display = 'none';
 
+  // Le feed Scoops reste visible pour Blair dans TOUTES les phases (parité admin).
+  document.getElementById('scoops-locked').style.display = 'none';
+  document.getElementById('scoops-active').style.display = 'block';
+
   if (phase === 'quiz') {
     icon.textContent  = '⚡';
     title.textContent = 'Flash Quiz en cours !';
     sub.textContent   = state.isGG ? 'Tu choisis les questions. 👑' : "Va sur l'onglet Quiz pour répondre.";
+    document.getElementById('scoops-phase-label').textContent = 'Flash Quiz';
     document.getElementById('nav-badge-quiz').classList.add('show');
   } else if (phase === 'free') {
     icon.textContent  = '🖤';
     title.textContent = 'Mode Libre';
     sub.textContent   = 'Poste tes scoops et profite de la soirée.';
-    document.getElementById('scoops-locked').style.display = 'none';
-    document.getElementById('scoops-active').style.display = 'block';
     document.getElementById('scoops-phase-label').textContent = 'Mode Libre';
     document.getElementById('nav-badge-scoops').classList.add('show');
     if (endsAt) { timerEl.style.display = 'block'; startFreeTimer(endsAt); }
@@ -1189,6 +1507,7 @@ function updatePhaseCard(rawPhase, endsAt) {
     icon.textContent  = '⏳';
     title.textContent = 'En attente…';
     sub.textContent   = 'Gossip Girl va bientôt lancer la soirée. XOXO.';
+    document.getElementById('scoops-phase-label').textContent = 'Lobby';
   }
 }
 
@@ -1298,6 +1617,14 @@ function renderQuestion(data) {
   // Le timer est piloté exclusivement par socket.on('question_tick') — pas de setInterval local
   updateTimerDisplay(state.questionDuration, state.questionDuration);
   document.getElementById('answer-result').className = 'answer-result';
+  // Purge le contenu du panneau résultat pour éviter que l'explication de la
+  // question précédente ne s'affiche brièvement quand le joueur clique sur sa
+  // réponse (answer_confirmed rend le panneau visible avant que question_answer
+  // n'écrive la nouvelle explication).
+  document.getElementById('result-icon').textContent  = '';
+  document.getElementById('result-title').textContent = '';
+  document.getElementById('result-pts').textContent   = '';
+  document.getElementById('result-expl').textContent  = '';
 
   // ✅ FIX: boutons gelés après premier clic (anti-double-click, anti-fausse-manip)
   const grid = document.getElementById('answers-grid');
@@ -1362,10 +1689,32 @@ function submitAnswer(key) {
   const btn = document.getElementById('ans-' + key);
   if (btn) { btn.classList.add('selected'); btn.style.opacity = '1'; btn.style.borderColor = 'var(--gold)'; }
 
-  // Pas de feedback intermédiaire : answer_confirmed arrive dans les ~100ms
-  // et affiche directement ✓ ou ✕ (suppression de l'ancien "⏳ Réponse envoyée…")
-
   socket.emit('submit_answer', { question_id: state.currentQuestion.question_id, answer: key });
+
+  // Feedback local immédiat — la bonne lettre est déjà dans le payload new_question
+  // (cf. main.py _send_question, champ `answer` initialement destiné à Chuck Mode).
+  // Ça garantit que la VIP voit ✓/✕ dès le clic, même si l'echo `answer_confirmed`
+  // du serveur est perdu (session_id desync entre onglets mobile/vip, etc.).
+  // answer_confirmed viendra ensuite affiner les points quand il arrivera.
+  _showAnswerBanner(key, state.currentQuestion.answer, null);
+}
+
+/* Affiche la bannière résultat. Si `points` est null, on marque "En attente…". */
+function _showAnswerBanner(mine, correctLetter, points) {
+  if (!correctLetter) return;   // pas de fallback possible sans la bonne lettre
+  const isCorrect = mine && mine.toUpperCase() === correctLetter.toUpperCase();
+  const r = document.getElementById('answer-result');
+  r.style.background = '';
+  r.style.border     = '';
+  r.className = 'answer-result show ' + (isCorrect ? 'correct-bg' : 'wrong-bg');
+  document.getElementById('result-icon').textContent  = isCorrect ? '✓' : '✕';
+  document.getElementById('result-title').textContent = isCorrect ? 'Bonne réponse !' : 'Raté…';
+  document.getElementById('result-pts').textContent   = (points == null)
+    ? (isCorrect ? 'Points en cours…' : 'Pas de points cette fois.')
+    : (points > 0 ? `+${points} point${points > 1 ? 's' : ''}` : 'Pas de points cette fois.');
+  const selBtn = document.getElementById('ans-' + (mine || ''));
+  if (selBtn) selBtn.classList.add(isCorrect ? 'correct' : 'wrong');
+  setTimeout(() => r.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
 }
 
 /* ═══════════════════════════════════════
@@ -1615,6 +1964,10 @@ socket.on('disconnect', () => {
   }
 });
 
+// Le projecteur émet sound_stopped à la fin de la piste — on retire alors
+// l'état "playing" du bouton soundboard correspondant.
+socket.on('sound_stopped', () => { _sbClearPlaying(); });
+
 socket.on('game_state', data => {
   state.currentPhase = normalizePhase(data.phase);
   if (data.leaderboard) {
@@ -1843,6 +2196,8 @@ socket.on('question_answer', data => {
   revealAnswer(data);
   document.getElementById('result-expl').textContent = data.explanation || '';
 
+  const r = document.getElementById('answer-result');
+
   if (state.isGG) {
     // Prépare l'UI GG pour le prochain pick
     document.getElementById('quiz-waiting').style.display = 'flex';
@@ -1855,11 +2210,15 @@ socket.on('question_answer', data => {
     `;
   } else if (!state.hasAnswered) {
     // B5 — abstentionnistes : affiche la bonne réponse avec fond "raté"
-    const r = document.getElementById('answer-result');
     r.className = 'answer-result show wrong-bg';
     document.getElementById('result-icon').textContent  = '💤';
     document.getElementById('result-title').textContent = 'Pas de réponse';
     document.getElementById('result-pts').textContent   = `La bonne réponse était : ${data.answer}`;
+  } else if (!r.classList.contains('show')) {
+    // Fallback : la joueuse a répondu mais aucun banner n'a été affiché
+    // (answer_confirmed jamais reçu, ni le feedback local à submit). On le
+    // synthétise au reveal à partir de la bonne lettre broadcast à tout le monde.
+    _showAnswerBanner(state.myAnswer, data.answer, null);
   }
 });
 
@@ -1965,13 +2324,28 @@ socket.on('gg_pick_question', data => {
   });
 });
 
+// Garde anti-boucle : bloque un reload s'il en est déjà arrivé un très récemment.
+// Sert de filet de sécurité contre un handler qui se déclencherait en rafale.
+let _lastReloadAt = parseInt(sessionStorage.getItem('gg_last_reload_at') || '0', 10);
+function _safeReload(reason) {
+  const now = Date.now();
+  console.log(`[vip] reload demandé — raison: ${reason}, dernier reload il y a ${now - _lastReloadAt}ms`);
+  if (now - _lastReloadAt < 4000) {
+    console.warn(`[vip] reload BLOQUÉ (throttle) — raison: ${reason}`);
+    return;
+  }
+  sessionStorage.setItem('gg_last_reload_at', String(now));
+  window.location.reload();
+}
+
 // Expulsion admin
 socket.on('force_logout', () => {
-  localStorage.removeItem('player_token');
+  localStorage.removeItem('gg_player_token');
+  state.playerToken = null;
   state.player = null;
   state.isGG   = false;
   showToast('Tu as été expulsé(e) par Chuck Bass. XOXO.', 5000);
-  setTimeout(() => { window.location.reload(); }, 3000);
+  setTimeout(() => _safeReload('force_logout'), 3000);
 });
 
 // Reset session (admin)
@@ -1980,16 +2354,17 @@ socket.on('force_logout', () => {
 // Sinon (reset complet) : le joueur a été supprimé → on purge le token et on repart au login.
 socket.on('session_reset', (data) => {
   if (!data || !data.keep_players) {
-    localStorage.removeItem('player_token');
+    localStorage.removeItem('gg_player_token');
+    state.playerToken = null;
     state.player = null;
     state.isGG   = false;
   }
-  window.location.reload();
+  _safeReload('session_reset');
 });
 
 // Rechargement forcé de tous les clients (admin)
 socket.on('client_reload', () => {
-  window.location.reload();
+  _safeReload('client_reload');
 });
 
 // F13 — Erreur de réponse (double submit, GG qui tente de répondre, etc.)
@@ -1999,6 +2374,13 @@ socket.on('answer_error', data => {
 
 /* Page /vip — Blair VIP toujours authentifiée côté serveur */
 sessionStorage.setItem('blair_vip', '1');
+
+// Nettoie ?token=... de l'URL — passé par mobile.html pour valider @vip_required
+// côté HTTP (cf. main.py). Une fois la session cookie posée, le token en URL n'a
+// plus d'utilité (évite fuite via referer / clipboard).
+if (window.location.search.includes('token=')) {
+  history.replaceState(null, '', '/vip');
+}
 
 // Charge le roster centralisé puis construit la grille (occupation temps réel via socket)
 fetch('/api/characters')
@@ -2023,11 +2405,14 @@ let _vipPreviousNavBtn = null;
 let _vipCurrentPanel   = 'tiles';
 
 const VIP_PANEL_META = {
-  tiles:            { eyebrow: 'Blair Waldorf · Accès Exclusif',  title: 'VIP 💎',      back: false },
-  gallery:          { eyebrow: 'Dino Gallery · Collection Privée', title: '🐱 Galerie', back: true  },
-  soundboard:       { eyebrow: 'VIP Soundboard · Exclusif',       title: '🔊 Sons VIP', back: true  },
-  'scoops-manager': { eyebrow: 'Scoops Manager · Modération',     title: '📰 Scoops',   back: true  },
-  blast:            { eyebrow: 'Custom Blast · Diffusion',         title: '✨ Blast',    back: true  },
+  tiles:                 { eyebrow: 'Blair Waldorf · Accès Exclusif',  title: 'VIP 💎',            back: false, backTo: null    },
+  gallery:               { eyebrow: 'Dino Gallery · Collection Privée', title: '🐱 Galerie',       back: true,  backTo: 'tiles' },
+  toolbox:               { eyebrow: 'VIP Toolbox · Contrôles Blair',    title: '🧰 Toolbox',        back: true,  backTo: 'tiles' },
+  'toolbox-qr':          { eyebrow: 'Toolbox · QR /mobile',             title: '📲 QR Code',         back: true,  backTo: 'toolbox' },
+  'toolbox-sons':        { eyebrow: 'Toolbox · Soundboard Blair',       title: '🔊 Sons',            back: true,  backTo: 'toolbox' },
+  'toolbox-projector':   { eyebrow: 'Toolbox · Affichage Projecteur',   title: '📺 Projecteur',      back: true,  backTo: 'toolbox' },
+  'scoops-manager':      { eyebrow: 'Scoops Manager · Modération',      title: '📰 Scoops',          back: true,  backTo: 'tiles' },
+  blast:                 { eyebrow: 'Custom Blast · Diffusion',         title: '💎 Blast Composer', back: true,  backTo: 'tiles' },
 };
 
 function openVip(btn) {
@@ -2046,7 +2431,8 @@ function closeVip() {
 }
 
 function vipGoBack() {
-  _showVipPanel('tiles');
+  const meta = VIP_PANEL_META[_vipCurrentPanel];
+  _showVipPanel(meta?.backTo || 'tiles');
 }
 
 function openVipPanel(name) {
@@ -2073,10 +2459,12 @@ function _showVipPanel(name) {
   _vipCurrentPanel = name;
 
   // Panel-specific init
-  if (name === 'gallery')         initGallery();
-  if (name === 'soundboard')      initSoundboard();
-  if (name === 'scoops-manager')  initScoopsManager();
-  if (name === 'blast')           initBlastPanel();
+  if (name === 'gallery')            initGallery();
+  if (name === 'toolbox-sons')       initSoundboard();
+  if (name === 'toolbox-qr')         initToolboxQR();
+  if (name === 'toolbox-projector')  initToolboxProjector();
+  if (name === 'scoops-manager')     initScoopsManager();
+  if (name === 'blast')              initBlastPanel();
 }
 
 /* ═══════════════════════════════════════
@@ -2208,31 +2596,27 @@ function _lbRender(animate) {
 /* ═══════════════════════════════════════
    VIP SOUNDBOARD
 ═══════════════════════════════════════ */
+// IDs alignés avec VIP_SOUNDS côté serveur (main.py). Le son est diffusé sur
+// le projecteur via socket.io (endpoint /api/vip/play-sound), pas localement,
+// pour que toute la salle entende — pas seulement l'iPhone VIP.
 const SB_DEFS = [
-  { id: 'champagne', name: 'Champagne', icon: '🥂', freq: 880, wave: 'sine',     dur: 1.2 },
-  { id: 'drama',     name: 'Drama',     icon: '🎭', freq: 196, wave: 'sawtooth', dur: 1.6 },
-  { id: 'gossip',    name: 'Gossip',    icon: '🤫', freq: 528, wave: 'triangle', dur: 1.0 },
-  { id: 'scandale',  name: 'Scandale',  icon: '😱', freq: 659, wave: 'square',   dur: 0.5 },
-  { id: 'suspens',   name: 'Suspens',   icon: '⏱',  freq: 330, wave: 'sine',     dur: 2.2 },
-  { id: 'victoire',  name: 'Victoire',  icon: '🏆', freq: 523, wave: 'sine',     dur: 1.4 },
+  { id: 'bitch_back',   name: 'The Bitch Is Back', icon: '💅' },
+  { id: 'biggest_news', name: 'Biggest News Ever', icon: '🗞' },
+  { id: 'first_post',   name: 'First Post',        icon: '✍'  },
+  { id: 'ringtone',     name: 'Incoming Gossip',   icon: '📱' },
+  { id: 'georgina',     name: 'Devil In Disguise', icon: '😈' },
+  { id: 'bad_girl',     name: 'Bad Girl',          icon: '🖤' },
 ];
 
-let _sbReady     = false;
-let _sbUrls      = {};   // id → url string or null
-let _sbAudio     = null;
-let _sbAudioCtx  = null;
-let _sbToneTimer = null;
-let _sbPlayingId = null;
+// Timeout de sécurité pour retirer l'état "playing" si sound_stopped n'arrive pas.
+const SB_MAX_PLAYING_MS = 25000;
+
+let _sbReady        = false;
+let _sbSafetyTimer  = null;
+let _sbPlayingId    = null;
 
 async function initSoundboard() {
-  if (!_sbReady) {
-    try {
-      const res  = await fetch('/api/vip/sounds');
-      const data = await res.json();
-      (data.sounds || []).forEach(s => { _sbUrls[s.id] = s.url || null; });
-    } catch { /* use tones only */ }
-    _sbReady = true;
-  }
+  _sbReady = true;
   _sbRender();
 }
 
@@ -2245,44 +2629,38 @@ function _sbRender() {
   `).join('');
 }
 
-function sbPlay(id) {
+async function sbPlay(id) {
   const def = SB_DEFS.find(d => d.id === id);
   if (!def) return;
 
-  sbStopAll();
+  // Bascule le highlight sur le bouton pressé (le projecteur coupe la piste
+  // précédente automatiquement via stopCurrentSound).
+  _sbClearPlaying();
   _sbPlayingId = id;
   document.getElementById('sb-btn-' + id)?.classList.add('playing');
+  _sbSafetyTimer = setTimeout(_sbClearPlaying, SB_MAX_PLAYING_MS);
 
-  const url = _sbUrls[id];
-  if (url) {
-    _sbAudio = new Audio(url);
-    _sbAudio.play().catch(() => {});
-    _sbAudio.onended = _sbDone;
-  } else {
-    // Web Audio API tone fallback
-    _sbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc  = _sbAudioCtx.createOscillator();
-    const gain = _sbAudioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(_sbAudioCtx.destination);
-    osc.type = def.wave;
-    osc.frequency.setValueAtTime(def.freq, _sbAudioCtx.currentTime);
-    gain.gain.setValueAtTime(0.22, _sbAudioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, _sbAudioCtx.currentTime + def.dur);
-    osc.start();
-    osc.stop(_sbAudioCtx.currentTime + def.dur);
-    _sbToneTimer = setTimeout(_sbDone, def.dur * 1000);
+  try {
+    const res  = await fetch('/api/vip/play-sound', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ sound: id }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'send failed');
+  } catch (e) {
+    _sbClearPlaying();
+    showToast('Son indisponible — projecteur injoignable');
   }
 }
 
 function sbStopAll() {
-  if (_sbAudio)    { _sbAudio.pause(); _sbAudio = null; }
-  if (_sbAudioCtx) { _sbAudioCtx.close().catch(() => {}); _sbAudioCtx = null; }
-  if (_sbToneTimer){ clearTimeout(_sbToneTimer); _sbToneTimer = null; }
-  _sbDone();
+  fetch('/api/vip/stop-sound', { method: 'POST' }).catch(() => {});
+  _sbClearPlaying();
 }
 
-function _sbDone() {
+function _sbClearPlaying() {
+  if (_sbSafetyTimer) { clearTimeout(_sbSafetyTimer); _sbSafetyTimer = null; }
   if (_sbPlayingId) {
     document.getElementById('sb-btn-' + _sbPlayingId)?.classList.remove('playing');
     _sbPlayingId = null;
@@ -2373,55 +2751,254 @@ function _smFmt(iso) {
 }
 
 /* ═══════════════════════════════════════
-   CUSTOM BLAST
+   TOOLBOX · QR
 ═══════════════════════════════════════ */
-function initBlastPanel() {
-  const input = document.getElementById('blast-input');
-  const btn   = document.getElementById('blast-send-btn');
-  const txt   = document.getElementById('blast-btn-text');
-  if (input) input.value = '';
-  if (btn)   btn.disabled = false;
-  if (txt)   txt.textContent = '💎 Envoyer le Blast';
-  blastUpdateCount();
-}
-
-function blastUpdateCount() {
-  const val = document.getElementById('blast-input')?.value || '';
-  const el  = document.getElementById('blast-count');
-  if (el) el.textContent = val.length;
-}
-
-async function blastSend() {
-  const input   = document.getElementById('blast-input');
-  const btn     = document.getElementById('blast-send-btn');
-  const btnText = document.getElementById('blast-btn-text');
-  const content = (input?.value || '').trim();
-  if (!content) { showToast('Ton blast est vide. Manhattan mérite mieux. 💎'); return; }
-
-  btn.disabled = true;
-  btnText.textContent = '✨ Envoi en cours…';
-
+let _tbxQrLoaded = false;
+async function initToolboxQR() {
+  if (_tbxQrLoaded) return;
   try {
-    const res  = await fetch('/api/vip/blast', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ content }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      input.value = '';
-      blastUpdateCount();
-      btnText.textContent = '✓ Blast envoyé !';
-      setTimeout(() => { btnText.textContent = '💎 Envoyer le Blast'; btn.disabled = false; }, 3000);
-    } else {
-      showToast(data.error || 'Erreur envoi blast.', 3000);
-      btnText.textContent = '💎 Envoyer le Blast';
-      btn.disabled = false;
+    const r = await fetch('/api/qr-code');
+    const d = await r.json();
+    if (d.qr_base64) {
+      const src = 'data:image/png;base64,' + d.qr_base64;
+      document.getElementById('tbx-qr-img').src           = src;
+      document.getElementById('tbx-qr-lightbox-img').src  = src;
+      document.getElementById('tbx-qr-url').textContent   = d.url || '';
+      _tbxQrLoaded = true;
     }
   } catch {
-    showToast('Erreur réseau.', 3000);
-    btnText.textContent = '💎 Envoyer le Blast';
-    btn.disabled = false;
+    document.getElementById('tbx-qr-url').textContent = 'QR indisponible.';
+  }
+}
+function tbxQrOpenLightbox() {
+  document.getElementById('tbx-qr-lightbox').classList.add('show');
+}
+function tbxQrCloseLightbox() {
+  document.getElementById('tbx-qr-lightbox').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════
+   TOOLBOX · Affichage Projecteur
+═══════════════════════════════════════ */
+const _tbxProj = { scoresBig: false, qrBig: false };
+
+function initToolboxProjector() {
+  // Rien à charger : l'état est local. Rafraîchit les labels au cas où.
+  _tbxRenderProjButtons();
+}
+function _tbxRenderProjButtons() {
+  const bs = document.getElementById('tbx-btn-scores');
+  const bq = document.getElementById('tbx-btn-qr');
+  if (bs) {
+    bs.classList.toggle('is-on', _tbxProj.scoresBig);
+    bs.textContent = _tbxProj.scoresBig ? '📊 Masquer les scores' : '📊 Scores en grand';
+  }
+  if (bq) {
+    bq.classList.toggle('is-on', _tbxProj.qrBig);
+    bq.textContent = _tbxProj.qrBig ? '📱 Masquer le QR Code' : '📱 Afficher QR Code';
+  }
+}
+async function tbxToggleScores() {
+  const next = !_tbxProj.scoresBig;
+  try {
+    const r = await fetch('/api/vip/projector-scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:   JSON.stringify({ visible: next }),
+    });
+    const d = await r.json();
+    if (d.ok !== false) { _tbxProj.scoresBig = next; _tbxRenderProjButtons(); }
+    else showToast(d.error || 'Erreur projecteur.', 2500);
+  } catch { showToast('Erreur réseau.', 2500); }
+}
+async function tbxToggleQR() {
+  const next = !_tbxProj.qrBig;
+  try {
+    const r = await fetch('/api/vip/projector-qr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:   JSON.stringify({ visible: next }),
+    });
+    const d = await r.json();
+    if (d.ok !== false) { _tbxProj.qrBig = next; _tbxRenderProjButtons(); }
+    else showToast(d.error || 'Erreur projecteur.', 2500);
+  } catch { showToast('Erreur réseau.', 2500); }
+}
+
+/* ═══════════════════════════════════════
+   CUSTOM BLAST — composer complet (parité admin, sans Chuck)
+═══════════════════════════════════════ */
+const BLAST_THEMES = {
+  gg:     { icon: '✦', eyebrow: 'GOSSIP GIRL', sig: 'XOXO, Gossip Girl' },
+  custom: { icon: '✧', eyebrow: 'BREAKING NEWS',      sig: ''                  },
+};
+const blastState = {
+  identity:   'gg',
+  customName: '',
+  content:    '',
+  imagePath:  null,
+  sound:      'new_gg',
+  pin:        false,
+};
+
+function initBlastPanel() {
+  // Reset à l'ouverture
+  const content = document.getElementById('bc-content');
+  const custom  = document.getElementById('bc-custom-name');
+  const pin     = document.getElementById('bc-pin');
+  const sound   = document.getElementById('bc-sound');
+  const btn     = document.getElementById('bc-send');
+  if (content) content.value = '';
+  if (custom)  custom.value  = '';
+  if (pin)     pin.checked   = false;
+  if (sound)   sound.value   = 'new_gg';
+  if (btn)   { btn.disabled = false; btn.textContent = '💎 Envoyer le Blast'; }
+  blastState.imagePath = null;
+  clearBlastImage();
+  setBlastIdentity('gg');
+  loadBlastPresets();
+  updateBlastPreview();
+}
+
+function setBlastIdentity(id) {
+  if (!(id in BLAST_THEMES)) return;
+  blastState.identity = id;
+  document.querySelectorAll('.bc-id-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.identity === id));
+  const customInp = document.getElementById('bc-custom-name');
+  if (customInp) customInp.style.display = (id === 'custom') ? 'block' : 'none';
+  updateBlastPreview();
+}
+
+function updateBlastPreview() {
+  blastState.content    = (document.getElementById('bc-content')?.value || '');
+  blastState.customName = (document.getElementById('bc-custom-name')?.value || '').trim();
+  blastState.sound      = document.getElementById('bc-sound')?.value || '';
+
+  const preview = document.getElementById('bc-preview');
+  const theme   = BLAST_THEMES[blastState.identity] || BLAST_THEMES.gg;
+
+  preview.classList.remove('theme-gg', 'theme-custom');
+  preview.classList.add(`theme-${blastState.identity}`);
+
+  document.getElementById('bc-preview-icon').textContent    = theme.icon;
+  document.getElementById('bc-preview-eyebrow').textContent = theme.eyebrow;
+  document.getElementById('bc-preview-message').textContent = blastState.content.trim() || '— Ton message ici —';
+  document.getElementById('bc-preview-sig').textContent     = blastState.identity === 'custom'
+    ? (blastState.customName ? `— ${blastState.customName}` : '— …')
+    : theme.sig;
+
+  const imgEl = document.getElementById('bc-preview-image');
+  if (blastState.imagePath) { imgEl.src = blastState.imagePath; imgEl.style.display = 'block'; }
+  else                      { imgEl.removeAttribute('src');     imgEl.style.display = 'none';  }
+
+  const cc = document.getElementById('bc-char-count');
+  if (cc) cc.textContent = `${blastState.content.length} / 500`;
+}
+
+async function onBlastImageSelected(evt) {
+  const file = evt.target.files?.[0];
+  if (!file) return;
+  const status = document.getElementById('bc-image-status');
+  if (status) status.textContent = 'Envoi…';
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    const r = await fetch('/api/upload-image', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.image_path) {
+      blastState.imagePath = d.image_path;
+      if (status) status.textContent = file.name;
+      document.getElementById('bc-image-clear').style.display = 'inline-block';
+    } else {
+      if (status) status.textContent = d.error || 'Échec upload.';
+    }
+  } catch {
+    if (status) status.textContent = 'Erreur réseau.';
+  }
+  evt.target.value = '';
+  updateBlastPreview();
+}
+
+function clearBlastImage() {
+  blastState.imagePath = null;
+  const status = document.getElementById('bc-image-status');
+  const clear  = document.getElementById('bc-image-clear');
+  if (status) status.textContent = 'Aucune image';
+  if (clear)  clear.style.display = 'none';
+  updateBlastPreview();
+}
+
+async function loadBlastPresets() {
+  const wrap = document.getElementById('bc-presets');
+  if (!wrap) return;
+  try {
+    const r = await fetch('/api/vip/blast-presets');
+    const d = await r.json();
+    const presets = d.presets || [];
+    if (!presets.length) {
+      wrap.innerHTML = '<div style="font-size:10px;color:var(--stone);">Aucun preset disponible.</div>';
+      return;
+    }
+    wrap.innerHTML = presets.map((p, i) =>
+      `<button type="button" class="bc-preset-btn" onclick="applyBlastPreset(${i})">${esc(p.label || 'Preset')}</button>`
+    ).join('');
+    wrap._presets = presets;
+  } catch {
+    wrap.innerHTML = '<div style="font-size:10px;color:var(--red);">Erreur presets.</div>';
+  }
+}
+
+function applyBlastPreset(idx) {
+  const p = document.getElementById('bc-presets')?._presets?.[idx];
+  if (!p) return;
+  if (p.content)                    document.getElementById('bc-content').value = p.content;
+  if (p.sound !== undefined)        document.getElementById('bc-sound').value   = p.sound || '';
+  if (typeof p.pin === 'boolean')   document.getElementById('bc-pin').checked   = p.pin;
+  if (p.identity && p.identity in BLAST_THEMES) setBlastIdentity(p.identity);
+  updateBlastPreview();
+}
+
+async function sendBlast() {
+  updateBlastPreview();
+  blastState.pin = !!document.getElementById('bc-pin')?.checked;
+  const content = blastState.content.trim();
+  if (!content && !blastState.imagePath) { showToast('✗ Blast vide.', 2500); return; }
+
+  const btn = document.getElementById('bc-send');
+  if (btn) { btn.disabled = true; btn.textContent = '… Envoi en cours'; }
+
+  try {
+    const r = await fetch('/api/vip/blast-composer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:   JSON.stringify({
+        content:     content,
+        identity:    blastState.identity,
+        custom_name: blastState.customName,
+        image_path:  blastState.imagePath,
+        sound:       blastState.sound || null,
+        pin:         blastState.pin,
+      }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      document.getElementById('bc-content').value = '';
+      clearBlastImage();
+      document.getElementById('bc-pin').checked = false;
+      blastState.pin = false;
+      updateBlastPreview();
+      if (btn) btn.textContent = '✓ Blast envoyé !';
+      setTimeout(() => {
+        if (btn) { btn.textContent = '💎 Envoyer le Blast'; btn.disabled = false; }
+      }, 2500);
+    } else {
+      showToast(d.error || 'Erreur envoi blast.', 3000);
+      if (btn) { btn.textContent = '💎 Envoyer le Blast'; btn.disabled = false; }
+    }
+  } catch {
+    showToast('Erreur réseau.', 2500);
+    if (btn) { btn.textContent = '💎 Envoyer le Blast'; btn.disabled = false; }
   }
 }
 
@@ -2441,7 +3018,7 @@ socket.on('vip_blast', showBlastOverlay);
 
 /* Admin Blast (Chuck Mode) — overlay distinct, multi-thème */
 const ADMIN_BLAST_THEMES = {
-  gg:     { icon: '✦', eyebrow: 'GOSSIP GIRL DECREE', sig: 'XOXO, Gossip Girl' },
+  gg:     { icon: '✦', eyebrow: 'GOSSIP GIRL', sig: 'XOXO, Gossip Girl' },
   chuck:  { icon: '♠', eyebrow: 'EMPIRE INSIDER',     sig: '— Chuck Bass'      },
   custom: { icon: '✧', eyebrow: 'BREAKING NEWS',      sig: ''                  },
 };
@@ -2483,7 +3060,14 @@ socket.on('admin_blast', data => {
 });
 
 /* Keep scoops list in sync with live game events */
-socket.on('scoop_published', () => {
+socket.on('new_scoop', scoop => {
+  addScoopToFeed(scoop);
+});
+socket.on('new_scoop_silent', scoop => {
+  addScoopToFeed(scoop);
+});
+socket.on('scoop_published', scoop => {
+  if (scoop && scoop.id != null) addScoopToFeed(scoop);
   if (_vipCurrentPanel === 'scoops-manager') smRefresh();
 });
 socket.on('scoop_deleted', () => {
