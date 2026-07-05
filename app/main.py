@@ -1676,6 +1676,10 @@ def _start_quiz_phase(game: GameSession):
         "total_rounds": total_questions,
         "gg":           _get_current_gg_dict(game),
     })
+    # Le leaderboard doit être ré-émis APRÈS l'incrément de quiz_number pour que
+    # `score_quiz` reparte à 0 côté projecteur — sinon la sidebar "Quiz en cours"
+    # conserve les points du quiz précédent tant que personne ne marque.
+    socketio.emit("leaderboard_update", {"leaderboard": get_leaderboard()})
     socketio.emit("play_sound", {"sound": "quiz_start"})
 
     # Notifie le GG qu'il peut choisir dès qu'il est prêt
@@ -1980,15 +1984,48 @@ def _question_timer_job(game_id: int, question_id: int, index: int):
     socketio.start_background_task(_after_answer, game_id, next_index, _delay_pick)
 
 
+def _pick_next_gg_from_quiz(game: GameSession, leaderboard: list) -> dict | None:
+    """
+    Sélectionne le prochain GG à la fin d'un quiz.
+
+    Règles produit :
+    - Basé UNIQUEMENT sur `score_quiz` (points du quiz qui vient de se terminer),
+      pas sur `score_total` cumulé — sinon le GG en tête cumulé reste GG à vie.
+    - Le GG sortant est exclu : pas deux fois GG d'affilée.
+    - Départage : `score_total` desc (tie-breaker plus stable qu'un random),
+      puis `id` asc pour un ordre reproductible.
+    - Ne retient que les joueurs connectés non-admin.
+
+    Retourne None si aucun candidat éligible (seul le GG est connecté, ou
+    personne du tout) — l'appelant garde l'ancien GG dans ce cas.
+    """
+    current_gg_id = game.current_gg_id
+    eligible = [
+        p for p in leaderboard
+        if p.get("is_connected")
+        and not p.get("is_admin")
+        and p.get("id") != current_gg_id
+    ]
+    if not eligible:
+        return None
+    eligible.sort(key=lambda p: (
+        -int(p.get("score_quiz") or 0),
+        -int(p.get("score_total") or 0),
+        int(p.get("id") or 0),
+    ))
+    return eligible[0]
+
+
 def _end_quiz(game: GameSession):
     """
     Fin du quiz (10 questions épuisées) :
     1. Calcule le podium de la session
-    2. Nomme le high-scorer nouveau GG
+    2. Nomme le nouveau GG selon `_pick_next_gg_from_quiz` (points du quiz
+       courant uniquement, GG sortant exclu)
     3. Transition automatique → LIBRE après 5 s
     """
     leaderboard = get_leaderboard()
-    winner      = leaderboard[0] if leaderboard else None
+    winner      = _pick_next_gg_from_quiz(game, leaderboard)
 
     new_gg_sound_duration = NEW_GG_AUDIO_DURATION
     if winner:
@@ -2011,7 +2048,18 @@ def _end_quiz(game: GameSession):
             socketio.emit("leaderboard_update", {"leaderboard": leaderboard})
             socketio.emit("play_sound", {"sound": sound})
             log_activity("quiz_ended", "system",
-                         f"Nouveau GG: {winner['prenom']} ({winner['personnage']})")
+                         f"Nouveau GG: {winner['prenom']} ({winner['personnage']}) "
+                         f"— {winner.get('score_quiz', 0)} pts ce quiz")
+    else:
+        # Aucun candidat éligible (seul le GG sortant est connecté, ou personne).
+        # On garde l'ancien GG plutôt que de laisser la soirée sans maître du jeu.
+        socketio.emit("quiz_ended", {
+            "leaderboard": leaderboard,
+            "new_gg":      _get_current_gg_dict(game),
+        })
+        socketio.emit("leaderboard_update", {"leaderboard": leaderboard})
+        log_activity("quiz_ended", "system",
+                     "Fin de quiz sans successeur eligible → GG conservé")
 
     # Transition → LIBRE : délai calé sur la durée audio new_gg + marge
     # pour éviter que le Mode Libre démarre pendant l'animation du nouveau GG

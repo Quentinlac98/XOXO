@@ -2943,15 +2943,23 @@ function loadScoresHistory() {
     if (!el) return;
     const h = res?.history || [];
     if (!h.length) { el.innerHTML = ''; return; }
+    // Endpoint /api/admin/scores-history renvoie { quiz_number, scores:[{prenom,personnage,points}] }
+    // — on résume chaque quiz en 1 ligne : "Flash Quiz #N — podium (points)".
     el.innerHTML = `
       <div class="panel panel-full">
         <div class="panel-title">Historique par Flash Quiz</div>
         <div class="panel-sub tight">Sessions précédentes</div>
-        <div style="margin-top:12px;">${h.map(e => `
+        <div style="margin-top:12px;">${h.map(e => {
+          const podium = (e.scores || [])
+            .slice(0, 3)
+            .map(s => `${escHtml(s.prenom || '?')} · ${s.points || 0}`)
+            .join(' — ');
+          return `
           <div class="log-row">
-            <span class="log-time">${escHtml(e.date || '')}</span>
-            <span class="log-detail">${escHtml(e.quiz_name || '')}</span>
-          </div>`).join('')}
+            <span class="log-time">Flash Quiz #${escHtml(String(e.quiz_number ?? '?'))}</span>
+            <span class="log-detail">${podium || '<em>Aucun point</em>'}</span>
+          </div>`;
+        }).join('')}
         </div>
       </div>`;
   });
