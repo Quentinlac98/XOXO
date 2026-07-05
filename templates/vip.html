@@ -171,18 +171,18 @@
     .timer-num { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--gold-light); position: relative; z-index: 1; }
     .timer-num.urgent { color: var(--red); }
     .question-card { background: rgba(201,168,76,.04); border: 1px solid rgba(201,168,76,.16); border-radius: 16px; padding: 18px; }
-    .question-text { font-family: 'Playfair Display', serif; font-size: 18px; color: white; line-height: 1.4; font-weight: 700; }
-    .answers-grid { display: flex; flex-direction: column; gap: 8px; }
-    .answer-btn { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 13px 14px; cursor: pointer; text-align: left; transition: all .2s; color: var(--cream); font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .question-text { font-family: 'Playfair Display', serif; font-size: 22px; color: white; line-height: 1.35; font-weight: 700; }
+    .answers-grid { display: flex; flex-direction: column; gap: 10px; }
+    .answer-btn { display: flex; align-items: center; gap: 14px; min-height: 56px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 16px 18px; cursor: pointer; text-align: left; transition: all .2s; color: var(--cream); font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
     .answer-btn:active { transform: scale(.98); }
     .answer-btn.selected { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.4); }
     .answer-btn.correct { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.4); pointer-events: none; }
     .answer-btn.wrong { background: rgba(192,80,77,.08); border-color: rgba(192,80,77,.3); pointer-events: none; }
     .answer-btn.revealed { opacity: .45; pointer-events: none; }
     .answer-btn:disabled { opacity: .5; cursor: default; pointer-events: none; }
-    .answer-key { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold); flex-shrink: 0; width: 22px; }
+    .answer-key { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold); flex-shrink: 0; width: 26px; }
     .answer-btn.correct .answer-key { color: var(--green); }
-    .answer-text { font-size: 13px; line-height: 1.35; }
+    .answer-text { font-size: 16px; line-height: 1.35; }
     .answer-result { display: none; border-radius: 14px; padding: 16px 18px; text-align: center; }
     .answer-result.show { display: block; animation: resultIn .35s ease; }
     @keyframes resultIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -1617,6 +1617,14 @@ function renderQuestion(data) {
   // Le timer est piloté exclusivement par socket.on('question_tick') — pas de setInterval local
   updateTimerDisplay(state.questionDuration, state.questionDuration);
   document.getElementById('answer-result').className = 'answer-result';
+  // Purge le contenu du panneau résultat pour éviter que l'explication de la
+  // question précédente ne s'affiche brièvement quand le joueur clique sur sa
+  // réponse (answer_confirmed rend le panneau visible avant que question_answer
+  // n'écrive la nouvelle explication).
+  document.getElementById('result-icon').textContent  = '';
+  document.getElementById('result-title').textContent = '';
+  document.getElementById('result-pts').textContent   = '';
+  document.getElementById('result-expl').textContent  = '';
 
   // ✅ FIX: boutons gelés après premier clic (anti-double-click, anti-fausse-manip)
   const grid = document.getElementById('answers-grid');

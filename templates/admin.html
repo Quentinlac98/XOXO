@@ -1595,7 +1595,10 @@ tr:hover td { background: rgba(255,255,255,.018); }
               <div class="panel-title">Feed · Modération</div>
               <div class="panel-sub tight">Plus récents en premier</div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="loadScoops()">↻ Rafraîchir</button>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="loadScoops()">↻ Rafraîchir</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteAllScoops()">🗑 Supprimer tous les scoops</button>
+            </div>
           </div>
           <div id="scoops-list">
             <div style="text-align:center;padding:24px;color:var(--stone);font-size:12px;">Aucun scoop pour l'instant.</div>
@@ -2703,6 +2706,10 @@ function postAsChuck() {
 }
 function deleteScoop(id) { adminAction('/api/admin/delete-scoop', { scoop_id: id }).then(r => r && loadScoops()); }
 function pinScoop(id)    { adminAction('/api/admin/pin-scoop',    { scoop_id: id }).then(r => r && loadScoops()); }
+function deleteAllScoops() {
+  if (!confirm('Supprimer tous les scoops ? Cette action est irréversible.')) return;
+  adminAction('/api/admin/delete-all-scoops').then(r => r && loadScoops());
+}
 
 /* ══════════════════════════════════════════════════
    BLAST COMPOSER (Chuck Mode)

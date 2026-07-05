@@ -754,6 +754,20 @@ def api_delete_scoop():
     return jsonify({"ok": True})
 
 
+@app.route("/api/admin/delete-all-scoops", methods=["POST"])
+@admin_required
+def api_delete_all_scoops():
+    scoops = Scoop.query.filter_by(is_deleted=False).all()
+    ids    = [s.id for s in scoops]
+    for s in scoops:
+        s.is_deleted = True
+    db.session.commit()
+    for sid in ids:
+        socketio.emit("scoop_deleted", {"scoop_id": sid})
+    log_activity("delete_all_scoops", "admin", f"{len(ids)} scoops supprimés")
+    return jsonify({"ok": True, "message": f"{len(ids)} scoop(s) supprimé(s)."})
+
+
 @app.route("/api/admin/pin-scoop", methods=["POST"])
 @admin_required
 def api_pin_scoop():
