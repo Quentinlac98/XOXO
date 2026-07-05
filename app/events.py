@@ -138,7 +138,7 @@ def on_reconnect(data):
                     "candidates":      [{"id": q["id"], "question": q["question"]}
                                         for q in candidates],
                     "question_number": idx + 1,
-                    "total":           "?",
+                    "total":           app.config.get("QUESTIONS_PER_SESSION", 10),
                     "timeout":         10,
                 })
 
@@ -195,7 +195,7 @@ def on_projector_reconnect(data=None):
         emit("waiting_for_gg_pick", {
             "gg":              gg.to_dict() if gg else None,
             "question_number": pick_index + 1,
-            "total":           "?",
+            "total":           app.config.get("QUESTIONS_PER_SESSION", 10),
         })
         return
 
@@ -216,7 +216,7 @@ def on_projector_reconnect(data=None):
 
     emit("new_question", {
         "question_number": idx + 1,
-        "total":           "?",
+        "total":           app.config.get("QUESTIONS_PER_SESSION", 10),
         "question_id":     q_data["id"],
         "question":        q_data["question"],
         "choices":         q_data["choices"],
@@ -256,7 +256,7 @@ def on_get_game_state(data=None):
         emit("waiting_for_gg_pick", {
             "gg":              gg.to_dict() if gg else None,
             "question_number": pick_index + 1,
-            "total":           "?",
+            "total":           app.config.get("QUESTIONS_PER_SESSION", 10),
         })
         return
 

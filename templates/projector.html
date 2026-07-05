@@ -532,7 +532,7 @@
       <!-- GG Pick Waiting (affiché pendant que le GG choisit) -->
       <div id="gg-pick-waiting">
         <div class="gg-pick-proj-crown">👑</div>
-        <div class="gg-pick-proj-title">Le Gossip Girl choisit…</div>
+        <div class="gg-pick-proj-title">Gossip Girl choisit…</div>
         <div class="gg-pick-proj-sub">Manhattan retient son souffle.</div>
         <div class="gg-pick-proj-progress" id="gg-pick-proj-progress">Question — / —</div>
       </div>
@@ -1390,6 +1390,10 @@ socket.on('phase_changed', data => {
           clearInterval(cd);
           overlay.classList.remove('show');
           showView('quiz');
+          // showView('quiz') ré-affiche #quiz-content et retire .show de
+          // #gg-pick-waiting — on refait le reset APRÈS pour purger le DOM
+          // du quiz précédent tant que le GG n'a pas choisi la première question.
+          _projResetQuizContent('En attente du Gossip Girl…');
         }
       }, 1000);
     }
@@ -1434,30 +1438,30 @@ socket.on('quiz_stopped', data => {
   showView('waiting');
 });
 
-// ✅ NOUVEAU — Projecteur : GG en train de choisir la question
-socket.on('waiting_for_gg_pick', data => {
-  showView('quiz');
-
-  // ── Nettoyage de l'état visuel du quiz précédent ──────────────────────────
-  // Retire le bandeau "La réponse était…" de la question précédente
+// Reset visuel de la vue quiz — appelé sur phase_changed(QUIZ) et waiting_for_gg_pick
+// pour éviter que la dernière question du quiz précédent traîne à l'écran pendant
+// que le GG choisit.
+function _projResetQuizContent(progressText) {
   const reveal = document.getElementById('answer-reveal');
   if (reveal) reveal.classList.remove('show');
-  // Retire les classes correct/revealed sur les choix (reste du quiz précédent)
   document.querySelectorAll('.choice-item').forEach(el => {
     el.classList.remove('correct', 'revealed');
   });
-  // Vide les choix et le texte de question pour éviter tout flash au prochain new_question
-  const choicesWrap = document.getElementById('quiz-choices');
+  const choicesWrap = document.getElementById('choices-grid');
   if (choicesWrap) choicesWrap.innerHTML = '';
   const qText = document.getElementById('q-text');
   if (qText) qText.textContent = '';
-  // ─────────────────────────────────────────────────────────────────────────
 
-  // Masque le contenu quiz normal, affiche l'écran d'attente GG
   document.getElementById('quiz-content').style.display = 'none';
   document.getElementById('gg-pick-waiting').classList.add('show');
-  document.getElementById('gg-pick-proj-progress').textContent =
-    `Question ${data.question_number} / ${data.total || '?'}`;
+  const progEl = document.getElementById('gg-pick-proj-progress');
+  if (progEl && progressText) progEl.textContent = progressText;
+}
+
+// ✅ NOUVEAU — Projecteur : GG en train de choisir la question
+socket.on('waiting_for_gg_pick', data => {
+  showView('quiz');
+  _projResetQuizContent(`Question ${data.question_number} / ${data.total || '?'}`);
   if (data.gg) {
     document.getElementById('ticker-gg').textContent = data.gg.prenom;
   }

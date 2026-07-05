@@ -3236,7 +3236,7 @@ function initSocket() {
     const choices  = document.getElementById('quiz-q-choices');
     const statusEl = document.getElementById('quiz-q-status');
     if (qNum)     qNum.textContent  = `Q.${data.question_number ?? '—'} / ${data.total ?? '?'}`;
-    if (qText)    qText.textContent = data.gg ? `${data.gg.prenom} choisit la question…` : 'Le Gossip Girl choisit la question…';
+    if (qText)    qText.textContent = data.gg ? `${data.gg.prenom} choisit la question…` : 'Gossip Girl choisit la question…';
     if (choices)  choices.innerHTML = '';
     if (statusEl) statusEl.textContent = 'Sélection en cours';
   });

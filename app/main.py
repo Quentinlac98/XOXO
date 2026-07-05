@@ -1655,6 +1655,11 @@ def _start_quiz_phase(game: GameSession):
     game.question_index = 0
     game.is_paused      = False
     game.libre_ends_at  = None
+    # Purge la question du quiz précédent : sinon projector_reconnect /
+    # get_game_state la ré-émet en `new_question` pendant l'intro du nouveau
+    # quiz (pick_index=-1 + is_quiz_active=True + current_question_data != None)
+    # → le projecteur ré-affiche la Q10 stale du quiz précédent.
+    game.set_current_question(None)
     db.session.commit()
 
     app.config["last_round_candidates"] = []  # blacklist round réinitialisée
@@ -1768,6 +1773,7 @@ def _ask_gg_to_pick(game: GameSession, _questions_unused: list, index: int):
     socketio.emit("waiting_for_gg_pick", {
         "gg":              gg.to_dict() if gg else None,
         "question_number": index + 1,
+        "total":           app.config.get("QUESTIONS_PER_SESSION", 10),
     })
 
     # Timer 15s APScheduler (⚡ Turbo : 2s)
